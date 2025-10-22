@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { logger } from "@/lib/logger";
 
 interface ProfileData {
   id: string;
@@ -65,7 +66,7 @@ export default function TherapistProfile() {
         setFormData(data);
       }
     } catch (error) {
-      console.error("Error loading profile:", error);
+      logger.error("Error loading profile:", error);
       toast.error("Error al cargar el perfil");
     } finally {
       setLoading(false);
@@ -116,7 +117,7 @@ export default function TherapistProfile() {
         toast.success("Perfil actualizado correctamente");
       }
     } catch (error) {
-      console.error("Error saving profile:", error);
+      logger.error("Error saving profile:", error);
       toast.error("Error al guardar el perfil");
     } finally {
       setSaving(false);

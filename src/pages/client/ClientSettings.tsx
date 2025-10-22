@@ -8,8 +8,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
 import { Download } from "lucide-react";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { supabase } from "@/integrations/supabase/client";
+import { passwordSchema } from "@/lib/validation";
+import { logger } from "@/lib/logger";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useToast } from "@/hooks/use-toast";
 
 interface ProfileData {
@@ -103,10 +105,12 @@ export default function ClientSettings() {
       return;
     }
 
-    if (passwordData.newPassword.length < 6) {
+    // Validate password strength using the same schema as registration
+    const passwordValidation = passwordSchema.safeParse(passwordData.newPassword);
+    if (!passwordValidation.success) {
       toast({
         title: "Error",
-        description: "La contraseña debe tener al menos 6 caracteres",
+        description: passwordValidation.error.errors[0].message,
         variant: "destructive"
       });
       return;

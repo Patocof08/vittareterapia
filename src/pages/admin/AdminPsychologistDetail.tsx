@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 import {
   ArrowLeft,
   CheckCircle,
@@ -57,7 +58,7 @@ export default function AdminPsychologistDetail() {
       if (error) throw error;
       setProfile(data);
     } catch (error) {
-      console.error("Error fetching profile:", error);
+      logger.error("Error fetching profile:", error);
       toast.error("Error al cargar perfil");
     } finally {
       setLoading(false);
@@ -75,7 +76,7 @@ export default function AdminPsychologistDetail() {
       if (error) throw error;
       setDocuments(data || []);
     } catch (error) {
-      console.error("Error fetching documents:", error);
+      logger.error("Error fetching documents:", error);
     }
   };
 
@@ -95,7 +96,7 @@ export default function AdminPsychologistDetail() {
       toast.success("Psicólogo aprobado exitosamente");
       fetchProfileDetails();
     } catch (error) {
-      console.error("Error approving psychologist:", error);
+      logger.error("Error approving psychologist:", error);
       toast.error("Error al aprobar psicólogo");
     } finally {
       setActionLoading(false);
@@ -123,7 +124,7 @@ export default function AdminPsychologistDetail() {
       setRejectionReason("");
       fetchProfileDetails();
     } catch (error) {
-      console.error("Error rejecting psychologist:", error);
+      logger.error("Error rejecting psychologist:", error);
       toast.error("Error al rechazar psicólogo");
     } finally {
       setActionLoading(false);
@@ -150,7 +151,7 @@ export default function AdminPsychologistDetail() {
 
       toast.success("Documento descargado");
     } catch (error) {
-      console.error("Error downloading document:", error);
+      logger.error("Error downloading document:", error);
       toast.error("Error al descargar documento");
     }
   };
