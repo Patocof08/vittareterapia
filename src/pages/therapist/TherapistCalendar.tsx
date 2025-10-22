@@ -1,19 +1,20 @@
 import { useEffect, useState } from "react";
-import { Calendar as CalendarIcon, Clock, Plus } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, Settings } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { AvailabilityEditor } from "@/components/therapist/AvailabilityEditor";
 
 const daysOfWeek = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 
 export default function TherapistCalendar() {
   const [date, setDate] = useState<Date | undefined>(new Date());
   const { user } = useAuth();
-  const navigate = useNavigate();
+  const [showEditor, setShowEditor] = useState(false);
+  const [psychologistId, setPsychologistId] = useState<string | null>(null);
 
   type Block = { start: string; end: string };
   type DayAvailability = { dayOfWeek: number; blocks: Block[] };
@@ -32,8 +33,11 @@ export default function TherapistCalendar() {
 
       if (!profile) {
         setAvailability([]);
+        setPsychologistId(null);
         return;
       }
+
+      setPsychologistId(profile.id);
 
       const { data: rows, error } = await supabase
         .from("psychologist_availability")
@@ -65,8 +69,8 @@ export default function TherapistCalendar() {
     load();
   }, [user]);
 
-  const handleAddAvailability = () => {
-    navigate("/onboarding-psicologo");
+  const handleConfigureAvailability = () => {
+    setShowEditor(true);
   };
 
   const handleBlockTime = () => {
@@ -75,6 +79,58 @@ export default function TherapistCalendar() {
 
   // Sesiones del día seleccionado (aún sin fuente de datos)
   const sessionsForDay: any[] = [];
+
+  // Show editor if requested
+  if (showEditor && psychologistId) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <Button variant="outline" onClick={() => setShowEditor(false)}>
+            ← Volver al calendario
+          </Button>
+        </div>
+        <AvailabilityEditor 
+          psychologistId={psychologistId}
+          onClose={() => {
+            setShowEditor(false);
+            // Reload availability after editing
+            const load = async () => {
+              if (!user) return;
+              const { data: profile } = await supabase
+                .from("psychologist_profiles")
+                .select("id")
+                .eq("user_id", user.id)
+                .maybeSingle();
+
+              if (!profile) return;
+
+              const { data: rows } = await supabase
+                .from("psychologist_availability")
+                .select("day_of_week, start_time, end_time, is_exception")
+                .eq("psychologist_id", profile.id)
+                .eq("is_exception", false);
+
+              const grouped: Record<number, Block[]> = {};
+              (rows || []).forEach((r: any) => {
+                if (r.day_of_week === null) return;
+                const d = r.day_of_week as number;
+                (grouped[d] ||= []).push({
+                  start: formatTime(r.start_time as string),
+                  end: formatTime(r.end_time as string),
+                });
+              });
+
+              const result = Object.keys(grouped)
+                .map((k) => ({ dayOfWeek: Number(k), blocks: grouped[Number(k)] }))
+                .sort((a, b) => a.dayOfWeek - b.dayOfWeek);
+              setAvailability(result);
+            };
+            load();
+          }}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -85,8 +141,8 @@ export default function TherapistCalendar() {
             Gestiona tu disponibilidad y sesiones
           </p>
         </div>
-        <Button onClick={handleAddAvailability}>
-          <Plus className="w-4 h-4 mr-2" />
+        <Button onClick={handleConfigureAvailability}>
+          <Settings className="w-4 h-4 mr-2" />
           Configurar disponibilidad
         </Button>
       </div>
@@ -202,7 +258,11 @@ export default function TherapistCalendar() {
                       ))}
                     </div>
                   </div>
-                  <Button size="sm" variant="ghost">
+                  <Button 
+                    size="sm" 
+                    variant="ghost"
+                    onClick={handleConfigureAvailability}
+                  >
                     Editar
                   </Button>
                 </div>
