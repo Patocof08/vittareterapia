@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { User, Mail, Lock, CreditCard, Bell, Trash2, Package, HelpCircle } from "lucide-react";
+import { useState, useEffect } from "react";
+import { User, Mail, Lock, CreditCard, Bell, Trash2, Package, HelpCircle, Upload } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,10 +9,181 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
 import { Download } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+
+interface ProfileData {
+  full_name: string;
+  email: string;
+  phone?: string;
+  avatar_url?: string;
+}
 
 export default function ClientSettings() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("profile");
+  const [loading, setLoading] = useState(false);
+  const [profileData, setProfileData] = useState<ProfileData>({
+    full_name: "",
+    email: user?.email || "",
+    phone: "",
+    avatar_url: ""
+  });
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: ""
+  });
+
+  useEffect(() => {
+    if (user) {
+      loadProfile();
+    }
+  }, [user]);
+
+  const loadProfile = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user?.id)
+        .single();
+
+      if (error) throw error;
+
+      if (data) {
+        setProfileData({
+          full_name: data.full_name || "",
+          email: data.email || user?.email || "",
+          phone: data.phone || "",
+          avatar_url: data.avatar_url || ""
+        });
+      }
+    } catch (error) {
+      console.error('Error loading profile:', error);
+    }
+  };
+
+  const handleProfileUpdate = async () => {
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          full_name: profileData.full_name,
+          phone: profileData.phone
+        })
+        .eq('id', user?.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Perfil actualizado",
+        description: "Tus datos han sido guardados correctamente."
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePasswordChange = async () => {
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast({
+        title: "Error",
+        description: "Las contraseñas no coinciden",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      toast({
+        title: "Error",
+        description: "La contraseña debe tener al menos 6 caracteres",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: passwordData.newPassword
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Contraseña actualizada",
+        description: "Tu contraseña ha sido cambiada correctamente."
+      });
+
+      setPasswordData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: ""
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setLoading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user?.id}-${Date.now()}.${fileExt}`;
+      const filePath = `avatars/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('id', user?.id);
+
+      if (updateError) throw updateError;
+
+      setProfileData({ ...profileData, avatar_url: publicUrl });
+
+      toast({
+        title: "Foto actualizada",
+        description: "Tu foto de perfil ha sido actualizada."
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -51,16 +222,39 @@ export default function ClientSettings() {
             <CardContent className="space-y-6">
               {/* Foto de Perfil */}
               <div className="flex items-center gap-6">
-                <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center">
-                  <User className="w-12 h-12 text-muted-foreground" />
+                <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center overflow-hidden">
+                  {profileData.avatar_url ? (
+                    <img 
+                      src={profileData.avatar_url} 
+                      alt="Avatar" 
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <User className="w-12 h-12 text-muted-foreground" />
+                  )}
                 </div>
                 <div className="space-y-2">
                   <p className="text-sm text-muted-foreground">
                     Sube una foto de perfil para personalizar tu cuenta
                   </p>
-                  <Button variant="outline" size="sm">
-                    Subir Foto
-                  </Button>
+                  <div className="relative">
+                    <Input
+                      id="avatar-upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarUpload}
+                      className="hidden"
+                    />
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => document.getElementById('avatar-upload')?.click()}
+                      disabled={loading}
+                    >
+                      <Upload className="w-4 h-4 mr-2" />
+                      Subir Foto
+                    </Button>
+                  </div>
                 </div>
               </div>
 
@@ -72,6 +266,8 @@ export default function ClientSettings() {
                     id="name" 
                     type="text" 
                     placeholder="Tu nombre"
+                    value={profileData.full_name}
+                    onChange={(e) => setProfileData({ ...profileData, full_name: e.target.value })}
                   />
                 </div>
 
@@ -80,7 +276,7 @@ export default function ClientSettings() {
                   <Input 
                     id="email" 
                     type="email" 
-                    value={user?.email || ""} 
+                    value={profileData.email} 
                     disabled
                   />
                 </div>
@@ -91,10 +287,14 @@ export default function ClientSettings() {
                     id="phone" 
                     type="tel" 
                     placeholder="+52 123 456 7890"
+                    value={profileData.phone || ""}
+                    onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
                   />
                 </div>
 
-                <Button>Guardar Cambios</Button>
+                <Button onClick={handleProfileUpdate} disabled={loading}>
+                  {loading ? "Guardando..." : "Guardar Cambios"}
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -119,6 +319,8 @@ export default function ClientSettings() {
                   id="current-password" 
                   type="password" 
                   placeholder="••••••••"
+                  value={passwordData.currentPassword}
+                  onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
                 />
               </div>
 
@@ -128,6 +330,8 @@ export default function ClientSettings() {
                   id="new-password" 
                   type="password" 
                   placeholder="••••••••"
+                  value={passwordData.newPassword}
+                  onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
                 />
               </div>
 
@@ -137,10 +341,14 @@ export default function ClientSettings() {
                   id="confirm-password" 
                   type="password" 
                   placeholder="••••••••"
+                  value={passwordData.confirmPassword}
+                  onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
                 />
               </div>
 
-              <Button>Cambiar Contraseña</Button>
+              <Button onClick={handlePasswordChange} disabled={loading}>
+                {loading ? "Cambiando..." : "Cambiar Contraseña"}
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>
