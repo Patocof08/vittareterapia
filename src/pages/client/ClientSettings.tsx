@@ -151,9 +151,19 @@ export default function ClientSettings() {
 
     setLoading(true);
     try {
+      if (!user) {
+        toast({
+          title: "Error",
+          description: "Debes iniciar sesión para actualizar tu foto",
+          variant: "destructive"
+        });
+        return;
+      }
+
       const fileExt = file.name.split('.').pop();
-      const fileName = `${user?.id}-${Date.now()}.${fileExt}`;
-      const filePath = `avatars/${fileName}`;
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+      // IMPORTANT: path must start with the user id to satisfy storage RLS policies
+      const filePath = `${user.id}/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from('avatars')
