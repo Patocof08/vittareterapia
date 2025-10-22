@@ -17,7 +17,7 @@ export const Footer = () => {
       return;
     }
     
-    window.location.href = "/onboarding/psicologo";
+    window.location.href = "/onboarding-psicologo";
   };
 
   return (

@@ -66,7 +66,7 @@ export default function TherapistCalendar() {
   }, [user]);
 
   const handleAddAvailability = () => {
-    navigate("/onboarding/psicologo");
+    navigate("/onboarding-psicologo");
   };
 
   const handleBlockTime = () => {
