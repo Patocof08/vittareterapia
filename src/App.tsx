@@ -32,6 +32,7 @@ import TherapistReports from "./pages/therapist/TherapistReports";
 import TherapistProfilePage from "./pages/therapist/TherapistProfile";
 import TherapistDocuments from "./pages/therapist/TherapistDocuments";
 import TherapistSupport from "./pages/therapist/TherapistSupport";
+import TherapistSettings from "./pages/therapist/TherapistSettings";
 import PendingVerification from "./pages/therapist/PendingVerification";
 import ClientDashboard from "./pages/client/ClientDashboard";
 import ClientBooking from "./pages/client/ClientBooking";
@@ -94,6 +95,7 @@ const App = () => {
             <Route path="profile" element={<TherapistProfilePage />} />
             <Route path="documents" element={<TherapistDocuments />} />
             <Route path="support" element={<TherapistSupport />} />
+            <Route path="settings" element={<TherapistSettings />} />
           </Route>
 
           {/* Client Portal Routes - Protected */}
