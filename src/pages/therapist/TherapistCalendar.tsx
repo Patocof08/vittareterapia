@@ -91,36 +91,45 @@ export default function TherapistCalendar() {
       endOfDay.setHours(23, 59, 59, 999);
 
       // @ts-ignore - Types will regenerate automatically
-      const { data, error } = await supabase
-        // @ts-ignore - Types will regenerate automatically
+      const { data: appts, error: apptError } = await supabase
         .from("appointments")
-        .select(`
-          *,
-          profiles!appointments_patient_id_fkey(
-            full_name
-          )
-        `)
+        .select("*")
         .eq("psychologist_id", psychologistId)
         .gte("start_time", startOfDay.toISOString())
         .lte("start_time", endOfDay.toISOString())
         .order("start_time", { ascending: true });
 
-      if (error) {
-        console.error("Error loading sessions:", error);
+      if (apptError) {
+        console.error("Error loading sessions:", apptError);
         setSessionsForDay([]);
-      } else {
-        const formatted = (data || []).map((appt: any) => ({
-          id: appt.id,
-          time: new Date(appt.start_time).toLocaleTimeString("es-MX", {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
-          patientName: appt.profiles?.full_name || "Paciente",
-          status: appt.status === "pending" ? "pendiente" : appt.status === "confirmed" ? "confirmada" : appt.status,
-          duration: 50,
-        }));
-        setSessionsForDay(formatted);
+        return;
       }
+
+      const patientIds = Array.from(new Set((appts || []).map((a: any) => a.patient_id))).filter(Boolean);
+      let profilesById: Record<string, any> = {};
+      if (patientIds.length > 0) {
+        const { data: profs, error: profErr } = await supabase
+          .from("profiles")
+          .select("id, full_name")
+          .in("id", patientIds);
+        if (profErr) {
+          console.error("Error loading profiles:", profErr);
+        } else {
+          profilesById = Object.fromEntries((profs || []).map((p: any) => [p.id, p]));
+        }
+      }
+
+      const formatted = (appts || []).map((appt: any) => ({
+        id: appt.id,
+        time: new Date(appt.start_time).toLocaleTimeString("es-MX", {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        patientName: profilesById[appt.patient_id]?.full_name || "Paciente",
+        status: appt.status === "pending" ? "pendiente" : appt.status === "confirmed" ? "confirmada" : appt.status,
+        duration: 50,
+      }));
+      setSessionsForDay(formatted);
     };
 
     loadSessionsForDay();

@@ -43,22 +43,33 @@ export default function TherapistSessions() {
         return;
       }
 
-      // @ts-ignore - Types will regenerate automatically
-      const { data, error } = await supabase
-        // @ts-ignore - Types will regenerate automatically
+      // Fetch appointments first
+      const { data: appts, error: apptError } = await supabase
         .from("appointments")
-        .select(`
-          *,
-          profiles!appointments_patient_id_fkey(
-            full_name,
-            email
-          )
-        `)
+        .select("*")
         .eq("psychologist_id", profile.id)
         .order("start_time", { ascending: true });
 
-      if (error) throw error;
-      setSessions(data || []);
+      if (apptError) throw apptError;
+
+      const patientIds = Array.from(new Set((appts || []).map((a: any) => a.patient_id))).filter(Boolean);
+
+      let profilesById: Record<string, any> = {};
+      if (patientIds.length > 0) {
+        const { data: profs, error: profErr } = await supabase
+          .from("profiles")
+          .select("id, full_name, email")
+          .in("id", patientIds);
+        if (profErr) throw profErr;
+        profilesById = Object.fromEntries((profs || []).map((p: any) => [p.id, p]));
+      }
+
+      const enriched = (appts || []).map((a: any) => ({
+        ...a,
+        profile: profilesById[a.patient_id] || null,
+      }));
+
+      setSessions(enriched);
     } catch (error) {
       console.error("Error loading sessions:", error);
       toast.error("Error al cargar sesiones");
@@ -95,9 +106,8 @@ export default function TherapistSessions() {
   };
 
   const filteredSessions = sessions.filter((session) => {
-    const matchesSearch = session.profiles?.full_name
-      ?.toLowerCase()
-      .includes(searchTerm.toLowerCase());
+    const name = session.profile?.full_name?.toLowerCase() || "";
+    const matchesSearch = name.includes(searchTerm.toLowerCase());
     const matchesStatus =
       statusFilter === "todas" || session.status === statusFilter;
     return matchesSearch && matchesStatus;
@@ -171,7 +181,7 @@ export default function TherapistSessions() {
                 <div className="flex items-start justify-between">
                   <div>
                     <CardTitle className="text-xl">
-                      {session.profiles?.full_name || "Paciente"}
+                      {session.profile?.full_name || "Paciente"}
                     </CardTitle>
                     <p className="text-muted-foreground mt-1">
                       {new Date(session.start_time).toLocaleDateString("es-MX", {
