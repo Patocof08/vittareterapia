@@ -1,28 +1,40 @@
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { useAuth } from "@/hooks/useAuth";
 import { CheckCircle2, Calendar, CreditCard, Users, Video, Shield } from "lucide-react";
+import { toast } from "sonner";
 
 export default function ParaPsicologos() {
-  const { user, role } = useAuth();
+  const { user, role, signOut } = useAuth();
+  const navigate = useNavigate();
 
-  const handleJoinClick = () => {
-    // Si está logueado como paciente, mostrar alerta
+  const handleJoinClick = async () => {
+    // Si está logueado como paciente, ofrecer cerrar sesión
     if (user && role === "cliente") {
-      alert("Actualmente estás en sesión como paciente. Para registrarte como psicólogo, primero cierra tu sesión actual.");
+      toast.error("Ya tienes una sesión activa como paciente", {
+        description: "Cierra tu sesión actual para registrarte como psicólogo",
+        action: {
+          label: "Cerrar sesión",
+          onClick: async () => {
+            await signOut();
+            navigate("/onboarding-psicologo");
+          }
+        },
+        duration: 10000
+      });
       return;
     }
     
     // Si está logueado como psicólogo, ir al dashboard
     if (user && role === "psicologo") {
-      window.location.href = "/therapist/dashboard";
+      navigate("/therapist/dashboard");
       return;
     }
     
     // Si no está logueado, ir al onboarding
-    window.location.href = "/onboarding-psicologo";
+    navigate("/onboarding-psicologo");
   };
 
   const benefits = [
