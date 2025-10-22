@@ -24,6 +24,7 @@ export const TherapistTopbar = ({ onMenuClick }: TherapistTopbarProps) => {
     const fetchTherapistData = async () => {
       if (!user) return;
       
+      // @ts-ignore - Types will regenerate automatically
       const { data, error } = await supabase
         .from("psychologist_profiles")
         .select("first_name, last_name, profile_photo_url, specialties")

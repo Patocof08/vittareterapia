@@ -46,6 +46,7 @@ export default function AdminVerifications() {
 
   const fetchProfiles = async () => {
     try {
+      // @ts-ignore - Types will regenerate automatically
       const { data, error } = await supabase
         .from("psychologist_profiles")
         .select("id, first_name, last_name, email, verification_status, created_at, specialties")

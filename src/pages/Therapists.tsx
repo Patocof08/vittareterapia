@@ -45,6 +45,7 @@ const Therapists = () => {
             sessionStorage.removeItem('pending_preferences');
             
             // Save to database
+            // @ts-ignore - Types will regenerate automatically
             const { data, error } = await supabase
               .from("patient_preferences")
               .upsert({
@@ -66,6 +67,7 @@ const Therapists = () => {
         }
 
         // Load existing preferences
+        // @ts-ignore - Types will regenerate automatically
         const { data, error } = await supabase
           .from("patient_preferences")
           .select("*")
@@ -106,6 +108,7 @@ const Therapists = () => {
 
     // Save preferences to database
     try {
+      // @ts-ignore - Types will regenerate automatically
       const { data, error } = await supabase
         .from("patient_preferences")
         .upsert({

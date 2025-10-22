@@ -14,16 +14,433 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      patient_preferences: {
+        Row: {
+          accepts_homework: string
+          accompaniment_style: string
+          budget_max: number | null
+          budget_min: number | null
+          context_preference: string[] | null
+          created_at: string | null
+          gender_preference: string | null
+          id: string
+          is_active: boolean | null
+          main_concern: string
+          main_concern_other: string | null
+          modality: string
+          preferred_language: string
+          preferred_time_slots: string[]
+          session_expectations: string
+          updated_at: string | null
+          urgency: string
+          user_id: string
+          wants_inclusive: boolean | null
+          work_comfort: string
+        }
+        Insert: {
+          accepts_homework: string
+          accompaniment_style: string
+          budget_max?: number | null
+          budget_min?: number | null
+          context_preference?: string[] | null
+          created_at?: string | null
+          gender_preference?: string | null
+          id?: string
+          is_active?: boolean | null
+          main_concern: string
+          main_concern_other?: string | null
+          modality: string
+          preferred_language: string
+          preferred_time_slots?: string[]
+          session_expectations: string
+          updated_at?: string | null
+          urgency?: string
+          user_id: string
+          wants_inclusive?: boolean | null
+          work_comfort: string
+        }
+        Update: {
+          accepts_homework?: string
+          accompaniment_style?: string
+          budget_max?: number | null
+          budget_min?: number | null
+          context_preference?: string[] | null
+          created_at?: string | null
+          gender_preference?: string | null
+          id?: string
+          is_active?: boolean | null
+          main_concern?: string
+          main_concern_other?: string | null
+          modality?: string
+          preferred_language?: string
+          preferred_time_slots?: string[]
+          session_expectations?: string
+          updated_at?: string | null
+          urgency?: string
+          user_id?: string
+          wants_inclusive?: boolean | null
+          work_comfort?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      psychologist_availability: {
+        Row: {
+          created_at: string | null
+          day_of_week: number | null
+          end_time: string
+          exception_date: string | null
+          id: string
+          is_exception: boolean | null
+          psychologist_id: string
+          start_time: string
+        }
+        Insert: {
+          created_at?: string | null
+          day_of_week?: number | null
+          end_time: string
+          exception_date?: string | null
+          id?: string
+          is_exception?: boolean | null
+          psychologist_id: string
+          start_time: string
+        }
+        Update: {
+          created_at?: string | null
+          day_of_week?: number | null
+          end_time?: string
+          exception_date?: string | null
+          id?: string
+          is_exception?: boolean | null
+          psychologist_id?: string
+          start_time?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "psychologist_availability_psychologist_id_fkey"
+            columns: ["psychologist_id"]
+            isOneToOne: false
+            referencedRelation: "psychologist_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      psychologist_documents: {
+        Row: {
+          document_type: Database["public"]["Enums"]["document_type"]
+          file_name: string | null
+          file_path: string
+          file_size: number | null
+          id: string
+          mime_type: string | null
+          psychologist_id: string
+          rejection_reason: string | null
+          reviewed_at: string | null
+          status: Database["public"]["Enums"]["verification_status"] | null
+          uploaded_at: string | null
+        }
+        Insert: {
+          document_type: Database["public"]["Enums"]["document_type"]
+          file_name?: string | null
+          file_path: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          psychologist_id: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          status?: Database["public"]["Enums"]["verification_status"] | null
+          uploaded_at?: string | null
+        }
+        Update: {
+          document_type?: Database["public"]["Enums"]["document_type"]
+          file_name?: string | null
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          psychologist_id?: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          status?: Database["public"]["Enums"]["verification_status"] | null
+          uploaded_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "psychologist_documents_psychologist_id_fkey"
+            columns: ["psychologist_id"]
+            isOneToOne: false
+            referencedRelation: "psychologist_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      psychologist_pricing: {
+        Row: {
+          cancellation_policy: string | null
+          created_at: string | null
+          currency: string | null
+          first_session_price: number | null
+          fiscal_data: Json | null
+          id: string
+          late_tolerance_minutes: number | null
+          minimum_notice_hours: number | null
+          package_4_price: number | null
+          package_8_price: number | null
+          psychologist_id: string
+          refund_policy: string | null
+          reschedule_window_hours: number | null
+          session_duration_minutes: number | null
+          session_price: number
+          updated_at: string | null
+        }
+        Insert: {
+          cancellation_policy?: string | null
+          created_at?: string | null
+          currency?: string | null
+          first_session_price?: number | null
+          fiscal_data?: Json | null
+          id?: string
+          late_tolerance_minutes?: number | null
+          minimum_notice_hours?: number | null
+          package_4_price?: number | null
+          package_8_price?: number | null
+          psychologist_id: string
+          refund_policy?: string | null
+          reschedule_window_hours?: number | null
+          session_duration_minutes?: number | null
+          session_price: number
+          updated_at?: string | null
+        }
+        Update: {
+          cancellation_policy?: string | null
+          created_at?: string | null
+          currency?: string | null
+          first_session_price?: number | null
+          fiscal_data?: Json | null
+          id?: string
+          late_tolerance_minutes?: number | null
+          minimum_notice_hours?: number | null
+          package_4_price?: number | null
+          package_8_price?: number | null
+          psychologist_id?: string
+          refund_policy?: string | null
+          reschedule_window_hours?: number | null
+          session_duration_minutes?: number | null
+          session_price?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "psychologist_pricing_psychologist_id_fkey"
+            columns: ["psychologist_id"]
+            isOneToOne: true
+            referencedRelation: "psychologist_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      psychologist_profiles: {
+        Row: {
+          bio_extended: string | null
+          bio_short: string | null
+          city: string | null
+          country: string | null
+          created_at: string | null
+          email: string | null
+          emergency_disclaimer_accepted: boolean | null
+          first_name: string | null
+          id: string
+          is_published: boolean | null
+          languages: string[] | null
+          last_name: string | null
+          modalities: string[] | null
+          onboarding_step: number | null
+          phone: string | null
+          populations: string[] | null
+          profile_photo_url: string | null
+          specialties: string[] | null
+          terms_accepted: boolean | null
+          therapeutic_approaches: string[] | null
+          updated_at: string | null
+          user_id: string
+          verification_notes: string | null
+          verification_status:
+            | Database["public"]["Enums"]["verification_status"]
+            | null
+          years_experience: number | null
+        }
+        Insert: {
+          bio_extended?: string | null
+          bio_short?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string | null
+          email?: string | null
+          emergency_disclaimer_accepted?: boolean | null
+          first_name?: string | null
+          id?: string
+          is_published?: boolean | null
+          languages?: string[] | null
+          last_name?: string | null
+          modalities?: string[] | null
+          onboarding_step?: number | null
+          phone?: string | null
+          populations?: string[] | null
+          profile_photo_url?: string | null
+          specialties?: string[] | null
+          terms_accepted?: boolean | null
+          therapeutic_approaches?: string[] | null
+          updated_at?: string | null
+          user_id: string
+          verification_notes?: string | null
+          verification_status?:
+            | Database["public"]["Enums"]["verification_status"]
+            | null
+          years_experience?: number | null
+        }
+        Update: {
+          bio_extended?: string | null
+          bio_short?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string | null
+          email?: string | null
+          emergency_disclaimer_accepted?: boolean | null
+          first_name?: string | null
+          id?: string
+          is_published?: boolean | null
+          languages?: string[] | null
+          last_name?: string | null
+          modalities?: string[] | null
+          onboarding_step?: number | null
+          phone?: string | null
+          populations?: string[] | null
+          profile_photo_url?: string | null
+          specialties?: string[] | null
+          terms_accepted?: boolean | null
+          therapeutic_approaches?: string[] | null
+          updated_at?: string | null
+          user_id?: string
+          verification_notes?: string | null
+          verification_status?:
+            | Database["public"]["Enums"]["verification_status"]
+            | null
+          years_experience?: number | null
+        }
+        Relationships: []
+      }
+      psychologist_verifications: {
+        Row: {
+          admin_id: string
+          created_at: string | null
+          id: string
+          new_status: Database["public"]["Enums"]["verification_status"]
+          notes: string | null
+          previous_status: Database["public"]["Enums"]["verification_status"]
+          psychologist_id: string
+        }
+        Insert: {
+          admin_id: string
+          created_at?: string | null
+          id?: string
+          new_status: Database["public"]["Enums"]["verification_status"]
+          notes?: string | null
+          previous_status: Database["public"]["Enums"]["verification_status"]
+          psychologist_id: string
+        }
+        Update: {
+          admin_id?: string
+          created_at?: string | null
+          id?: string
+          new_status?: Database["public"]["Enums"]["verification_status"]
+          notes?: string | null
+          previous_status?: Database["public"]["Enums"]["verification_status"]
+          psychologist_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "psychologist_verifications_psychologist_id_fkey"
+            columns: ["psychologist_id"]
+            isOneToOne: false
+            referencedRelation: "psychologist_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      approve_psychologist: {
+        Args: { _admin_notes?: string; _psychologist_id: string }
+        Returns: undefined
+      }
+      get_user_role: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      reject_psychologist: {
+        Args: { _psychologist_id: string; _rejection_reason: string }
+        Returns: undefined
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "psicologo" | "cliente" | "admin"
+      document_type: "license" | "id" | "certificate" | "address_proof"
+      verification_status: "pending" | "approved" | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +567,10 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["psicologo", "cliente", "admin"],
+      document_type: ["license", "id", "certificate", "address_proof"],
+      verification_status: ["pending", "approved", "rejected"],
+    },
   },
 } as const

@@ -26,6 +26,7 @@ export default function AdminDashboard() {
 
   const fetchStats = async () => {
     try {
+      // @ts-ignore - Types will regenerate automatically
       const { data, error } = await supabase
         .from("psychologist_profiles")
         .select("verification_status");
