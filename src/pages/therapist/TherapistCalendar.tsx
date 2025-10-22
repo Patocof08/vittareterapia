@@ -77,8 +77,51 @@ export default function TherapistCalendar() {
     toast.info("Horario bloqueado exitosamente");
   };
 
-  // Sesiones del día seleccionado (aún sin fuente de datos)
-  const sessionsForDay: any[] = [];
+  // Sesiones del día seleccionado
+  const [sessionsForDay, setSessionsForDay] = useState<any[]>([]);
+
+  useEffect(() => {
+    const loadSessionsForDay = async () => {
+      if (!date || !psychologistId) return;
+
+      const startOfDay = new Date(date);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(date);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      // @ts-ignore - Types will regenerate automatically
+      const { data, error } = await supabase
+        .from("appointments")
+          *,
+          profiles!appointments_patient_id_fkey(
+            full_name
+          )
+        `)
+        .eq("psychologist_id", psychologistId)
+        .gte("start_time", startOfDay.toISOString())
+        .lte("start_time", endOfDay.toISOString())
+        .order("start_time", { ascending: true });
+
+      if (error) {
+        console.error("Error loading sessions:", error);
+        setSessionsForDay([]);
+      } else {
+        const formatted = (data || []).map((appt: any) => ({
+          id: appt.id,
+          time: new Date(appt.start_time).toLocaleTimeString("es-MX", {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+          patientName: appt.profiles?.full_name || "Paciente",
+          status: appt.status === "pending" ? "pendiente" : appt.status === "confirmed" ? "confirmada" : appt.status,
+          duration: 50,
+        }));
+        setSessionsForDay(formatted);
+      }
+    };
+
+    loadSessionsForDay();
+  }, [date, psychologistId]);
 
   // Show editor if requested
   if (showEditor && psychologistId) {

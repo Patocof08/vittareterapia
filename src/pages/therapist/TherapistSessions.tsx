@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Video, Search, Filter, ExternalLink } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,28 +10,107 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-// No data source yet
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function TherapistSessions() {
+  const { user } = useAuth();
   const [statusFilter, setStatusFilter] = useState<string>("todas");
   const [searchTerm, setSearchTerm] = useState("");
+  const [sessions, setSessions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (user) {
+      loadSessions();
+    }
+  }, [user]);
+
+  const loadSessions = async () => {
+    if (!user) return;
+    setLoading(true);
+    try {
+      const { data: profile } = await supabase
+        .from("psychologist_profiles")
+        .select("id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (!profile) {
+        setSessions([]);
+        setLoading(false);
+        return;
+      }
+
+      // @ts-ignore - Types will regenerate automatically
+      const { data, error } = await supabase
+        .from("appointments")
+        .select(`
+          *,
+          profiles!appointments_patient_id_fkey(
+            full_name,
+            email
+          )
+        `)
+        .eq("psychologist_id", profile.id)
+        .order("start_time", { ascending: true });
+
+      if (error) throw error;
+      setSessions(data || []);
+    } catch (error) {
+      console.error("Error loading sessions:", error);
+      toast.error("Error al cargar sesiones");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleStartSession = (sessionId: string, videoLink?: string) => {
     if (videoLink) {
       toast.success("Abriendo videollamada...");
-      // window.open(videoLink, "_blank");
+      window.open(videoLink, "_blank");
     } else {
       toast.error("No hay enlace de videollamada disponible");
     }
   };
 
-  const handleCompleteSession = (sessionId: string) => {
-    toast.success("Sesión marcada como completada");
+  const handleCompleteSession = async (sessionId: string) => {
+    try {
+      // @ts-ignore - Types will regenerate automatically
+      const { error } = await supabase
+        .from("appointments")
+        .update({ status: "completed" })
+        .eq("id", sessionId);
+
+      if (error) throw error;
+      toast.success("Sesión marcada como completada");
+      loadSessions();
+    } catch (error) {
+      console.error("Error updating session:", error);
+      toast.error("Error al completar sesión");
+    }
   };
 
-  // Fuente de datos pendiente de implementar
-  const filteredSessions: any[] = [];
+  const filteredSessions = sessions.filter((session) => {
+    const matchesSearch = session.profiles?.full_name
+      ?.toLowerCase()
+      .includes(searchTerm.toLowerCase());
+    const matchesStatus =
+      statusFilter === "todas" || session.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Sesiones</h1>
+          <p className="text-muted-foreground mt-1">Cargando...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -62,10 +141,10 @@ export default function TherapistSessions() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="todas">Todas</SelectItem>
-                <SelectItem value="confirmada">Confirmadas</SelectItem>
-                <SelectItem value="pendiente">Pendientes</SelectItem>
-                <SelectItem value="completada">Completadas</SelectItem>
-                <SelectItem value="cancelada">Canceladas</SelectItem>
+                <SelectItem value="confirmed">Confirmadas</SelectItem>
+                <SelectItem value="pending">Pendientes</SelectItem>
+                <SelectItem value="completed">Completadas</SelectItem>
+                <SelectItem value="cancelled">Canceladas</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -90,58 +169,64 @@ export default function TherapistSessions() {
                 <div className="flex items-start justify-between">
                   <div>
                     <CardTitle className="text-xl">
-                      {session.patientName}
+                      {session.profiles?.full_name || "Paciente"}
                     </CardTitle>
                     <p className="text-muted-foreground mt-1">
-                      {new Date(session.date).toLocaleDateString("es-MX", {
+                      {new Date(session.start_time).toLocaleDateString("es-MX", {
                         weekday: "long",
                         year: "numeric",
                         month: "long",
                         day: "numeric",
                       })}{" "}
-                      • {session.time} • {session.duration} min
+                      • {new Date(session.start_time).toLocaleTimeString("es-MX", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })} • 50 min
                     </p>
                   </div>
                   <span
                     className={`px-3 py-1 rounded text-sm font-medium ${
-                      session.status === "confirmada"
+                      session.status === "confirmed"
                         ? "bg-primary/10 text-primary"
-                        : session.status === "pendiente"
+                        : session.status === "pending"
                         ? "bg-secondary/10 text-secondary"
-                        : session.status === "completada"
+                        : session.status === "completed"
                         ? "bg-accent text-accent-foreground"
                         : "bg-muted text-muted-foreground"
                     }`}
                   >
-                    {session.status}
+                    {session.status === "pending" ? "pendiente" :
+                     session.status === "confirmed" ? "confirmada" :
+                     session.status === "completed" ? "completada" :
+                     session.status === "cancelled" ? "cancelada" : session.status}
                   </span>
                 </div>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {session.notes && (
+                  {session.session_notes && (
                     <div>
                       <p className="text-sm font-medium text-foreground mb-1">
                         Notas de la sesión:
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        {session.notes}
+                        {session.session_notes}
                       </p>
                     </div>
                   )}
 
                   <div className="flex flex-wrap gap-2">
-                    {session.videoLink && session.status === "confirmada" && (
+                    {session.video_link && session.status === "confirmed" && (
                       <Button
                         onClick={() =>
-                          handleStartSession(session.id, session.videoLink)
+                          handleStartSession(session.id, session.video_link)
                         }
                       >
                         <ExternalLink className="w-4 h-4 mr-2" />
                         Iniciar videollamada
                       </Button>
                     )}
-                    {session.status === "confirmada" && (
+                    {session.status === "confirmed" && (
                       <Button
                         variant="outline"
                         onClick={() => handleCompleteSession(session.id)}

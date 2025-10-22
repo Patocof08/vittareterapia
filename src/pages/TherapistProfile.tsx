@@ -1,4 +1,4 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -8,9 +8,12 @@ import { Star, Video, Globe, GraduationCap, Award, Heart, ArrowLeft } from "luci
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 const TherapistProfile = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [therapist, setTherapist] = useState<any>(null);
   const [pricing, setPricing] = useState<any>(null);
   const [availability, setAvailability] = useState<any[]>([]);
@@ -120,11 +123,15 @@ const TherapistProfile = () => {
   const availableTimes = getAvailableTimesForDate(selectedDate);
 
   const handleBooking = () => {
+    if (!user) {
+      toast.error("Debes iniciar sesión para agendar");
+      return;
+    }
     if (!selectedDate || !selectedTime) {
       toast.error("Por favor selecciona una fecha y hora");
       return;
     }
-    toast.success("Sesión agendada correctamente. Recibirás un correo de confirmación.");
+    navigate(`/client/booking?psychologist=${id}`);
   };
 
   return (
@@ -282,7 +289,9 @@ const TherapistProfile = () => {
                 )}
 
                 <div className="mb-6">
-                  <p className="text-sm text-muted-foreground">Próximamente podrás agendar sesiones directamente</p>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Selecciona una fecha y hora para agendar tu sesión
+                  </p>
                 </div>
 
                 <div className="space-y-6">

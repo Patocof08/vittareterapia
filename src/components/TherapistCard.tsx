@@ -1,10 +1,11 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Star, Heart, Video, MapPin, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { MatchReason } from "@/types/preferences";
+import { useAuth } from "@/hooks/useAuth";
 
 interface TherapistCardProps {
   id: string;
@@ -36,10 +37,22 @@ export const TherapistCard = ({
   matchReasons,
 }: TherapistCardProps) => {
   const [isFavorite, setIsFavorite] = useState(false);
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
   const handleFavorite = () => {
     setIsFavorite(!isFavorite);
     toast.success(isFavorite ? "Eliminado de favoritos" : "Agregado a favoritos");
+  };
+
+  const handleBooking = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!user) {
+      toast.error("Debes iniciar sesión para agendar");
+      return;
+    }
+    navigate(`/client/booking?psychologist=${id}`);
   };
 
   const matchLevelLabels = {
@@ -139,9 +152,14 @@ export const TherapistCard = ({
                 <span className="text-sm text-muted-foreground">Consultar precio</span>
               </div>
             )}
-            <Link to={`/therapist/${id}`}>
-              <Button variant="default">Ver perfil</Button>
-            </Link>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={handleBooking}>
+                Agendar
+              </Button>
+              <Link to={`/therapist/${id}`}>
+                <Button variant="default">Ver perfil</Button>
+              </Link>
+            </div>
           </div>
         </div>
       </div>
