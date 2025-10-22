@@ -14,6 +14,77 @@ export type Database = {
   }
   public: {
     Tables: {
+      client_subscriptions: {
+        Row: {
+          auto_renew: boolean
+          cancelled_at: string | null
+          client_id: string
+          created_at: string
+          current_period_end: string
+          current_period_start: string
+          discount_percentage: number
+          id: string
+          next_billing_date: string | null
+          package_type: string
+          psychologist_id: string
+          rollover_sessions: number
+          session_price: number
+          sessions_remaining: number
+          sessions_total: number
+          sessions_used: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          auto_renew?: boolean
+          cancelled_at?: string | null
+          client_id: string
+          created_at?: string
+          current_period_end: string
+          current_period_start?: string
+          discount_percentage: number
+          id?: string
+          next_billing_date?: string | null
+          package_type: string
+          psychologist_id: string
+          rollover_sessions?: number
+          session_price: number
+          sessions_remaining: number
+          sessions_total: number
+          sessions_used?: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          auto_renew?: boolean
+          cancelled_at?: string | null
+          client_id?: string
+          created_at?: string
+          current_period_end?: string
+          current_period_start?: string
+          discount_percentage?: number
+          id?: string
+          next_billing_date?: string | null
+          package_type?: string
+          psychologist_id?: string
+          rollover_sessions?: number
+          session_price?: number
+          sessions_remaining?: number
+          sessions_total?: number
+          sessions_used?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_subscriptions_psychologist_id_fkey"
+            columns: ["psychologist_id"]
+            isOneToOne: false
+            referencedRelation: "psychologist_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       patient_preferences: {
         Row: {
           accepts_homework: string
@@ -397,6 +468,47 @@ export type Database = {
           },
         ]
       }
+      subscription_history: {
+        Row: {
+          amount_charged: number | null
+          created_at: string
+          event_type: string
+          id: string
+          notes: string | null
+          rollover_amount: number | null
+          sessions_added: number | null
+          subscription_id: string
+        }
+        Insert: {
+          amount_charged?: number | null
+          created_at?: string
+          event_type: string
+          id?: string
+          notes?: string | null
+          rollover_amount?: number | null
+          sessions_added?: number | null
+          subscription_id: string
+        }
+        Update: {
+          amount_charged?: number | null
+          created_at?: string
+          event_type?: string
+          id?: string
+          notes?: string | null
+          rollover_amount?: number | null
+          sessions_added?: number | null
+          subscription_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_history_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "client_subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -426,6 +538,10 @@ export type Database = {
       approve_psychologist: {
         Args: { _admin_notes?: string; _psychologist_id: string }
         Returns: undefined
+      }
+      calculate_rollover: {
+        Args: { _sessions_used: number; _total_sessions: number }
+        Returns: number
       }
       get_user_role: {
         Args: { _user_id: string }
