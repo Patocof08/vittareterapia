@@ -56,8 +56,8 @@ export default function ClientSettings() {
         setProfileData({
           full_name: data.full_name || "",
           email: data.email || user?.email || "",
-          phone: data.phone || "",
-          avatar_url: data.avatar_url || ""
+          phone: (data as any).phone || "",
+          avatar_url: (data as any).avatar_url || ""
         });
       }
     } catch (error) {
@@ -73,7 +73,7 @@ export default function ClientSettings() {
         .update({
           full_name: profileData.full_name,
           phone: profileData.phone
-        })
+        } as any)
         .eq('id', user?.id);
 
       if (error) throw error;
@@ -163,7 +163,7 @@ export default function ClientSettings() {
 
       const { error: updateError } = await supabase
         .from('profiles')
-        .update({ avatar_url: publicUrl })
+        .update({ avatar_url: publicUrl } as any)
         .eq('id', user?.id);
 
       if (updateError) throw updateError;
