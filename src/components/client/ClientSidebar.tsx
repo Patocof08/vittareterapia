@@ -10,10 +10,10 @@ import {
 
 const menuItems = [
   { icon: Home, label: "Inicio", path: "/portal" },
+  { icon: Video, label: "Mis Sesiones", path: "/portal/sesiones" },
   { icon: MessageSquare, label: "Mensajes", path: "/portal/mensajes" },
   { icon: CheckSquare, label: "Tareas", path: "/portal/tareas" },
   { icon: Calendar, label: "Agendar", path: "/portal/agendar" },
-  { icon: Video, label: "Mis Sesiones", path: "/portal/sesiones" },
   { icon: Package, label: "Suscripciones", path: "/portal/suscripciones" },
 ];
 
