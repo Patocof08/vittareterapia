@@ -11,10 +11,8 @@ import {
   BarChart3,
   FileText,
   HelpCircle,
-  LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/hooks/useAuth";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Inicio", path: "/therapist/dashboard" },
@@ -31,8 +29,6 @@ const menuItems = [
 ];
 
 export const TherapistSidebar = () => {
-  const { signOut } = useAuth();
-
   return (
     <aside className="hidden lg:flex flex-col w-64 bg-card border-r border-border h-screen sticky top-0">
       <div className="p-6 border-b border-border block">
@@ -64,16 +60,6 @@ export const TherapistSidebar = () => {
           </NavLink>
         ))}
       </nav>
-
-      <div className="p-4 border-t border-border">
-        <button
-          onClick={signOut}
-          className="flex items-center gap-3 px-4 py-3 w-full rounded-lg text-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
-        >
-          <LogOut className="w-5 h-5" />
-          <span>Cerrar sesión</span>
-        </button>
-      </div>
     </aside>
   );
 };

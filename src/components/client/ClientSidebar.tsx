@@ -4,12 +4,9 @@ import {
   Calendar, 
   Video, 
   MessageSquare, 
-  CreditCard, 
-  LogOut,
+  CreditCard,
   CheckSquare
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useAuth } from "@/hooks/useAuth";
 
 const menuItems = [
   { icon: Home, label: "Inicio", path: "/portal" },
@@ -21,8 +18,6 @@ const menuItems = [
 ];
 
 export const ClientSidebar = () => {
-  const { signOut } = useAuth();
-
   return (
     <aside className="w-64 bg-card border-r border-border min-h-screen p-4 flex flex-col">
       {/* Header */}
@@ -56,16 +51,6 @@ export const ClientSidebar = () => {
           </NavLink>
         ))}
       </nav>
-
-      {/* Logout */}
-      <Button
-        variant="ghost"
-        className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground"
-        onClick={signOut}
-      >
-        <LogOut className="w-5 h-5" />
-        <span>Cerrar sesión</span>
-      </Button>
     </aside>
   );
 };
