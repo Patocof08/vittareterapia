@@ -118,17 +118,22 @@ const Therapists = () => {
       // @ts-ignore - Types will regenerate automatically
       const { data, error } = await supabase
         .from("patient_preferences")
-        .upsert({
-          user_id: user.id,
-          ...preferences
-        })
+        .upsert(
+          {
+            user_id: user.id,
+            ...preferences
+          },
+          {
+            onConflict: 'user_id'
+          }
+        )
         .select()
         .single();
 
       if (error) throw error;
 
-        setSavedPreferences(data as PatientPreferences);
-        toast.success("Preferencias guardadas correctamente");
+      setSavedPreferences(data as PatientPreferences);
+      toast.success("Preferencias guardadas correctamente");
     } catch (error) {
       console.error("Error saving preferences:", error);
       toast.error("Error al guardar preferencias");
@@ -208,29 +213,20 @@ const Therapists = () => {
             Todos nuestros terapeutas están certificados y tienen amplia experiencia.
           </p>
           <div className="mt-6 flex flex-wrap gap-3 items-center">
-            {!savedPreferences ? (
-              <Button
-                onClick={() => setShowQuiz(true)}
-                size="lg"
-                className="gap-2"
-              >
-                <Sparkles className="w-5 h-5" />
-                Quiero atención personalizada (2 min)
-              </Button>
-            ) : (
+            <Button
+              onClick={() => setShowQuiz(true)}
+              size="lg"
+              className="gap-2"
+            >
+              <Sparkles className="w-5 h-5" />
+              {savedPreferences ? 'Actualizar' : 'Configurar'} atención personalizada (2 min)
+            </Button>
+            {savedPreferences && (
               <>
                 <Badge variant="secondary" className="text-sm py-2 px-4">
                   <Sparkles className="w-4 h-4 mr-2" />
-                  Recomendados según tus preferencias
+                  Mostrando recomendados
                 </Badge>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowQuiz(true)}
-                  className="gap-2"
-                >
-                  Actualizar preferencias
-                </Button>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -241,13 +237,13 @@ const Therapists = () => {
                         .delete()
                         .eq("user_id", user.id);
                       setSavedPreferences(null);
-                      toast.success("Preferencias eliminadas");
+                      toast.success("Preferencias eliminadas - mostrando todos los terapeutas");
                     }
                   }}
                   className="gap-2"
                 >
                   <X className="w-4 h-4" />
-                  Eliminar preferencias
+                  Ver todos
                 </Button>
               </>
             )}
