@@ -90,14 +90,16 @@ export const TherapistCard = ({
             </button>
           </div>
 
-          {/* Rating */}
-          <div className="flex items-center space-x-2 mt-2">
-            <div className="flex items-center">
-              <Star className="w-4 h-4 fill-secondary text-secondary" />
-              <span className="ml-1 text-sm font-semibold">{rating.toFixed(1)}</span>
+          {/* Rating - Hidden until review system is implemented */}
+          {rating > 0 && (
+            <div className="flex items-center space-x-2 mt-2">
+              <div className="flex items-center">
+                <Star className="w-4 h-4 fill-secondary text-secondary" />
+                <span className="ml-1 text-sm font-semibold">{rating.toFixed(1)}</span>
+              </div>
+              <span className="text-xs text-muted-foreground">({reviews} reseñas)</span>
             </div>
-            <span className="text-xs text-muted-foreground">({reviews} reseñas)</span>
-          </div>
+          )}
 
           {/* Approaches */}
           <div className="flex flex-wrap gap-2 mt-3">
@@ -136,10 +138,16 @@ export const TherapistCard = ({
 
           {/* Price & CTA */}
           <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
-            <div>
-              <span className="text-2xl font-bold text-foreground">${price}</span>
-              <span className="text-sm text-muted-foreground ml-1">/ sesión</span>
-            </div>
+            {price > 0 ? (
+              <div>
+                <span className="text-2xl font-bold text-foreground">${price}</span>
+                <span className="text-sm text-muted-foreground ml-1">/ sesión</span>
+              </div>
+            ) : (
+              <div>
+                <span className="text-sm text-muted-foreground">Consultar precio</span>
+              </div>
+            )}
             <Link to={`/therapist/${id}`}>
               <Button variant="default">Ver perfil</Button>
             </Link>

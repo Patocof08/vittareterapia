@@ -12,6 +12,8 @@ import { supabase } from "@/integrations/supabase/client";
 const TherapistProfile = () => {
   const { id } = useParams();
   const [therapist, setTherapist] = useState<any>(null);
+  const [pricing, setPricing] = useState<any>(null);
+  const [availability, setAvailability] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [selectedTime, setSelectedTime] = useState("");
@@ -19,8 +21,9 @@ const TherapistProfile = () => {
   useEffect(() => {
     const loadTherapist = async () => {
       try {
+        // Load therapist profile
         // @ts-ignore - Types will regenerate automatically
-        const { data, error } = await supabase
+        const { data: profileData, error: profileError } = await supabase
           .from("psychologist_profiles")
           .select("*")
           .eq("id", id)
@@ -28,8 +31,28 @@ const TherapistProfile = () => {
           .eq("verification_status", "approved")
           .single();
 
-        if (error) throw error;
-        setTherapist(data);
+        if (profileError) throw profileError;
+        setTherapist(profileData);
+
+        // Load pricing
+        // @ts-ignore - Types will regenerate automatically
+        const { data: pricingData } = await supabase
+          .from("psychologist_pricing")
+          .select("*")
+          .eq("psychologist_id", id)
+          .maybeSingle();
+        
+        if (pricingData) setPricing(pricingData);
+
+        // Load availability
+        // @ts-ignore - Types will regenerate automatically
+        const { data: availabilityData } = await supabase
+          .from("psychologist_availability")
+          .select("*")
+          .eq("psychologist_id", id)
+          .order("day_of_week", { ascending: true });
+        
+        if (availabilityData) setAvailability(availabilityData);
       } catch (error) {
         console.error("Error loading therapist:", error);
       } finally {
@@ -69,10 +92,32 @@ const TherapistProfile = () => {
     );
   }
 
-  const availableTimes = [
-    "09:00", "10:00", "11:00", "12:00",
-    "14:00", "15:00", "16:00", "17:00", "18:00"
-  ];
+  // Generate available time slots based on therapist's availability
+  const getAvailableTimesForDate = (date: Date | undefined) => {
+    if (!date || availability.length === 0) return [];
+    
+    const dayOfWeek = date.getDay();
+    const dayAvailability = availability.filter(a => 
+      a.day_of_week === dayOfWeek && !a.is_exception
+    );
+
+    if (dayAvailability.length === 0) return [];
+
+    // Generate time slots from availability
+    const times: string[] = [];
+    dayAvailability.forEach(slot => {
+      const [startHour] = slot.start_time.split(':').map(Number);
+      const [endHour] = slot.end_time.split(':').map(Number);
+      
+      for (let hour = startHour; hour < endHour; hour++) {
+        times.push(`${hour.toString().padStart(2, '0')}:00`);
+      }
+    });
+
+    return times.sort();
+  };
+
+  const availableTimes = getAvailableTimesForDate(selectedDate);
 
   const handleBooking = () => {
     if (!selectedDate || !selectedTime) {
@@ -199,6 +244,40 @@ const TherapistProfile = () => {
             {/* Right Column - Booking */}
             <div className="lg:col-span-1">
               <div className="bg-card rounded-xl shadow-large p-6 border border-border sticky top-24">
+                {/* Pricing */}
+                {pricing && (
+                  <div className="mb-6 pb-6 border-b border-border">
+                    <h3 className="font-semibold mb-3">Precios</h3>
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">Sesión individual</span>
+                        <span className="text-2xl font-bold">${pricing.session_price} {pricing.currency}</span>
+                      </div>
+                      {pricing.first_session_price && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-muted-foreground">Primera sesión</span>
+                          <span className="text-lg font-semibold text-primary">${pricing.first_session_price} {pricing.currency}</span>
+                        </div>
+                      )}
+                      {pricing.package_4_price && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-muted-foreground">Paquete 4 sesiones</span>
+                          <span className="text-lg font-semibold">${pricing.package_4_price} {pricing.currency}</span>
+                        </div>
+                      )}
+                      {pricing.package_8_price && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-muted-foreground">Paquete 8 sesiones</span>
+                          <span className="text-lg font-semibold">${pricing.package_8_price} {pricing.currency}</span>
+                        </div>
+                      )}
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Duración: {pricing.session_duration_minutes} minutos
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 <div className="mb-6">
                   <p className="text-sm text-muted-foreground">Próximamente podrás agendar sesiones directamente</p>
                 </div>
@@ -217,21 +296,27 @@ const TherapistProfile = () => {
 
                   <div>
                     <h3 className="font-semibold mb-3">Horarios disponibles</h3>
-                    <div className="grid grid-cols-3 gap-2">
-                      {availableTimes.map((time) => (
-                        <button
-                          key={time}
-                          onClick={() => setSelectedTime(time)}
-                          className={`py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
-                            selectedTime === time
-                              ? "bg-primary text-primary-foreground"
-                              : "bg-muted hover:bg-muted/80 text-foreground"
-                          }`}
-                        >
-                          {time}
-                        </button>
-                      ))}
-                    </div>
+                    {availableTimes.length > 0 ? (
+                      <div className="grid grid-cols-3 gap-2">
+                        {availableTimes.map((time) => (
+                          <button
+                            key={time}
+                            onClick={() => setSelectedTime(time)}
+                            className={`py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+                              selectedTime === time
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-muted hover:bg-muted/80 text-foreground"
+                            }`}
+                          >
+                            {time}
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground text-center py-4">
+                        No hay horarios disponibles para esta fecha
+                      </p>
+                    )}
                   </div>
 
                   <Button
@@ -239,14 +324,17 @@ const TherapistProfile = () => {
                     className="w-full"
                     size="lg"
                     variant="hero"
+                    disabled={availableTimes.length === 0}
                   >
                     <Video className="w-5 h-5 mr-2" />
                     Agendar sesión
                   </Button>
 
-                  <p className="text-xs text-center text-muted-foreground">
-                    Cancela hasta 24 horas antes sin cargo
-                  </p>
+                  {pricing && (
+                    <p className="text-xs text-center text-muted-foreground">
+                      {pricing.cancellation_policy || "Cancela hasta 24 horas antes sin cargo"}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>

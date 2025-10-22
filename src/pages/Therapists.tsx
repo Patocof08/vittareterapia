@@ -34,11 +34,14 @@ const Therapists = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        // Load therapists
+        // Load therapists with pricing
         // @ts-ignore - Types will regenerate automatically
         const { data: therapistsData, error: therapistsError } = await supabase
           .from("psychologist_profiles")
-          .select("*")
+          .select(`
+            *,
+            pricing:psychologist_pricing(*)
+          `)
           .eq("is_published", true)
           .eq("verification_status", "approved");
 
@@ -318,21 +321,24 @@ const Therapists = () => {
                 </p>
               </div>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {filteredTherapists.map((therapist) => (
-                  <TherapistCard 
-                    key={therapist.id}
-                    id={therapist.id}
-                    name={`${therapist.first_name} ${therapist.last_name}`}
-                    specialty={therapist.specialties?.[0] || "Psicología"}
-                    photo={therapist.profile_photo_url || "https://images.unsplash.com/photo-1594824476967-48c8b964273f?w=400&h=400&fit=crop"}
-                    rating={4.8}
-                    reviews={0}
-                    price={0}
-                    approaches={therapist.therapeutic_approaches || []}
-                    languages={therapist.languages || []}
-                    availability="Disponible"
-                  />
-                ))}
+                {filteredTherapists.map((therapist) => {
+                  const pricing = therapist.pricing?.[0];
+                  return (
+                    <TherapistCard 
+                      key={therapist.id}
+                      id={therapist.id}
+                      name={`${therapist.first_name} ${therapist.last_name}`}
+                      specialty={therapist.specialties?.[0] || "Psicología"}
+                      photo={therapist.profile_photo_url || "https://images.unsplash.com/photo-1594824476967-48c8b964273f?w=400&h=400&fit=crop"}
+                      rating={0}
+                      reviews={0}
+                      price={pricing?.session_price || 0}
+                      approaches={therapist.therapeutic_approaches || []}
+                      languages={therapist.languages || []}
+                      availability="Disponible"
+                    />
+                  );
+                })}
               </div>
             </>
           ) : (
