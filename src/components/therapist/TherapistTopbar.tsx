@@ -1,9 +1,18 @@
-import { Bell, Menu, Search } from "lucide-react";
+import { Bell, Menu, Search, User, HelpCircle, Shield, FileText, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface TherapistTopbarProps {
   onMenuClick?: () => void;
@@ -17,7 +26,8 @@ interface TherapistData {
 }
 
 export const TherapistTopbar = ({ onMenuClick }: TherapistTopbarProps) => {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   const [therapistData, setTherapistData] = useState<TherapistData | null>(null);
 
   useEffect(() => {
@@ -70,22 +80,51 @@ export const TherapistTopbar = ({ onMenuClick }: TherapistTopbarProps) => {
             <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full"></span>
           </Button>
 
-          {/* Profile */}
-          <div className="flex items-center gap-3 ml-2">
-            <img
-              src={therapistData?.profile_photo_url || "https://api.dicebear.com/7.x/avataaars/svg?seed=default"}
-              alt={therapistData ? `${therapistData.first_name} ${therapistData.last_name}` : "Usuario"}
-              className="w-8 h-8 rounded-full object-cover"
-            />
-            <div className="hidden md:block">
-              <p className="text-sm font-medium text-foreground">
-                {therapistData ? `${therapistData.first_name} ${therapistData.last_name}` : "Cargando..."}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {therapistData?.specialties?.[0] || "Psicólogo/a"}
-              </p>
-            </div>
-          </div>
+          {/* Profile menu */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="flex items-center gap-3 ml-2 h-auto py-2">
+                <img
+                  src={therapistData?.profile_photo_url || "https://api.dicebear.com/7.x/avataaars/svg?seed=default"}
+                  alt={therapistData ? `${therapistData.first_name} ${therapistData.last_name}` : "Usuario"}
+                  className="w-8 h-8 rounded-full object-cover"
+                />
+                <div className="hidden md:block text-left">
+                  <p className="text-sm font-medium text-foreground">
+                    {therapistData ? `${therapistData.first_name} ${therapistData.last_name}` : "Cargando..."}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {therapistData?.specialties?.[0] || "Psicólogo/a"}
+                  </p>
+                </div>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56" align="end">
+              <DropdownMenuLabel>Mi Cuenta</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => navigate("/terapeuta/perfil")}>
+                <User className="mr-2 h-4 w-4" />
+                <span>Perfil</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/terapeuta/soporte")}>
+                <HelpCircle className="mr-2 h-4 w-4" />
+                <span>Ayuda</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/privacidad")}>
+                <Shield className="mr-2 h-4 w-4" />
+                <span>Privacidad</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/terminos")}>
+                <FileText className="mr-2 h-4 w-4" />
+                <span>Términos</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={signOut}>
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Cerrar Sesión</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </header>

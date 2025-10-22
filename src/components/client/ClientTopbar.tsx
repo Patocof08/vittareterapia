@@ -1,10 +1,20 @@
-import { Bell, Menu } from "lucide-react";
+import { Bell, Menu, User, HelpCircle, Shield, FileText, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export const ClientTopbar = () => {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
 
   return (
     <header className="sticky top-0 z-40 bg-background border-b border-border">
@@ -31,14 +41,43 @@ export const ClientTopbar = () => {
             <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full" />
           </Button>
 
-          {/* User info */}
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <span className="text-primary font-medium">
-                {user?.email?.[0].toUpperCase()}
-              </span>
-            </div>
-          </div>
+          {/* User menu */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <span className="text-primary font-medium">
+                    {user?.email?.[0].toUpperCase()}
+                  </span>
+                </div>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56" align="end">
+              <DropdownMenuLabel>Mi Cuenta</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => navigate("/portal/perfil")}>
+                <User className="mr-2 h-4 w-4" />
+                <span>Perfil</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/faq")}>
+                <HelpCircle className="mr-2 h-4 w-4" />
+                <span>Ayuda</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/privacidad")}>
+                <Shield className="mr-2 h-4 w-4" />
+                <span>Privacidad</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/terminos")}>
+                <FileText className="mr-2 h-4 w-4" />
+                <span>Términos</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={signOut}>
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Cerrar Sesión</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </header>
