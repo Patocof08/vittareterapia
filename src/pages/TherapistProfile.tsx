@@ -1,4 +1,4 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 const TherapistProfile = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [therapist, setTherapist] = useState<any>(null);
   const [pricing, setPricing] = useState<any>(null);
   const [availability, setAvailability] = useState<any[]>([]);
@@ -120,11 +121,7 @@ const TherapistProfile = () => {
   const availableTimes = getAvailableTimesForDate(selectedDate);
 
   const handleBooking = () => {
-    if (!selectedDate || !selectedTime) {
-      toast.error("Por favor selecciona una fecha y hora");
-      return;
-    }
-    toast.success("Sesión agendada correctamente. Recibirás un correo de confirmación.");
+    navigate(`/client/booking?psychologist=${id}`);
   };
 
   return (
@@ -281,56 +278,15 @@ const TherapistProfile = () => {
                   </div>
                 )}
 
-                <div className="mb-6">
-                  <p className="text-sm text-muted-foreground">Próximamente podrás agendar sesiones directamente</p>
-                </div>
-
                 <div className="space-y-6">
-                  <div>
-                    <h3 className="font-semibold mb-3">Selecciona una fecha</h3>
-                    <Calendar
-                      mode="single"
-                      selected={selectedDate}
-                      onSelect={setSelectedDate}
-                      className="rounded-lg border border-border"
-                      disabled={(date) => date < new Date()}
-                    />
-                  </div>
-
-                  <div>
-                    <h3 className="font-semibold mb-3">Horarios disponibles</h3>
-                    {availableTimes.length > 0 ? (
-                      <div className="grid grid-cols-3 gap-2">
-                        {availableTimes.map((time) => (
-                          <button
-                            key={time}
-                            onClick={() => setSelectedTime(time)}
-                            className={`py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
-                              selectedTime === time
-                                ? "bg-primary text-primary-foreground"
-                                : "bg-muted hover:bg-muted/80 text-foreground"
-                            }`}
-                          >
-                            {time}
-                          </button>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-sm text-muted-foreground text-center py-4">
-                        No hay horarios disponibles para esta fecha
-                      </p>
-                    )}
-                  </div>
-
                   <Button
                     onClick={handleBooking}
                     className="w-full"
                     size="lg"
                     variant="hero"
-                    disabled={availableTimes.length === 0}
                   >
                     <Video className="w-5 h-5 mr-2" />
-                    Agendar sesión
+                    Agendar sesión ahora
                   </Button>
 
                   {pricing && (

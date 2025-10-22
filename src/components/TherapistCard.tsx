@@ -139,9 +139,14 @@ export const TherapistCard = ({
                 <span className="text-sm text-muted-foreground">Consultar precio</span>
               </div>
             )}
-            <Link to={`/therapist/${id}`}>
-              <Button variant="default">Ver perfil</Button>
-            </Link>
+            <div className="flex gap-2">
+              <Link to={`/client/booking?psychologist=${id}`}>
+                <Button variant="default" size="sm">Agendar cita</Button>
+              </Link>
+              <Link to={`/therapist/${id}`}>
+                <Button variant="outline" size="sm">Ver perfil</Button>
+              </Link>
+            </div>
           </div>
         </div>
       </div>
