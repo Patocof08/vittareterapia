@@ -153,17 +153,29 @@ const TherapistProfile = () => {
               <div className="flex items-start justify-between mb-4">
                 <div>
                   <h1 className="text-4xl font-bold mb-2">{therapist.first_name} {therapist.last_name}</h1>
-                  <p className="text-xl text-muted-foreground mb-4">{therapist.specialties?.[0] || "Psicología"}</p>
+                  <p className="text-xl text-muted-foreground mb-2">
+                    Enfoque: {therapist.therapeutic_approaches?.[0] || 'No especificado'}
+                  </p>
                   <div className="flex items-center space-x-4 mb-4">
                     <Badge variant="secondary">Disponible</Badge>
                   </div>
                 </div>
               </div>
 
-              <div className="flex flex-wrap gap-2 mb-6">
-                {therapist.therapeutic_approaches?.map((approach: string) => (
-                  <Badge key={approach} variant="outline">
-                    {approach}
+              {/* Rating */}
+              <div className="flex items-center space-x-2 mb-4">
+                <div className="flex items-center">
+                  <Star className="w-5 h-5 fill-secondary text-secondary" />
+                  <span className="ml-1 text-lg font-semibold">4.8</span>
+                </div>
+                <span className="text-sm text-muted-foreground">(127 reseñas)</span>
+              </div>
+
+              {/* Specialties */}
+              <div className="flex flex-wrap gap-1.5 mb-6">
+                {therapist.specialties?.map((specialty: string) => (
+                  <Badge key={specialty} variant="secondary" className="text-[10px] px-2 py-0.5">
+                    {specialty}
                   </Badge>
                 ))}
               </div>
