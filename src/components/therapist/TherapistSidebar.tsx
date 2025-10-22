@@ -1,4 +1,4 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, Link } from "react-router-dom";
 import {
   LayoutDashboard,
   Calendar,
@@ -31,10 +31,10 @@ const menuItems = [
 export const TherapistSidebar = () => {
   return (
     <aside className="hidden lg:flex flex-col w-64 bg-card border-r border-border h-screen sticky top-0">
-      <div className="p-6 border-b border-border block">
+      <Link to="/" className="p-6 border-b border-border block hover:opacity-80 transition-opacity">
         <h1 className="text-xl font-bold text-primary">Vittare</h1>
         <p className="text-sm text-muted-foreground">Panel de Terapeuta</p>
-      </div>
+      </Link>
 
       <nav className="flex-1 overflow-y-auto p-4 space-y-1">
         {menuItems.map((item) => (

@@ -1,4 +1,4 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, Link } from "react-router-dom";
 import { 
   Home, 
   Calendar, 
@@ -21,7 +21,7 @@ export const ClientSidebar = () => {
   return (
     <aside className="w-64 bg-card border-r border-border min-h-screen p-4 flex flex-col">
       {/* Header */}
-      <div className="mb-8 block">
+      <Link to="/" className="mb-8 block hover:opacity-80 transition-opacity">
         <div className="flex items-center space-x-2 mb-2">
           <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
             <span className="text-primary-foreground font-bold text-xl">V</span>
@@ -29,7 +29,7 @@ export const ClientSidebar = () => {
           <span className="font-bold text-xl text-foreground">Vittare</span>
         </div>
         <p className="text-sm text-muted-foreground ml-12">Portal Cliente</p>
-      </div>
+      </Link>
 
       {/* Menu */}
       <nav className="flex-1 space-y-1">
