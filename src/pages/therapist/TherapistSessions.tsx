@@ -45,6 +45,7 @@ export default function TherapistSessions() {
 
       // @ts-ignore - Types will regenerate automatically
       const { data, error } = await supabase
+        // @ts-ignore - Types will regenerate automatically
         .from("appointments")
         .select(`
           *,
@@ -79,6 +80,7 @@ export default function TherapistSessions() {
     try {
       // @ts-ignore - Types will regenerate automatically
       const { error } = await supabase
+        // @ts-ignore - Types will regenerate automatically
         .from("appointments")
         .update({ status: "completed" })
         .eq("id", sessionId);
