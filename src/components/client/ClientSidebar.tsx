@@ -4,7 +4,8 @@ import {
   Calendar, 
   Video, 
   MessageSquare, 
-  CheckSquare
+  CheckSquare,
+  Package
 } from "lucide-react";
 
 const menuItems = [
@@ -13,6 +14,7 @@ const menuItems = [
   { icon: CheckSquare, label: "Tareas", path: "/portal/tareas" },
   { icon: Calendar, label: "Agendar", path: "/portal/agendar" },
   { icon: Video, label: "Mis Sesiones", path: "/portal/sesiones" },
+  { icon: Package, label: "Suscripciones", path: "/portal/suscripciones" },
 ];
 
 export const ClientSidebar = () => {

@@ -38,6 +38,7 @@ import ClientBooking from "./pages/client/ClientBooking";
 import ClientSessions from "./pages/client/ClientSessions";
 import ClientMessages from "./pages/client/ClientMessages";
 import ClientSettings from "./pages/client/ClientSettings";
+import ClientSubscriptions from "./pages/client/ClientSubscriptions";
 import ClientTasks from "./pages/client/ClientTasks";
 import Auth from "./pages/Auth";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -106,6 +107,7 @@ const App = () => {
             <Route path="tareas" element={<ClientTasks />} />
             <Route path="agendar" element={<ClientBooking />} />
             <Route path="sesiones" element={<ClientSessions />} />
+            <Route path="suscripciones" element={<ClientSubscriptions />} />
             <Route path="ajustes" element={<ClientSettings />} />
           </Route>
 

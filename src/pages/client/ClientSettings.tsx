@@ -211,11 +211,10 @@ export default function ClientSettings() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-7">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="profile">Mi Perfil</TabsTrigger>
           <TabsTrigger value="security">Seguridad</TabsTrigger>
           <TabsTrigger value="payment-methods">Métodos de Pago</TabsTrigger>
-          <TabsTrigger value="subscription">Suscripción</TabsTrigger>
           <TabsTrigger value="payments">Pagos</TabsTrigger>
           <TabsTrigger value="notifications">Notificaciones</TabsTrigger>
           <TabsTrigger value="delete">Eliminar Cuenta</TabsTrigger>
@@ -388,152 +387,6 @@ export default function ClientSettings() {
                 <Button>
                   Agregar Método de Pago
                 </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Suscripción */}
-        <TabsContent value="subscription" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Package className="w-5 h-5" />
-                Mi Suscripción
-              </CardTitle>
-              <CardDescription>
-                Gestiona tus paquetes de sesiones mensuales
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Créditos Disponibles */}
-              <div className="bg-primary/10 border border-primary/20 rounded-lg p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Sesiones Disponibles</p>
-                    <p className="text-3xl font-bold text-foreground">0</p>
-                  </div>
-                  <Package className="w-12 h-12 text-primary" />
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  No tienes sesiones disponibles en tu cuenta
-                </p>
-              </div>
-
-              {/* Paquetes Disponibles */}
-              <div>
-                <h3 className="text-lg font-semibold mb-4">Paquetes Disponibles</h3>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <Card className="border-2">
-                    <CardHeader>
-                      <CardTitle className="text-xl">Paquete Básico</CardTitle>
-                      <CardDescription>4 sesiones mensuales</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div>
-                        <p className="text-3xl font-bold">$280</p>
-                        <p className="text-sm text-muted-foreground">
-                          $70 por sesión (ahorra 12%)
-                        </p>
-                      </div>
-                      <ul className="space-y-2 text-sm">
-                        <li className="flex items-center gap-2">
-                          <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                          <span>4 sesiones al mes</span>
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                          <span>25% se transfiere al siguiente mes</span>
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                          <span>Cambio de terapeuta disponible</span>
-                        </li>
-                      </ul>
-                      <Button className="w-full">Comprar Paquete</Button>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="border-2 border-primary">
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <CardTitle className="text-xl">Paquete Premium</CardTitle>
-                          <CardDescription>8 sesiones mensuales</CardDescription>
-                        </div>
-                        <Badge>Más Popular</Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div>
-                        <p className="text-3xl font-bold">$520</p>
-                        <p className="text-sm text-muted-foreground">
-                          $65 por sesión (ahorra 19%)
-                        </p>
-                      </div>
-                      <ul className="space-y-2 text-sm">
-                        <li className="flex items-center gap-2">
-                          <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                          <span>8 sesiones al mes</span>
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                          <span>25% se transfiere al siguiente mes</span>
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                          <span>Cambio de terapeuta disponible</span>
-                        </li>
-                      </ul>
-                      <Button className="w-full">Comprar Paquete</Button>
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
-
-              {/* FAQs */}
-              <div>
-                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                  <HelpCircle className="w-5 h-5" />
-                  Preguntas Frecuentes sobre Suscripciones
-                </h3>
-                <Accordion type="single" collapsible className="w-full">
-                  <AccordionItem value="item-1">
-                    <AccordionTrigger>¿Cómo funciona el sistema de créditos?</AccordionTrigger>
-                    <AccordionContent>
-                      Compras un paquete de sesiones que se cargan a tu cuenta como créditos. Puedes usar estas sesiones 
-                      cuando quieras durante el mes con cualquier terapeuta disponible. Es como tener un monedero de sesiones.
-                    </AccordionContent>
-                  </AccordionItem>
-                  <AccordionItem value="item-2">
-                    <AccordionTrigger>¿Qué pasa con las sesiones no utilizadas?</AccordionTrigger>
-                    <AccordionContent>
-                      El 25% de tus sesiones no utilizadas se transfieren automáticamente al siguiente mes. Por ejemplo, 
-                      si te quedan 4 sesiones del paquete de 8, una sesión (25%) se agregará a tu cuenta el próximo mes.
-                    </AccordionContent>
-                  </AccordionItem>
-                  <AccordionItem value="item-3">
-                    <AccordionTrigger>¿Puedo cambiar de terapeuta?</AccordionTrigger>
-                    <AccordionContent>
-                      Sí, puedes usar tus sesiones con diferentes terapeutas. Si cambias a un terapeuta con precio diferente, 
-                      solo pagas la diferencia (con descuento del paquete). Si es más barato, la diferencia se convierte en créditos adicionales.
-                    </AccordionContent>
-                  </AccordionItem>
-                  <AccordionItem value="item-4">
-                    <AccordionTrigger>¿Los paquetes se renuevan automáticamente?</AccordionTrigger>
-                    <AccordionContent>
-                      Los paquetes tienen vigencia mensual pero NO se renuevan automáticamente. Tú decides cuándo comprar 
-                      más sesiones según tus necesidades. Esto te da total control sobre tu inversión en terapia.
-                    </AccordionContent>
-                  </AccordionItem>
-                  <AccordionItem value="item-5">
-                    <AccordionTrigger>¿Puedo comprar sesiones individuales?</AccordionTrigger>
-                    <AccordionContent>
-                      Sí, siempre puedes agendar sesiones individuales directamente con tu terapeuta al precio regular. 
-                      Los paquetes son opcionales y solo ofrecen descuentos adicionales si decides comprar varias sesiones.
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
               </div>
             </CardContent>
           </Card>
