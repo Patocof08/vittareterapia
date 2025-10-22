@@ -5,7 +5,7 @@ import { Footer } from "@/components/Footer";
 import { TherapistCard } from "@/components/TherapistCard";
 import { Shield, Clock, FileText, DollarSign, CheckCircle, ArrowRight } from "lucide-react";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { fetchPublicProfiles } from "@/lib/psychologistQueries";
 
 const Index = () => {
   const [featuredTherapists, setFeaturedTherapists] = useState<any[]>([]);
@@ -14,16 +14,12 @@ const Index = () => {
   useEffect(() => {
     const loadFeaturedTherapists = async () => {
       try {
-        // @ts-ignore - Types will regenerate automatically
-        const { data, error } = await supabase
-          .from("psychologist_profiles")
-          .select("*")
-          .eq("is_published", true)
-          .eq("verification_status", "approved")
-          .limit(2);
+        // Fetch public profiles securely (excludes email/phone)
+        const data = await fetchPublicProfiles();
 
-        if (!error && data) {
-          setFeaturedTherapists(data);
+        if (data) {
+          // Limit to 2 featured therapists
+          setFeaturedTherapists(data.slice(0, 2));
         }
       } catch (error) {
         console.error("Error loading therapists:", error);

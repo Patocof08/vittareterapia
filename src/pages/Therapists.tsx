@@ -15,6 +15,7 @@ import { PatientPreferences } from "@/types/preferences";
 import { toast } from "sonner";
 import { rankTherapists } from "@/lib/matchingAlgorithm";
 import { Badge } from "@/components/ui/badge";
+import { fetchPublicProfiles } from "@/lib/psychologistQueries";
 
 const Therapists = () => {
   const navigate = useNavigate();
@@ -37,15 +38,9 @@ const Therapists = () => {
     const loadData = async () => {
       try {
         // Load therapists with pricing
-        // @ts-ignore - Types will regenerate automatically
-        const { data: therapistsData, error: therapistsError } = await supabase
-          .from("psychologist_profiles")
-          .select(`
-            *,
-            pricing:psychologist_pricing(*)
-          `)
-          .eq("is_published", true)
-          .eq("verification_status", "approved");
+        // Fetch public profiles securely (excludes email/phone)
+        const therapistsData = await fetchPublicProfiles();
+        const therapistsError = null;
 
         if (!therapistsError && therapistsData) {
           setTherapists(therapistsData);
