@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -46,6 +47,7 @@ export default function ClientSubscriptions() {
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [selectedSubscription, setSelectedSubscription] = useState<string | null>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchSubscriptions();
@@ -177,7 +179,7 @@ export default function ClientSubscriptions() {
             <p className="text-sm text-muted-foreground text-center mb-4">
               Compra un paquete de sesiones con tu terapeuta favorito para obtener descuentos
             </p>
-            <Button>Explorar Terapeutas</Button>
+            <Button onClick={() => navigate('/therapists')}>Explorar Terapeutas</Button>
           </CardContent>
         </Card>
       ) : (
