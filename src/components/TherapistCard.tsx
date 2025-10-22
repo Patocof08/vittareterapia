@@ -45,16 +45,6 @@ export const TherapistCard = ({
     toast.success(isFavorite ? "Eliminado de favoritos" : "Agregado a favoritos");
   };
 
-  const handleBooking = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!user) {
-      toast.error("Debes iniciar sesión para agendar");
-      return;
-    }
-    navigate(`/client/booking?psychologist=${id}`);
-  };
-
   const matchLevelLabels = {
     top: { label: 'Top match', color: 'bg-primary text-primary-foreground' },
     high: { label: 'Muy compatible', color: 'bg-secondary text-secondary-foreground' },
@@ -153,9 +143,6 @@ export const TherapistCard = ({
               </div>
             )}
             <div className="flex gap-2">
-              <Button variant="outline" onClick={handleBooking}>
-                Agendar
-              </Button>
               <Link to={`/therapist/${id}`}>
                 <Button variant="default">Ver perfil</Button>
               </Link>

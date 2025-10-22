@@ -9,6 +9,8 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { BookingTypeDialog } from "@/components/client/BookingTypeDialog";
+import { AuthPopup } from "@/components/AuthPopup";
 
 const TherapistProfile = () => {
   const { id } = useParams();
@@ -20,6 +22,8 @@ const TherapistProfile = () => {
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [selectedTime, setSelectedTime] = useState("");
+  const [showBookingDialog, setShowBookingDialog] = useState(false);
+  const [showAuthPopup, setShowAuthPopup] = useState(false);
 
   useEffect(() => {
     const loadTherapist = async () => {
@@ -124,14 +128,85 @@ const TherapistProfile = () => {
 
   const handleBooking = () => {
     if (!user) {
-      toast.error("Debes iniciar sesión para agendar");
+      setShowAuthPopup(true);
       return;
     }
     if (!selectedDate || !selectedTime) {
       toast.error("Por favor selecciona una fecha y hora");
       return;
     }
-    navigate(`/client/booking?psychologist=${id}`);
+    setShowBookingDialog(true);
+  };
+
+  const handleBookingTypeConfirm = async (type: "single" | "package_4" | "package_8") => {
+    if (!user || !selectedDate || !selectedTime) return;
+
+    try {
+      const [hours, minutes] = selectedTime.split(":").map(Number);
+      const startTime = new Date(selectedDate);
+      startTime.setHours(hours, minutes, 0, 0);
+      const endTime = new Date(startTime);
+      endTime.setMinutes(endTime.getMinutes() + (pricing?.session_duration_minutes || 50));
+
+      if (type === "single") {
+        // Create single appointment
+        // @ts-ignore - Types will regenerate automatically
+        const { error } = await supabase.from("appointments").insert({
+          patient_id: user.id,
+          psychologist_id: id,
+          start_time: startTime.toISOString(),
+          end_time: endTime.toISOString(),
+          status: "pending",
+          modality: "online",
+        });
+
+        if (error) throw error;
+        toast.success("Cita agendada con éxito");
+        navigate("/client/sessions");
+      } else {
+        // Create subscription with package
+        const sessionsTotal = type === "package_4" ? 4 : 8;
+        const packagePrice = type === "package_4" ? pricing?.package_4_price : pricing?.package_8_price;
+
+        // @ts-ignore - Types will regenerate automatically
+        const { error: subError } = await supabase.from("client_subscriptions")
+        // @ts-ignore - Types will regenerate automatically
+        .insert({
+          client_id: user.id,
+          psychologist_id: id,
+          session_price: pricing?.session_price || 0,
+          discount_percentage: 0,
+          sessions_total: sessionsTotal,
+          sessions_used: 1, // First session is being booked
+          sessions_remaining: sessionsTotal - 1,
+          package_type: type,
+          status: "active",
+          auto_renew: false,
+          current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
+        });
+
+        if (subError) throw subError;
+
+        // Create first appointment
+        // @ts-ignore - Types will regenerate automatically
+        const { error: apptError } = await supabase.from("appointments").insert({
+          patient_id: user.id,
+          psychologist_id: id,
+          start_time: startTime.toISOString(),
+          end_time: endTime.toISOString(),
+          status: "pending",
+          modality: "online",
+        });
+
+        if (apptError) throw apptError;
+
+        toast.success(`Paquete de ${sessionsTotal} sesiones adquirido y primera cita agendada`);
+        navigate("/client/subscriptions");
+      }
+    } catch (error: any) {
+      console.error("Error booking:", error);
+      toast.error(error.message || "Error al procesar la reserva");
+    }
   };
 
   return (
@@ -355,6 +430,19 @@ const TherapistProfile = () => {
       </section>
 
       <Footer />
+
+      {/* Booking Type Dialog */}
+      {pricing && (
+        <BookingTypeDialog
+          open={showBookingDialog}
+          onOpenChange={setShowBookingDialog}
+          pricing={pricing}
+          onConfirm={handleBookingTypeConfirm}
+        />
+      )}
+
+      {/* Auth Popup */}
+      <AuthPopup isOpen={showAuthPopup} onClose={() => setShowAuthPopup(false)} />
     </div>
   );
 };
