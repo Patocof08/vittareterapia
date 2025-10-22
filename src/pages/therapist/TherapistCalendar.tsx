@@ -77,50 +77,8 @@ export default function TherapistCalendar() {
     toast.info("Horario bloqueado exitosamente");
   };
 
-  const [sessionsForDay, setSessionsForDay] = useState<any[]>([]);
-
-  // Cargar sesiones del día seleccionado
-  useEffect(() => {
-    if (date && psychologistId) {
-      loadSessionsForDay();
-    }
-  }, [date, psychologistId]);
-
-  const loadSessionsForDay = async () => {
-    if (!date || !psychologistId) return;
-
-    try {
-      const startOfDay = new Date(date);
-      startOfDay.setHours(0, 0, 0, 0);
-      const endOfDay = new Date(date);
-      endOfDay.setHours(23, 59, 59, 999);
-
-      const { data, error } = await supabase
-        .from("appointments")
-        .select("*")
-        .eq("psychologist_id", psychologistId)
-        .gte("start_time", startOfDay.toISOString())
-        .lte("start_time", endOfDay.toISOString())
-        .order("start_time", { ascending: true });
-
-      if (error) throw error;
-
-      const formattedSessions = (data || []).map(apt => ({
-        id: apt.id,
-        time: new Date(apt.start_time).toLocaleTimeString("es-MX", { 
-          hour: "2-digit", 
-          minute: "2-digit" 
-        }),
-        patientName: "Paciente",
-        duration: Math.round((new Date(apt.end_time).getTime() - new Date(apt.start_time).getTime()) / 60000),
-        status: apt.status === "confirmed" ? "confirmada" : apt.status === "pending" ? "pendiente" : apt.status
-      }));
-
-      setSessionsForDay(formattedSessions);
-    } catch (error) {
-      console.error("Error loading sessions:", error);
-    }
-  };
+  // Sesiones del día seleccionado (aún sin fuente de datos)
+  const sessionsForDay: any[] = [];
 
   // Show editor if requested
   if (showEditor && psychologistId) {

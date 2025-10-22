@@ -14,62 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      appointments: {
-        Row: {
-          cancellation_reason: string | null
-          cancelled_by: string | null
-          created_at: string | null
-          end_time: string
-          id: string
-          modality: string
-          patient_id: string
-          psychologist_id: string
-          session_notes: string | null
-          start_time: string
-          status: string
-          updated_at: string | null
-          video_link: string | null
-        }
-        Insert: {
-          cancellation_reason?: string | null
-          cancelled_by?: string | null
-          created_at?: string | null
-          end_time: string
-          id?: string
-          modality: string
-          patient_id: string
-          psychologist_id: string
-          session_notes?: string | null
-          start_time: string
-          status?: string
-          updated_at?: string | null
-          video_link?: string | null
-        }
-        Update: {
-          cancellation_reason?: string | null
-          cancelled_by?: string | null
-          created_at?: string | null
-          end_time?: string
-          id?: string
-          modality?: string
-          patient_id?: string
-          psychologist_id?: string
-          session_notes?: string | null
-          start_time?: string
-          status?: string
-          updated_at?: string | null
-          video_link?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "appointments_psychologist_id_fkey"
-            columns: ["psychologist_id"]
-            isOneToOne: false
-            referencedRelation: "psychologist_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       client_subscriptions: {
         Row: {
           auto_renew: boolean
