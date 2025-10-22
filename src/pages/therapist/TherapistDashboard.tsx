@@ -1,17 +1,24 @@
-import { Calendar, DollarSign, MessageSquare, Users, Video, CheckCircle } from "lucide-react";
+import { Calendar, DollarSign, MessageSquare, Users, Video, CheckCircle, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 interface TherapistProfile {
+  id: string;
   first_name: string | null;
   last_name: string | null;
+  verification_status: string;
+  is_published: boolean;
+  pricing?: any[];
 }
 
 export default function TherapistDashboard() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<TherapistProfile | null>(null);
 
   useEffect(() => {
@@ -20,12 +27,15 @@ export default function TherapistDashboard() {
       
       const { data } = await supabase
         .from("psychologist_profiles")
-        .select("first_name, last_name")
+        .select(`
+          *,
+          pricing:psychologist_pricing(*)
+        `)
         .eq("user_id", user.id)
-        .single();
+        .maybeSingle();
 
       if (data) {
-        setProfile(data);
+        setProfile(data as any);
       }
     };
 
@@ -48,6 +58,37 @@ export default function TherapistDashboard() {
           Aquí está tu resumen del día
         </p>
       </div>
+
+      {/* Status Alerts */}
+      {profile?.verification_status === 'pending' && (
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Tu perfil está en revisión. Te notificaremos cuando sea aprobado para que puedas recibir pacientes.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {profile?.verification_status === 'rejected' && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription className="flex items-center justify-between">
+            <span>Tu perfil fue rechazado. Por favor revisa los comentarios y actualiza tu información.</span>
+            <Button variant="outline" size="sm" onClick={() => navigate('/therapist/profile')}>
+              Ver perfil
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {profile?.verification_status === 'approved' && !profile?.is_published && (
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Tu perfil fue aprobado pero no está publicado aún. Los cambios recientes requieren nueva revisión.
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -84,16 +125,16 @@ export default function TherapistDashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Ingresos estimados
+              Precio por sesión
             </CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              $0
+              ${profile?.pricing?.[0]?.session_price || 0}
             </div>
             <p className="text-xs text-muted-foreground">
-              Este mes
+              {profile?.pricing?.[0] ? 'Configurado' : 'Por configurar'}
             </p>
           </CardContent>
         </Card>
