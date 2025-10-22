@@ -28,16 +28,9 @@ interface TimeSlot {
 export const Step4Availability = () => {
   const { data, updateData, nextStep, prevStep, saveAvailability } = useOnboardingContext();
   
-  const [sessionDuration, setSessionDuration] = useState(
-    data.session_duration_minutes?.toString() || "50"
+  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>(
+    data.availability || [{ day_of_week: 1, start_time: "09:00", end_time: "13:00" }]
   );
-  const [minNotice, setMinNotice] = useState(data.minimum_notice_hours?.toString() || "24");
-  const [rescheduleWindow, setRescheduleWindow] = useState(
-    data.reschedule_window_hours?.toString() || "24"
-  );
-  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([
-    { day_of_week: 1, start_time: "09:00", end_time: "13:00" },
-  ]);
 
   const addTimeSlot = () => {
     setTimeSlots([
@@ -89,10 +82,12 @@ export const Step4Availability = () => {
 
     if (!validateTimeSlots()) return;
 
+    // Use fixed universal values for session parameters
     updateData({
-      session_duration_minutes: parseInt(sessionDuration),
-      minimum_notice_hours: parseInt(minNotice),
-      reschedule_window_hours: parseInt(rescheduleWindow),
+      session_duration_minutes: 50,
+      minimum_notice_hours: 6,
+      reschedule_window_hours: 12,
+      availability: timeSlots,
     });
 
     await saveAvailability(timeSlots);
@@ -109,79 +104,14 @@ export const Step4Availability = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Session Duration */}
-          <div className="space-y-3">
-            <Label>Duración de sesión *</Label>
-            <RadioGroup value={sessionDuration} onValueChange={setSessionDuration}>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="45" id="duration-45" />
-                <Label htmlFor="duration-45" className="font-normal cursor-pointer">
-                  45 minutos
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="50" id="duration-50" />
-                <Label htmlFor="duration-50" className="font-normal cursor-pointer">
-                  50 minutos
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="60" id="duration-60" />
-                <Label htmlFor="duration-60" className="font-normal cursor-pointer">
-                  60 minutos
-                </Label>
-              </div>
-            </RadioGroup>
-          </div>
-
-          {/* Minimum Notice */}
-          <div className="space-y-3">
-            <Label>Tiempo mínimo de anticipación para reservar *</Label>
-            <RadioGroup value={minNotice} onValueChange={setMinNotice}>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="2" id="notice-2" />
-                <Label htmlFor="notice-2" className="font-normal cursor-pointer">
-                  2 horas
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="12" id="notice-12" />
-                <Label htmlFor="notice-12" className="font-normal cursor-pointer">
-                  12 horas
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="24" id="notice-24" />
-                <Label htmlFor="notice-24" className="font-normal cursor-pointer">
-                  24 horas
-                </Label>
-              </div>
-            </RadioGroup>
-          </div>
-
-          {/* Reschedule Window */}
-          <div className="space-y-3">
-            <Label>Ventana de reprogramación/cancelación *</Label>
-            <RadioGroup value={rescheduleWindow} onValueChange={setRescheduleWindow}>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="12" id="window-12" />
-                <Label htmlFor="window-12" className="font-normal cursor-pointer">
-                  12 horas antes
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="24" id="window-24" />
-                <Label htmlFor="window-24" className="font-normal cursor-pointer">
-                  24 horas antes
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="48" id="window-48" />
-                <Label htmlFor="window-48" className="font-normal cursor-pointer">
-                  48 horas antes
-                </Label>
-              </div>
-            </RadioGroup>
+          {/* Políticas universales */}
+          <div className="rounded-lg bg-muted p-4 space-y-2">
+            <p className="text-sm font-medium">Políticas de reserva y sesiones:</p>
+            <ul className="text-sm text-muted-foreground space-y-1">
+              <li>• Duración de sesión: 50 minutos</li>
+              <li>• Reserva con mínimo 6 horas de anticipación</li>
+              <li>• Cancelaciones: 12 horas antes de la cita</li>
+            </ul>
           </div>
 
           {/* Time Slots */}

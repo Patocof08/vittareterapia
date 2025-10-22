@@ -38,9 +38,6 @@ interface ProfileData {
   modalities: string[];
   profile_photo_url: string | null;
   verification_status: string;
-  session_duration_minutes: number;
-  minimum_notice_hours: number;
-  reschedule_window_hours: number;
   session_price: number;
 }
 
@@ -169,15 +166,12 @@ export default function TherapistSettings() {
         // Load pricing data
         const { data: pricingResponse, error: pricingError } = await supabase
           .from("psychologist_pricing")
-          .select("session_duration_minutes, minimum_notice_hours, reschedule_window_hours, session_price")
+          .select("session_price")
           .eq("psychologist_id", profileResponse.id)
           .single();
 
         setProfileData({
           ...profileResponse,
-          session_duration_minutes: pricingResponse?.session_duration_minutes || 50,
-          minimum_notice_hours: pricingResponse?.minimum_notice_hours || 24,
-          reschedule_window_hours: pricingResponse?.reschedule_window_hours || 24,
           session_price: pricingResponse?.session_price || 0,
         } as ProfileData);
       }
@@ -256,13 +250,13 @@ export default function TherapistSettings() {
 
       if (profileError) throw profileError;
 
-      // Update pricing
+      // Update pricing with fixed universal values
       const { error: pricingError } = await supabase
         .from("psychologist_pricing")
         .update({
-          session_duration_minutes: profileData.session_duration_minutes,
-          minimum_notice_hours: profileData.minimum_notice_hours,
-          reschedule_window_hours: profileData.reschedule_window_hours,
+          session_duration_minutes: 50,
+          minimum_notice_hours: 6,
+          reschedule_window_hours: 12,
           session_price: profileData.session_price,
         })
         .eq("psychologist_id", psychologistId);
@@ -770,103 +764,14 @@ export default function TherapistSettings() {
                 />
               </div>
 
-              {/* Session Duration */}
-              <div className="space-y-3">
-                <Label>Duración de sesión</Label>
-                <RadioGroup
-                  value={profileData?.session_duration_minutes.toString()}
-                  onValueChange={(value) =>
-                    setProfileData({
-                      ...profileData!,
-                      session_duration_minutes: parseInt(value),
-                    })
-                  }
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="45" id="duration-45" />
-                    <Label htmlFor="duration-45" className="font-normal cursor-pointer">
-                      45 minutos
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="50" id="duration-50" />
-                    <Label htmlFor="duration-50" className="font-normal cursor-pointer">
-                      50 minutos
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="60" id="duration-60" />
-                    <Label htmlFor="duration-60" className="font-normal cursor-pointer">
-                      60 minutos
-                    </Label>
-                  </div>
-                </RadioGroup>
-              </div>
-
-              {/* Minimum Notice */}
-              <div className="space-y-3">
-                <Label>Tiempo mínimo de anticipación para reservar</Label>
-                <RadioGroup
-                  value={profileData?.minimum_notice_hours.toString()}
-                  onValueChange={(value) =>
-                    setProfileData({
-                      ...profileData!,
-                      minimum_notice_hours: parseInt(value),
-                    })
-                  }
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="2" id="notice-2" />
-                    <Label htmlFor="notice-2" className="font-normal cursor-pointer">
-                      2 horas
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="12" id="notice-12" />
-                    <Label htmlFor="notice-12" className="font-normal cursor-pointer">
-                      12 horas
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="24" id="notice-24" />
-                    <Label htmlFor="notice-24" className="font-normal cursor-pointer">
-                      24 horas
-                    </Label>
-                  </div>
-                </RadioGroup>
-              </div>
-
-              {/* Reschedule Window */}
-              <div className="space-y-3">
-                <Label>Ventana de reprogramación/cancelación</Label>
-                <RadioGroup
-                  value={profileData?.reschedule_window_hours.toString()}
-                  onValueChange={(value) =>
-                    setProfileData({
-                      ...profileData!,
-                      reschedule_window_hours: parseInt(value),
-                    })
-                  }
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="12" id="window-12" />
-                    <Label htmlFor="window-12" className="font-normal cursor-pointer">
-                      12 horas antes
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="24" id="window-24" />
-                    <Label htmlFor="window-24" className="font-normal cursor-pointer">
-                      24 horas antes
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="48" id="window-48" />
-                    <Label htmlFor="window-48" className="font-normal cursor-pointer">
-                      48 horas antes
-                    </Label>
-                  </div>
-                </RadioGroup>
+              {/* Políticas universales info */}
+              <div className="rounded-lg bg-muted p-4 space-y-2">
+                <p className="text-sm font-medium">Políticas de reserva y sesiones:</p>
+                <ul className="text-sm text-muted-foreground space-y-1">
+                  <li>• Duración de sesión: 50 minutos</li>
+                  <li>• Reserva con mínimo 6 horas de anticipación</li>
+                  <li>• Cancelaciones: 12 horas antes de la cita</li>
+                </ul>
               </div>
 
               {/* Session Price */}
