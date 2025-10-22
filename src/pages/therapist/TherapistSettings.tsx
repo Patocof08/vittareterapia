@@ -65,6 +65,14 @@ const suggestedApproaches = [
   "Terapia Gestalt",
 ];
 
+// Calculate max price based on years of experience
+const getMaxPrice = (yearsExperience: number) => {
+  if (yearsExperience >= 1 && yearsExperience < 3) return 700;
+  if (yearsExperience >= 3 && yearsExperience < 5) return 1000;
+  if (yearsExperience >= 5) return 2000;
+  return 700; // default
+};
+
 const suggestedSpecialties = [
   "Ansiedad",
   "Depresión",
@@ -225,6 +233,13 @@ export default function TherapistSettings() {
 
   const handleProfileUpdate = async () => {
     if (!user || !profileData || !psychologistId) return;
+
+    // Validate session price against experience-based limit
+    const maxPrice = getMaxPrice(profileData.years_experience || 0);
+    if (profileData.session_price && profileData.session_price > maxPrice) {
+      toast.error(`El precio máximo para tu experiencia (${profileData.years_experience} años) es $${maxPrice} MXN`);
+      return;
+    }
 
     try {
       // Update profile (excluding email, phone, and years_experience)
@@ -769,12 +784,23 @@ export default function TherapistSettings() {
               </div>
 
               {/* Session Price */}
-              <div>
-                <Label>Precio por sesión</Label>
-                <div className="flex gap-2 items-center mt-2">
+              <div className="space-y-2">
+                <Label>Precio por sesión (MXN)</Label>
+                {profileData && (
+                  <div className="rounded-lg bg-muted p-3 mb-2">
+                    <p className="text-sm font-medium">
+                      Límite de precio según tu experiencia ({profileData.years_experience || 0} años):
+                    </p>
+                    <p className="text-xl font-bold text-primary">
+                      Hasta ${getMaxPrice(profileData.years_experience || 0)} MXN por sesión
+                    </p>
+                  </div>
+                )}
+                <div className="flex gap-2 items-center">
                   <Input
                     type="number"
                     min="0"
+                    max={profileData ? getMaxPrice(profileData.years_experience || 0) : undefined}
                     value={profileData?.session_price || 0}
                     onChange={(e) =>
                       setProfileData({
@@ -786,6 +812,11 @@ export default function TherapistSettings() {
                   />
                   <span className="text-sm font-medium text-muted-foreground w-16">MXN</span>
                 </div>
+                {profileData && profileData.session_price > getMaxPrice(profileData.years_experience || 0) && (
+                  <p className="text-sm text-destructive">
+                    El precio excede el máximo permitido para tu experiencia
+                  </p>
+                )}
               </div>
 
               <Button onClick={handleProfileUpdate}>Guardar cambios</Button>
