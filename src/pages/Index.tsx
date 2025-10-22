@@ -3,11 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { TherapistCard } from "@/components/TherapistCard";
-import { Shield, Clock, FileText, DollarSign, CheckCircle, ArrowRight, Package, TrendingUp } from "lucide-react";
+import { Shield, Clock, FileText, DollarSign, CheckCircle, ArrowRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { fetchPublicProfiles } from "@/lib/psychologistQueries";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 
 const Index = () => {
   const [featuredTherapists, setFeaturedTherapists] = useState<any[]>([]);
@@ -175,150 +173,17 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Pricing Section */}
-      <section className="py-20 bg-muted/30">
+      {/* Reviews Section - Hidden until we have real reviews */}
+      {/* <section className="py-20 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Paquetes de sesiones con descuento</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Lo que dicen nuestros pacientes</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Ahorra con paquetes mensuales personalizados con tu terapeuta
+              Ayudamos a personas a alcanzar su bienestar mental
             </p>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto mb-12">
-            {/* Paquete 4 Sesiones */}
-            <Card className="relative overflow-hidden border-2 hover:shadow-lg transition-all">
-              <CardHeader>
-                <div className="flex items-center justify-between mb-2">
-                  <CardTitle className="text-2xl">Paquete Básico</CardTitle>
-                  <Badge variant="secondary">10% descuento</Badge>
-                </div>
-                <CardDescription className="text-base">4 sesiones mensuales</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  <div className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-medium">10% de descuento</p>
-                      <p className="text-sm text-muted-foreground">
-                        Ahorra en cada sesión del paquete
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <TrendingUp className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-medium">25% de rollover</p>
-                      <p className="text-sm text-muted-foreground">
-                        1 sesión se transfiere al siguiente mes si no las usas todas
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <Package className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-medium">Renovación automática</p>
-                      <p className="text-sm text-muted-foreground">
-                        Se renueva cada mes, cancela cuando quieras
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <Link to="/therapists" className="block">
-                  <Button className="w-full">Elegir terapeuta</Button>
-                </Link>
-              </CardContent>
-            </Card>
-
-            {/* Paquete 8 Sesiones */}
-            <Card className="relative overflow-hidden border-2 border-primary hover:shadow-lg transition-all">
-              <div className="absolute top-0 right-0 bg-primary text-primary-foreground px-4 py-1 text-sm font-medium">
-                Más Popular
-              </div>
-              <CardHeader>
-                <div className="flex items-center justify-between mb-2">
-                  <CardTitle className="text-2xl">Paquete Premium</CardTitle>
-                  <Badge>20% descuento</Badge>
-                </div>
-                <CardDescription className="text-base">8 sesiones mensuales</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  <div className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-medium">20% de descuento</p>
-                      <p className="text-sm text-muted-foreground">
-                        Mayor ahorro por sesión
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <TrendingUp className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-medium">25% de rollover</p>
-                      <p className="text-sm text-muted-foreground">
-                        2 sesiones se transfieren al siguiente mes si no las usas todas
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <Package className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-medium">Renovación automática</p>
-                      <p className="text-sm text-muted-foreground">
-                        Se renueva cada mes, cancela cuando quieras
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <Link to="/therapists" className="block">
-                  <Button className="w-full">Elegir terapeuta</Button>
-                </Link>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Información adicional */}
-          <div className="max-w-3xl mx-auto">
-            <Card className="bg-primary/5 border-primary/20">
-              <CardContent className="pt-6">
-                <div className="space-y-3 text-sm">
-                  <p className="flex items-start gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0 mt-2" />
-                    <span>
-                      <strong>Precios personalizados:</strong> Cada terapeuta establece su precio de sesión individual. 
-                      Los descuentos de paquete se aplican sobre ese precio base.
-                    </span>
-                  </p>
-                  <p className="flex items-start gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0 mt-2" />
-                    <span>
-                      <strong>Rollover automático:</strong> El 25% del total de sesiones del paquete (no solo las no utilizadas) 
-                      se transfiere al siguiente mes para que no pierdas tu inversión.
-                    </span>
-                  </p>
-                  <p className="flex items-start gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0 mt-2" />
-                    <span>
-                      <strong>Compromiso flexible:</strong> Los paquetes se renuevan automáticamente cada mes, 
-                      pero puedes cancelar en cualquier momento sin penalización.
-                    </span>
-                  </p>
-                  <p className="flex items-start gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0 mt-2" />
-                    <span>
-                      <strong>También individual:</strong> Si prefieres, puedes agendar sesiones individuales 
-                      sin compromiso de paquete al precio regular del terapeuta.
-                    </span>
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
         </div>
-      </section>
+      </section> */}
 
       {/* Certifications */}
       <section className="py-20">
