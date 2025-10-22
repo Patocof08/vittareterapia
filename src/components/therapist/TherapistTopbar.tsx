@@ -1,4 +1,4 @@
-import { Bell, Menu, Search, User, HelpCircle, Shield, FileText, LogOut } from "lucide-react";
+import { Bell, Menu, Search, User, HelpCircle, Shield, FileText, LogOut, Users, DollarSign, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
@@ -102,14 +102,30 @@ export const TherapistTopbar = ({ onMenuClick }: TherapistTopbarProps) => {
             <DropdownMenuContent className="w-56" align="end">
               <DropdownMenuLabel>Mi Cuenta</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => navigate("/terapeuta/perfil")}>
+              <DropdownMenuItem onClick={() => navigate("/therapist/profile")}>
                 <User className="mr-2 h-4 w-4" />
                 <span>Perfil</span>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate("/terapeuta/soporte")}>
+              <DropdownMenuItem onClick={() => navigate("/therapist/support")}>
                 <HelpCircle className="mr-2 h-4 w-4" />
-                <span>Ayuda</span>
+                <span>Soporte</span>
               </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel>Explorar</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => navigate("/therapists")}>
+                <Users className="mr-2 h-4 w-4" />
+                <span>Ver Terapeutas</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/pricing")}>
+                <DollarSign className="mr-2 h-4 w-4" />
+                <span>Precios</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/blog")}>
+                <BookOpen className="mr-2 h-4 w-4" />
+                <span>Blog</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => navigate("/privacidad")}>
                 <Shield className="mr-2 h-4 w-4" />
                 <span>Privacidad</span>

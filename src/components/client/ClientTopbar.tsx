@@ -1,4 +1,4 @@
-import { Bell, Menu, User, HelpCircle, Shield, FileText, LogOut } from "lucide-react";
+import { Bell, Menu, User, HelpCircle, Shield, FileText, LogOut, Users, DollarSign, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
@@ -59,10 +59,26 @@ export const ClientTopbar = () => {
                 <User className="mr-2 h-4 w-4" />
                 <span>Perfil</span>
               </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel>Explorar</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => navigate("/therapists")}>
+                <Users className="mr-2 h-4 w-4" />
+                <span>Encontrar Terapeutas</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/pricing")}>
+                <DollarSign className="mr-2 h-4 w-4" />
+                <span>Precios</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/blog")}>
+                <BookOpen className="mr-2 h-4 w-4" />
+                <span>Blog</span>
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => navigate("/faq")}>
                 <HelpCircle className="mr-2 h-4 w-4" />
                 <span>Ayuda</span>
               </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => navigate("/privacidad")}>
                 <Shield className="mr-2 h-4 w-4" />
                 <span>Privacidad</span>
