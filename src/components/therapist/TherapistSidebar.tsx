@@ -9,9 +9,7 @@ import {
   BookOpen,
   CheckSquare,
   BarChart3,
-  FileText,
   HelpCircle,
-  Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -25,8 +23,6 @@ const menuItems = [
   { icon: BookOpen, label: "Biblioteca", path: "/therapist/library" },
   { icon: CheckSquare, label: "Tareas", path: "/therapist/tasks" },
   { icon: BarChart3, label: "Reportes", path: "/therapist/reports" },
-  { icon: FileText, label: "Documentos", path: "/therapist/documents" },
-  { icon: Settings, label: "Ajustes", path: "/therapist/settings" },
 ];
 
 export const TherapistSidebar = () => {

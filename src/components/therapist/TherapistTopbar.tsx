@@ -1,4 +1,4 @@
-import { Bell, Menu, Search, User, HelpCircle, Shield, FileText, LogOut } from "lucide-react";
+import { Bell, Menu, Search, User, HelpCircle, Shield, FileText, LogOut, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
@@ -105,6 +105,10 @@ export const TherapistTopbar = ({ onMenuClick }: TherapistTopbarProps) => {
               <DropdownMenuItem onClick={() => navigate("/therapist/profile")}>
                 <User className="mr-2 h-4 w-4" />
                 <span>Perfil</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/therapist/settings")}>
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Ajustes</span>
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => navigate("/therapist/support")}>
                 <HelpCircle className="mr-2 h-4 w-4" />
