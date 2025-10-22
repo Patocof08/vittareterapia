@@ -287,7 +287,7 @@ export default function TherapistSettings() {
 
     try {
       const fileExt = avatarFile.name.split(".").pop();
-      const filePath = `${psychologistId}/avatar_${Date.now()}.${fileExt}`;
+      const filePath = `${user.id}/avatar_${Date.now()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
         .from("avatars")
