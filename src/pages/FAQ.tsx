@@ -4,9 +4,39 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { MessageCircle } from "lucide-react";
-import { mockFAQs } from "@/data/mockData";
 
 const FAQ = () => {
+  const faqs = [
+    {
+      question: "¿Cómo funciona la terapia en línea?",
+      answer: "La terapia en línea funciona igual que la terapia presencial, pero a través de videollamada. Agendas tu sesión, te conectas desde la comodidad de tu hogar y hablas con tu terapeuta en tiempo real. Es seguro, privado y efectivo.",
+    },
+    {
+      question: "¿Qué métodos de pago aceptan?",
+      answer: "Aceptamos tarjetas de crédito y débito (Visa, Mastercard, American Express), transferencias bancarias y pagos a través de PayPal. Todos los pagos son procesados de forma segura.",
+    },
+    {
+      question: "¿Puedo cambiar de terapeuta?",
+      answer: "Sí, puedes cambiar de terapeuta en cualquier momento sin costo adicional. Sabemos que encontrar la conexión adecuada es importante para el éxito de la terapia.",
+    },
+    {
+      question: "¿Qué pasa si necesito cancelar una sesión?",
+      answer: "Puedes cancelar o reprogramar tu sesión con al menos 24 horas de anticipación sin cargo. Cancelaciones con menos de 24 horas se cobrarán el 50% del valor de la sesión.",
+    },
+    {
+      question: "¿Es confidencial la terapia en línea?",
+      answer: "Absolutamente. Todas las sesiones están protegidas por el secreto profesional y utilizamos plataformas seguras con cifrado de extremo a extremo. Tu privacidad es nuestra prioridad.",
+    },
+    {
+      question: "¿Emiten facturas?",
+      answer: "Sí, emitimos facturas fiscales (CFDI) para todos los servicios. Puedes solicitarla al momento del pago o después a través de tu cuenta.",
+    },
+    {
+      question: "¿Qué hago en caso de emergencia?",
+      answer: "Si estás experimentando una emergencia de salud mental, por favor contacta a los servicios de emergencia locales o llama a la Línea de la Vida: 800 911 2000. La terapia en línea no está diseñada para situaciones de crisis inmediatas.",
+    },
+  ];
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -26,7 +56,7 @@ const FAQ = () => {
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto">
             <Accordion type="single" collapsible className="space-y-4">
-              {mockFAQs.map((faq, index) => (
+              {faqs.map((faq, index) => (
                 <AccordionItem
                   key={index}
                   value={`item-${index}`}

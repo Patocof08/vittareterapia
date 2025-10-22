@@ -5,15 +5,54 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import { Star, Video, Globe, GraduationCap, Award, Heart, ArrowLeft } from "lucide-react";
-import { mockTherapists } from "@/data/mockData";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const TherapistProfile = () => {
   const { id } = useParams();
-  const therapist = mockTherapists.find((t) => t.id === id);
+  const [therapist, setTherapist] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [selectedTime, setSelectedTime] = useState("");
+
+  useEffect(() => {
+    const loadTherapist = async () => {
+      try {
+        // @ts-ignore - Types will regenerate automatically
+        const { data, error } = await supabase
+          .from("psychologist_profiles")
+          .select("*")
+          .eq("id", id)
+          .eq("is_published", true)
+          .eq("verification_status", "approved")
+          .single();
+
+        if (error) throw error;
+        setTherapist(data);
+      } catch (error) {
+        console.error("Error loading therapist:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) {
+      loadTherapist();
+    }
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="container mx-auto px-4 py-20 text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   if (!therapist) {
     return (
@@ -60,32 +99,24 @@ const TherapistProfile = () => {
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row gap-8 items-start">
             <img
-              src={therapist.photo}
-              alt={therapist.name}
+              src={therapist.profile_photo_url || "https://images.unsplash.com/photo-1594824476967-48c8b964273f?w=400&h=400&fit=crop"}
+              alt={`${therapist.first_name} ${therapist.last_name}`}
               className="w-48 h-48 rounded-2xl object-cover border-4 border-primary/20 shadow-large"
             />
 
             <div className="flex-1">
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h1 className="text-4xl font-bold mb-2">{therapist.name}</h1>
-                  <p className="text-xl text-muted-foreground mb-4">{therapist.specialty}</p>
+                  <h1 className="text-4xl font-bold mb-2">{therapist.first_name} {therapist.last_name}</h1>
+                  <p className="text-xl text-muted-foreground mb-4">{therapist.specialties?.[0] || "Psicología"}</p>
                   <div className="flex items-center space-x-4 mb-4">
-                    <div className="flex items-center">
-                      <Star className="w-5 h-5 fill-secondary text-secondary mr-1" />
-                      <span className="font-semibold mr-1">{therapist.rating}</span>
-                      <span className="text-sm text-muted-foreground">({therapist.reviews} reseñas)</span>
-                    </div>
-                    <Badge variant="secondary">{therapist.availability}</Badge>
+                    <Badge variant="secondary">Disponible</Badge>
                   </div>
                 </div>
-                <button className="p-3 rounded-full hover:bg-accent transition-colors">
-                  <Heart className="w-6 h-6 text-muted-foreground" />
-                </button>
               </div>
 
               <div className="flex flex-wrap gap-2 mb-6">
-                {therapist.approaches.map((approach) => (
+                {therapist.therapeutic_approaches?.map((approach: string) => (
                   <Badge key={approach} variant="outline">
                     {approach}
                   </Badge>
@@ -94,16 +125,12 @@ const TherapistProfile = () => {
 
               <div className="flex flex-col sm:flex-row gap-4">
                 <div className="flex items-center space-x-2 text-muted-foreground">
-                  <Award className="w-5 h-5 text-primary" />
-                  <span>Cédula: {therapist.cedula}</span>
-                </div>
-                <div className="flex items-center space-x-2 text-muted-foreground">
                   <GraduationCap className="w-5 h-5 text-primary" />
-                  <span>{therapist.yearsExperience} años de experiencia</span>
+                  <span>{therapist.years_experience} años de experiencia</span>
                 </div>
                 <div className="flex items-center space-x-2 text-muted-foreground">
                   <Globe className="w-5 h-5 text-primary" />
-                  <span>{therapist.languages.join(", ")}</span>
+                  <span>{therapist.languages?.join(", ") || "Español"}</span>
                 </div>
               </div>
             </div>
@@ -120,35 +147,52 @@ const TherapistProfile = () => {
               {/* About */}
               <div className="bg-card rounded-xl shadow-soft p-6 border border-border">
                 <h2 className="text-2xl font-bold mb-4">Sobre mí</h2>
-                <p className="text-muted-foreground leading-relaxed">{therapist.bio}</p>
-              </div>
-
-              {/* Education */}
-              <div className="bg-card rounded-xl shadow-soft p-6 border border-border">
-                <h2 className="text-2xl font-bold mb-4">Formación académica</h2>
-                <ul className="space-y-3">
-                  {therapist.education.map((edu, index) => (
-                    <li key={index} className="flex items-start space-x-3">
-                      <GraduationCap className="w-5 h-5 text-primary mt-1 flex-shrink-0" />
-                      <span className="text-muted-foreground">{edu}</span>
-                    </li>
-                  ))}
-                </ul>
+                <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                  {therapist.bio_extended || therapist.bio_short || "Psicólogo profesional certificado."}
+                </p>
               </div>
 
               {/* Specialties */}
               <div className="bg-card rounded-xl shadow-soft p-6 border border-border">
                 <h2 className="text-2xl font-bold mb-4">Especialidades y enfoques</h2>
-                <div className="flex flex-wrap gap-2">
-                  {therapist.approaches.map((approach) => (
-                    <Badge key={approach} variant="secondary" className="text-sm px-4 py-2">
-                      {approach}
-                    </Badge>
-                  ))}
+                <div className="space-y-4">
+                  {therapist.specialties && therapist.specialties.length > 0 && (
+                    <div>
+                      <h3 className="font-semibold mb-2">Especialidades:</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {therapist.specialties.map((specialty: string) => (
+                          <Badge key={specialty} variant="secondary" className="text-sm px-4 py-2">
+                            {specialty}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {therapist.therapeutic_approaches && therapist.therapeutic_approaches.length > 0 && (
+                    <div>
+                      <h3 className="font-semibold mb-2">Enfoques terapéuticos:</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {therapist.therapeutic_approaches.map((approach: string) => (
+                          <Badge key={approach} variant="outline" className="text-sm px-4 py-2">
+                            {approach}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {therapist.populations && therapist.populations.length > 0 && (
+                    <div>
+                      <h3 className="font-semibold mb-2">Poblaciones atendidas:</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {therapist.populations.map((population: string) => (
+                          <Badge key={population} variant="outline" className="text-sm px-3 py-1">
+                            {population}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <p className="text-sm text-muted-foreground mt-4">
-                  Trabajo con personas que enfrentan ansiedad, depresión, estrés, problemas de pareja y más.
-                </p>
               </div>
             </div>
 
@@ -156,11 +200,7 @@ const TherapistProfile = () => {
             <div className="lg:col-span-1">
               <div className="bg-card rounded-xl shadow-large p-6 border border-border sticky top-24">
                 <div className="mb-6">
-                  <div className="flex items-baseline space-x-2 mb-2">
-                    <span className="text-4xl font-bold">${therapist.price}</span>
-                    <span className="text-muted-foreground">/ sesión</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground">50 minutos por videollamada</p>
+                  <p className="text-sm text-muted-foreground">Próximamente podrás agendar sesiones directamente</p>
                 </div>
 
                 <div className="space-y-6">

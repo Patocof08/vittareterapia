@@ -2,12 +2,38 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
-import { ReviewCard } from "@/components/ReviewCard";
 import { TherapistCard } from "@/components/TherapistCard";
 import { Shield, Clock, FileText, DollarSign, CheckCircle, ArrowRight } from "lucide-react";
-import { mockReviews, mockTherapists } from "@/data/mockData";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
+  const [featuredTherapists, setFeaturedTherapists] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadFeaturedTherapists = async () => {
+      try {
+        // @ts-ignore - Types will regenerate automatically
+        const { data, error } = await supabase
+          .from("psychologist_profiles")
+          .select("*")
+          .eq("is_published", true)
+          .eq("verification_status", "approved")
+          .limit(2);
+
+        if (!error && data) {
+          setFeaturedTherapists(data);
+        }
+      } catch (error) {
+        console.error("Error loading therapists:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadFeaturedTherapists();
+  }, []);
   const benefits = [
     {
       icon: Shield,
@@ -106,40 +132,63 @@ const Index = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-6xl mx-auto mb-8">
-            {mockTherapists.slice(0, 2).map((therapist) => (
-              <TherapistCard key={therapist.id} {...therapist} />
-            ))}
-          </div>
-
-          <div className="text-center">
-            <Link to="/therapists">
-              <Button variant="default" size="lg">
-                Ver todos los terapeutas
-                <ArrowRight className="ml-2 w-5 h-5" />
-              </Button>
-            </Link>
-          </div>
+          {loading ? (
+            <div className="flex justify-center items-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            </div>
+          ) : featuredTherapists.length > 0 ? (
+            <>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-6xl mx-auto mb-8">
+                {featuredTherapists.map((therapist) => (
+                  <TherapistCard 
+                    key={therapist.id} 
+                    id={therapist.id}
+                    name={`${therapist.first_name} ${therapist.last_name}`}
+                    specialty={therapist.specialties?.[0] || "Psicología"}
+                    photo={therapist.profile_photo_url || "https://images.unsplash.com/photo-1594824476967-48c8b964273f?w=400&h=400&fit=crop"}
+                    rating={4.8}
+                    reviews={0}
+                    price={0}
+                    approaches={therapist.therapeutic_approaches || []}
+                    languages={therapist.languages || []}
+                    availability="Disponible"
+                  />
+                  />
+                ))}
+              </div>
+              <div className="text-center">
+                <Link to="/therapists">
+                  <Button variant="default" size="lg">
+                    Ver todos los terapeutas
+                    <ArrowRight className="ml-2 w-5 h-5" />
+                  </Button>
+                </Link>
+              </div>
+            </>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-lg text-muted-foreground mb-4">
+                Pronto encontrarás profesionales disponibles aquí.
+              </p>
+              <p className="text-muted-foreground">
+                Estamos revisando nuevos perfiles.
+              </p>
+            </div>
+          )}
         </div>
       </section>
 
-      {/* Reviews Section */}
-      <section className="py-20 bg-muted/30">
+      {/* Reviews Section - Hidden until we have real reviews */}
+      {/* <section className="py-20 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">Lo que dicen nuestros pacientes</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Miles de personas han transformado su bienestar con Vittare
+              Ayudamos a personas a alcanzar su bienestar mental
             </p>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
-            {mockReviews.map((review, index) => (
-              <ReviewCard key={index} {...review} />
-            ))}
-          </div>
         </div>
-      </section>
+      </section> */}
 
       {/* Certifications */}
       <section className="py-20">
