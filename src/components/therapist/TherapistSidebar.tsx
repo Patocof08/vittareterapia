@@ -1,4 +1,4 @@
-import { NavLink, Link } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard,
   Calendar,
@@ -9,7 +9,6 @@ import {
   BookOpen,
   CheckSquare,
   BarChart3,
-  User,
   FileText,
   HelpCircle,
   LogOut,
@@ -27,7 +26,6 @@ const menuItems = [
   { icon: BookOpen, label: "Biblioteca", path: "/therapist/library" },
   { icon: CheckSquare, label: "Tareas", path: "/therapist/tasks" },
   { icon: BarChart3, label: "Reportes", path: "/therapist/reports" },
-  { icon: User, label: "Perfil", path: "/therapist/profile" },
   { icon: FileText, label: "Documentos", path: "/therapist/documents" },
   { icon: HelpCircle, label: "Soporte", path: "/therapist/support" },
 ];
@@ -37,10 +35,10 @@ export const TherapistSidebar = () => {
 
   return (
     <aside className="hidden lg:flex flex-col w-64 bg-card border-r border-border h-screen sticky top-0">
-      <Link to="/" className="p-6 border-b border-border block hover:opacity-80 transition-opacity">
+      <div className="p-6 border-b border-border block">
         <h1 className="text-xl font-bold text-primary">Vittare</h1>
         <p className="text-sm text-muted-foreground">Panel de Terapeuta</p>
-      </Link>
+      </div>
 
       <nav className="flex-1 overflow-y-auto p-4 space-y-1">
         {menuItems.map((item) => (

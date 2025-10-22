@@ -1,11 +1,10 @@
-import { NavLink, Link } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import { 
   Home, 
   Calendar, 
   Video, 
   MessageSquare, 
   CreditCard, 
-  User, 
   LogOut,
   CheckSquare
 } from "lucide-react";
@@ -19,7 +18,6 @@ const menuItems = [
   { icon: Calendar, label: "Agendar", path: "/portal/agendar" },
   { icon: Video, label: "Mis Sesiones", path: "/portal/sesiones" },
   { icon: CreditCard, label: "Pagos", path: "/portal/pagos" },
-  { icon: User, label: "Perfil", path: "/portal/perfil" },
 ];
 
 export const ClientSidebar = () => {
@@ -28,15 +26,15 @@ export const ClientSidebar = () => {
   return (
     <aside className="w-64 bg-card border-r border-border min-h-screen p-4 flex flex-col">
       {/* Header */}
-      <Link to="/" className="mb-8 block">
-        <div className="flex items-center space-x-2 mb-2 hover:opacity-80 transition-opacity">
+      <div className="mb-8 block">
+        <div className="flex items-center space-x-2 mb-2">
           <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-            <span className="text-primary-foreground font-bold text-xl">M</span>
+            <span className="text-primary-foreground font-bold text-xl">V</span>
           </div>
           <span className="font-bold text-xl text-foreground">Vittare</span>
         </div>
         <p className="text-sm text-muted-foreground ml-12">Portal Cliente</p>
-      </Link>
+      </div>
 
       {/* Menu */}
       <nav className="flex-1 space-y-1">
