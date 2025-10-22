@@ -157,7 +157,7 @@ const TherapistProfile = () => {
           start_time: startTime.toISOString(),
           end_time: endTime.toISOString(),
           status: "pending",
-          modality: "online",
+          modality: "Videollamada",
         });
 
         if (error) throw error;
@@ -195,7 +195,7 @@ const TherapistProfile = () => {
           start_time: startTime.toISOString(),
           end_time: endTime.toISOString(),
           status: "pending",
-          modality: "online",
+          modality: "Videollamada",
         });
 
         if (apptError) throw apptError;
