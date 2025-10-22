@@ -7,10 +7,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { Upload, User, Shield, FileText, CreditCard, Bell, AlertTriangle, CheckCircle2, XCircle, Clock, Eye } from "lucide-react";
+import { Upload, User, Shield, FileText, CreditCard, Bell, AlertTriangle, CheckCircle2, XCircle, Clock, Eye, X as XIcon } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { logger } from "@/lib/logger";
 import { Database } from "@/integrations/supabase/types";
@@ -24,6 +26,8 @@ interface ProfileData {
   last_name: string;
   email: string;
   phone: string;
+  city: string;
+  country: string;
   bio_short: string;
   bio_extended: string;
   years_experience: number;
@@ -34,6 +38,10 @@ interface ProfileData {
   modalities: string[];
   profile_photo_url: string | null;
   verification_status: string;
+  session_duration_minutes: number;
+  minimum_notice_hours: number;
+  reschedule_window_hours: number;
+  session_price: number;
 }
 
 interface Document {
@@ -45,6 +53,44 @@ interface Document {
   uploadedAt?: string;
   rejectionReason?: string;
 }
+
+const languages = ["Español", "Inglés", "Francés", "Alemán", "Portugués", "Italiano"];
+const modalities = ["Videollamada", "Presencial", "Chat"];
+
+const suggestedApproaches = [
+  "Terapia Cognitivo-Conductual (TCC)",
+  "Terapia de Aceptación y Compromiso (ACT)",
+  "Terapia Sistémica",
+  "Psicoanálisis",
+  "Terapia Humanista",
+  "Mindfulness",
+  "EMDR",
+  "Terapia Gestalt",
+];
+
+const suggestedSpecialties = [
+  "Ansiedad",
+  "Depresión",
+  "Terapia de Pareja",
+  "Duelo",
+  "TDAH",
+  "Trauma",
+  "Autoestima",
+  "Estrés",
+  "Adicciones",
+  "Trastornos alimentarios",
+];
+
+const suggestedPopulations = [
+  "Adultos",
+  "Adolescentes",
+  "Niños",
+  "Parejas",
+  "Familias",
+  "Ejecutivos",
+  "LGBTQ+",
+  "Tercera edad",
+];
 
 const documentTypes: Array<{
   type: DocumentType;
@@ -109,17 +155,31 @@ export default function TherapistSettings() {
     if (!user) return;
 
     try {
-      const { data, error } = await supabase
+      const { data: profileResponse, error: profileError } = await supabase
         .from("psychologist_profiles")
         .select("*")
         .eq("user_id", user.id)
         .single();
 
-      if (error) throw error;
+      if (profileError) throw profileError;
 
-      if (data) {
-        setProfileData(data as ProfileData);
-        setPsychologistId(data.id);
+      if (profileResponse) {
+        setPsychologistId(profileResponse.id);
+
+        // Load pricing data
+        const { data: pricingResponse, error: pricingError } = await supabase
+          .from("psychologist_pricing")
+          .select("session_duration_minutes, minimum_notice_hours, reschedule_window_hours, session_price")
+          .eq("psychologist_id", profileResponse.id)
+          .single();
+
+        setProfileData({
+          ...profileResponse,
+          session_duration_minutes: pricingResponse?.session_duration_minutes || 50,
+          minimum_notice_hours: pricingResponse?.minimum_notice_hours || 24,
+          reschedule_window_hours: pricingResponse?.reschedule_window_hours || 24,
+          session_price: pricingResponse?.session_price || 0,
+        } as ProfileData);
       }
     } catch (error) {
       logger.error("Error loading profile:", error);
@@ -170,18 +230,22 @@ export default function TherapistSettings() {
   };
 
   const handleProfileUpdate = async () => {
-    if (!user || !profileData) return;
+    if (!user || !profileData || !psychologistId) return;
 
     try {
-      const { error } = await supabase
+      // Update profile
+      const { error: profileError } = await supabase
         .from("psychologist_profiles")
         .update({
           first_name: profileData.first_name,
           last_name: profileData.last_name,
           email: profileData.email,
           phone: profileData.phone,
+          city: profileData.city,
+          country: profileData.country,
           bio_short: profileData.bio_short,
           bio_extended: profileData.bio_extended,
+          years_experience: profileData.years_experience,
           specialties: profileData.specialties,
           therapeutic_approaches: profileData.therapeutic_approaches,
           languages: profileData.languages,
@@ -190,7 +254,20 @@ export default function TherapistSettings() {
         })
         .eq("user_id", user.id);
 
-      if (error) throw error;
+      if (profileError) throw profileError;
+
+      // Update pricing
+      const { error: pricingError } = await supabase
+        .from("psychologist_pricing")
+        .update({
+          session_duration_minutes: profileData.session_duration_minutes,
+          minimum_notice_hours: profileData.minimum_notice_hours,
+          reschedule_window_hours: profileData.reschedule_window_hours,
+          session_price: profileData.session_price,
+        })
+        .eq("psychologist_id", psychologistId);
+
+      if (pricingError) throw pricingError;
 
       toast.success("Perfil actualizado correctamente");
     } catch (error) {
@@ -439,86 +516,377 @@ export default function TherapistSettings() {
                 </div>
               </div>
 
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Email</Label>
+                  <Input
+                    type="email"
+                    value={profileData?.email || ""}
+                    onChange={(e) =>
+                      setProfileData({ ...profileData!, email: e.target.value })
+                    }
+                  />
+                </div>
+                <div>
+                  <Label>Teléfono</Label>
+                  <Input
+                    value={profileData?.phone || ""}
+                    onChange={(e) =>
+                      setProfileData({ ...profileData!, phone: e.target.value })
+                    }
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Ciudad</Label>
+                  <Input
+                    value={profileData?.city || ""}
+                    onChange={(e) =>
+                      setProfileData({ ...profileData!, city: e.target.value })
+                    }
+                  />
+                </div>
+                <div>
+                  <Label>País</Label>
+                  <Input
+                    value={profileData?.country || ""}
+                    onChange={(e) =>
+                      setProfileData({ ...profileData!, country: e.target.value })
+                    }
+                  />
+                </div>
+              </div>
+
+              {/* Languages */}
+              <div className="space-y-3">
+                <Label>Idiomas de atención</Label>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {languages.map((lang) => (
+                    <div key={lang} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`lang-${lang}`}
+                        checked={profileData?.languages.includes(lang)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setProfileData({
+                              ...profileData!,
+                              languages: [...(profileData?.languages || []), lang],
+                            });
+                          } else {
+                            setProfileData({
+                              ...profileData!,
+                              languages: (profileData?.languages || []).filter((l) => l !== lang),
+                            });
+                          }
+                        }}
+                      />
+                      <Label htmlFor={`lang-${lang}`} className="cursor-pointer font-normal">
+                        {lang}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Modalities */}
+              <div className="space-y-3">
+                <Label>Modalidad de atención</Label>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {modalities.map((mod) => (
+                    <div key={mod} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`mod-${mod}`}
+                        checked={profileData?.modalities.includes(mod)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setProfileData({
+                              ...profileData!,
+                              modalities: [...(profileData?.modalities || []), mod],
+                            });
+                          } else {
+                            setProfileData({
+                              ...profileData!,
+                              modalities: (profileData?.modalities || []).filter((m) => m !== mod),
+                            });
+                          }
+                        }}
+                      />
+                      <Label htmlFor={`mod-${mod}`} className="cursor-pointer font-normal">
+                        {mod}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Years of Experience */}
               <div>
-                <Label>Email</Label>
+                <Label>Años de experiencia</Label>
                 <Input
-                  type="email"
-                  value={profileData?.email || ""}
+                  type="number"
+                  min="0"
+                  max="50"
+                  value={profileData?.years_experience || 0}
                   onChange={(e) =>
-                    setProfileData({ ...profileData!, email: e.target.value })
+                    setProfileData({
+                      ...profileData!,
+                      years_experience: parseInt(e.target.value) || 0,
+                    })
                   }
                 />
               </div>
 
-              <div>
-                <Label>Teléfono</Label>
-                <Input
-                  value={profileData?.phone || ""}
-                  onChange={(e) =>
-                    setProfileData({ ...profileData!, phone: e.target.value })
-                  }
-                />
+              {/* Therapeutic Approaches */}
+              <div className="space-y-3">
+                <Label>Enfoques terapéuticos</Label>
+                <div className="flex flex-wrap gap-2">
+                  {suggestedApproaches.map((approach) => (
+                    <Badge
+                      key={approach}
+                      variant={profileData?.therapeutic_approaches.includes(approach) ? "default" : "outline"}
+                      className="cursor-pointer"
+                      onClick={() => {
+                        if (profileData?.therapeutic_approaches.includes(approach)) {
+                          setProfileData({
+                            ...profileData!,
+                            therapeutic_approaches: (profileData?.therapeutic_approaches || []).filter(
+                              (a) => a !== approach
+                            ),
+                          });
+                        } else {
+                          setProfileData({
+                            ...profileData!,
+                            therapeutic_approaches: [...(profileData?.therapeutic_approaches || []), approach],
+                          });
+                        }
+                      }}
+                    >
+                      {approach}
+                      {profileData?.therapeutic_approaches.includes(approach) && (
+                        <XIcon className="w-3 h-3 ml-1" />
+                      )}
+                    </Badge>
+                  ))}
+                </div>
               </div>
 
+              {/* Specialties */}
+              <div className="space-y-3">
+                <Label>Especialidades</Label>
+                <div className="flex flex-wrap gap-2">
+                  {suggestedSpecialties.map((specialty) => (
+                    <Badge
+                      key={specialty}
+                      variant={profileData?.specialties.includes(specialty) ? "default" : "outline"}
+                      className="cursor-pointer"
+                      onClick={() => {
+                        if (profileData?.specialties.includes(specialty)) {
+                          setProfileData({
+                            ...profileData!,
+                            specialties: (profileData?.specialties || []).filter((s) => s !== specialty),
+                          });
+                        } else {
+                          setProfileData({
+                            ...profileData!,
+                            specialties: [...(profileData?.specialties || []), specialty],
+                          });
+                        }
+                      }}
+                    >
+                      {specialty}
+                      {profileData?.specialties.includes(specialty) && <XIcon className="w-3 h-3 ml-1" />}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+
+              {/* Populations */}
+              <div className="space-y-3">
+                <Label>Poblaciones que atiendes</Label>
+                <div className="flex flex-wrap gap-2">
+                  {suggestedPopulations.map((pop) => (
+                    <Badge
+                      key={pop}
+                      variant={profileData?.populations.includes(pop) ? "default" : "outline"}
+                      className="cursor-pointer"
+                      onClick={() => {
+                        if (profileData?.populations.includes(pop)) {
+                          setProfileData({
+                            ...profileData!,
+                            populations: (profileData?.populations || []).filter((p) => p !== pop),
+                          });
+                        } else {
+                          setProfileData({
+                            ...profileData!,
+                            populations: [...(profileData?.populations || []), pop],
+                          });
+                        }
+                      }}
+                    >
+                      {pop}
+                      {profileData?.populations.includes(pop) && <XIcon className="w-3 h-3 ml-1" />}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+
+              {/* Bio Short */}
               <div>
-                <Label>Biografía corta</Label>
+                <div className="flex justify-between mb-2">
+                  <Label>Biografía corta</Label>
+                  <span className="text-sm text-muted-foreground">
+                    {profileData?.bio_short?.length || 0}/400
+                  </span>
+                </div>
                 <Textarea
                   value={profileData?.bio_short || ""}
                   onChange={(e) =>
                     setProfileData({ ...profileData!, bio_short: e.target.value })
                   }
+                  placeholder="Una breve descripción profesional..."
+                  maxLength={400}
                   rows={3}
                 />
               </div>
 
+              {/* Bio Extended */}
               <div>
-                <Label>Biografía extendida</Label>
+                <div className="flex justify-between mb-2">
+                  <Label>Biografía extendida</Label>
+                  <span className="text-sm text-muted-foreground">
+                    {profileData?.bio_extended?.length || 0}/1200
+                  </span>
+                </div>
                 <Textarea
                   value={profileData?.bio_extended || ""}
                   onChange={(e) =>
                     setProfileData({ ...profileData!, bio_extended: e.target.value })
                   }
+                  placeholder="Describe tu filosofía de trabajo..."
+                  maxLength={1200}
                   rows={6}
                 />
               </div>
 
-              <div>
-                <Label>Especialidades (separadas por coma)</Label>
-                <Input
-                  value={profileData?.specialties?.join(", ") || ""}
-                  onChange={(e) =>
+              {/* Session Duration */}
+              <div className="space-y-3">
+                <Label>Duración de sesión</Label>
+                <RadioGroup
+                  value={profileData?.session_duration_minutes.toString()}
+                  onValueChange={(value) =>
                     setProfileData({
                       ...profileData!,
-                      specialties: e.target.value.split(",").map((s) => s.trim()),
+                      session_duration_minutes: parseInt(value),
                     })
                   }
-                />
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="45" id="duration-45" />
+                    <Label htmlFor="duration-45" className="font-normal cursor-pointer">
+                      45 minutos
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="50" id="duration-50" />
+                    <Label htmlFor="duration-50" className="font-normal cursor-pointer">
+                      50 minutos
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="60" id="duration-60" />
+                    <Label htmlFor="duration-60" className="font-normal cursor-pointer">
+                      60 minutos
+                    </Label>
+                  </div>
+                </RadioGroup>
               </div>
 
-              <div>
-                <Label>Enfoques terapéuticos (separados por coma)</Label>
-                <Input
-                  value={profileData?.therapeutic_approaches?.join(", ") || ""}
-                  onChange={(e) =>
+              {/* Minimum Notice */}
+              <div className="space-y-3">
+                <Label>Tiempo mínimo de anticipación para reservar</Label>
+                <RadioGroup
+                  value={profileData?.minimum_notice_hours.toString()}
+                  onValueChange={(value) =>
                     setProfileData({
                       ...profileData!,
-                      therapeutic_approaches: e.target.value.split(",").map((s) => s.trim()),
+                      minimum_notice_hours: parseInt(value),
                     })
                   }
-                />
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="2" id="notice-2" />
+                    <Label htmlFor="notice-2" className="font-normal cursor-pointer">
+                      2 horas
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="12" id="notice-12" />
+                    <Label htmlFor="notice-12" className="font-normal cursor-pointer">
+                      12 horas
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="24" id="notice-24" />
+                    <Label htmlFor="notice-24" className="font-normal cursor-pointer">
+                      24 horas
+                    </Label>
+                  </div>
+                </RadioGroup>
               </div>
 
-              <div>
-                <Label>Idiomas (separados por coma)</Label>
-                <Input
-                  value={profileData?.languages?.join(", ") || ""}
-                  onChange={(e) =>
+              {/* Reschedule Window */}
+              <div className="space-y-3">
+                <Label>Ventana de reprogramación/cancelación</Label>
+                <RadioGroup
+                  value={profileData?.reschedule_window_hours.toString()}
+                  onValueChange={(value) =>
                     setProfileData({
                       ...profileData!,
-                      languages: e.target.value.split(",").map((s) => s.trim()),
+                      reschedule_window_hours: parseInt(value),
                     })
                   }
-                />
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="12" id="window-12" />
+                    <Label htmlFor="window-12" className="font-normal cursor-pointer">
+                      12 horas antes
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="24" id="window-24" />
+                    <Label htmlFor="window-24" className="font-normal cursor-pointer">
+                      24 horas antes
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="48" id="window-48" />
+                    <Label htmlFor="window-48" className="font-normal cursor-pointer">
+                      48 horas antes
+                    </Label>
+                  </div>
+                </RadioGroup>
+              </div>
+
+              {/* Session Price */}
+              <div>
+                <Label>Precio por sesión</Label>
+                <div className="flex gap-2 items-center mt-2">
+                  <Input
+                    type="number"
+                    min="0"
+                    value={profileData?.session_price || 0}
+                    onChange={(e) =>
+                      setProfileData({
+                        ...profileData!,
+                        session_price: parseFloat(e.target.value) || 0,
+                      })
+                    }
+                    className="flex-1"
+                  />
+                  <span className="text-sm font-medium text-muted-foreground w-16">MXN</span>
+                </div>
               </div>
 
               <Button onClick={handleProfileUpdate}>Guardar cambios</Button>
