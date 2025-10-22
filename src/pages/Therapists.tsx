@@ -8,11 +8,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, SlidersHorizontal, Sparkles } from "lucide-react";
+import { Search, SlidersHorizontal, Sparkles, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { PatientPreferences } from "@/types/preferences";
 import { toast } from "sonner";
+import { rankTherapists } from "@/lib/matchingAlgorithm";
+import { Badge } from "@/components/ui/badge";
 
 const Therapists = () => {
   const navigate = useNavigate();
@@ -133,7 +135,45 @@ const Therapists = () => {
     }
   };
 
-  const filteredTherapists = therapists.filter((therapist) => {
+  // Apply matching algorithm if preferences exist
+  const rankedTherapists = savedPreferences 
+    ? rankTherapists(
+        therapists.map(t => {
+          const pricing = t.pricing?.[0];
+          return {
+            id: t.id,
+            name: `${t.first_name} ${t.last_name}`,
+            specialty: t.specialties?.[0] || "Psicología",
+            approaches: t.therapeutic_approaches || [],
+            languages: t.languages || [],
+            price: pricing?.session_price || 0,
+            availability: "Disponible",
+            ...t
+          };
+        }),
+        savedPreferences
+      )
+    : therapists.map(t => {
+        const pricing = t.pricing?.[0];
+        return {
+          therapist: {
+            id: t.id,
+            name: `${t.first_name} ${t.last_name}`,
+            specialty: t.specialties?.[0] || "Psicología",
+            approaches: t.therapeutic_approaches || [],
+            languages: t.languages || [],
+            price: pricing?.session_price || 0,
+            availability: "Disponible",
+            ...t
+          },
+          score: 0,
+          reasons: [],
+          matchLevel: 'compatible' as const
+        };
+      });
+
+  const filteredTherapists = rankedTherapists.filter((match) => {
+    const therapist = match.therapist;
     const fullName = `${therapist.first_name} ${therapist.last_name}`.toLowerCase();
     const matchesSearch =
       fullName.includes(searchTerm.toLowerCase()) ||
@@ -167,15 +207,50 @@ const Therapists = () => {
           <p className="text-lg text-muted-foreground max-w-2xl">
             Todos nuestros terapeutas están certificados y tienen amplia experiencia.
           </p>
-          <div className="mt-6">
-            <Button
-              onClick={() => setShowQuiz(true)}
-              size="lg"
-              className="gap-2"
-            >
-              <Sparkles className="w-5 h-5" />
-              Quiero atención personalizada (2 min)
-            </Button>
+          <div className="mt-6 flex flex-wrap gap-3 items-center">
+            {!savedPreferences ? (
+              <Button
+                onClick={() => setShowQuiz(true)}
+                size="lg"
+                className="gap-2"
+              >
+                <Sparkles className="w-5 h-5" />
+                Quiero atención personalizada (2 min)
+              </Button>
+            ) : (
+              <>
+                <Badge variant="secondary" className="text-sm py-2 px-4">
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Recomendados según tus preferencias
+                </Badge>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowQuiz(true)}
+                  className="gap-2"
+                >
+                  Actualizar preferencias
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={async () => {
+                    if (user) {
+                      await supabase
+                        .from("patient_preferences")
+                        .delete()
+                        .eq("user_id", user.id);
+                      setSavedPreferences(null);
+                      toast.success("Preferencias eliminadas");
+                    }
+                  }}
+                  className="gap-2"
+                >
+                  <X className="w-4 h-4" />
+                  Eliminar preferencias
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </section>
@@ -321,22 +396,44 @@ const Therapists = () => {
                 </p>
               </div>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {filteredTherapists.map((therapist) => {
+                {filteredTherapists.map((match) => {
+                  const therapist = match.therapist;
                   const pricing = therapist.pricing?.[0];
+                  
                   return (
-                    <TherapistCard 
-                      key={therapist.id}
-                      id={therapist.id}
-                      name={`${therapist.first_name} ${therapist.last_name}`}
-                      specialty={therapist.specialties?.[0] || "Psicología"}
-                      photo={therapist.profile_photo_url || "https://images.unsplash.com/photo-1594824476967-48c8b964273f?w=400&h=400&fit=crop"}
-                      rating={0}
-                      reviews={0}
-                      price={pricing?.session_price || 0}
-                      approaches={therapist.therapeutic_approaches || []}
-                      languages={therapist.languages || []}
-                      availability="Disponible"
-                    />
+                    <div key={therapist.id} className="relative">
+                      {savedPreferences && match.matchLevel !== 'compatible' && (
+                        <div className="absolute -top-3 left-4 z-10">
+                          <Badge 
+                            variant={match.matchLevel === 'top' ? 'default' : 'secondary'}
+                            className="text-xs"
+                          >
+                            {match.matchLevel === 'top' ? '🌟 Excelente match' : '✨ Buen match'}
+                          </Badge>
+                        </div>
+                      )}
+                      <TherapistCard 
+                        id={therapist.id}
+                        name={`${therapist.first_name} ${therapist.last_name}`}
+                        specialty={therapist.specialties?.[0] || "Psicología"}
+                        photo={therapist.profile_photo_url || "https://images.unsplash.com/photo-1594824476967-48c8b964273f?w=400&h=400&fit=crop"}
+                        rating={0}
+                        reviews={0}
+                        price={pricing?.session_price || 0}
+                        approaches={therapist.therapeutic_approaches || []}
+                        languages={therapist.languages || []}
+                        availability="Disponible"
+                      />
+                      {savedPreferences && match.reasons.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {match.reasons.slice(0, 3).map((reason, idx) => (
+                            <Badge key={idx} variant="outline" className="text-xs">
+                              {reason.label}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   );
                 })}
               </div>

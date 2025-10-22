@@ -25,7 +25,6 @@ const menuItems = [
   { icon: CheckSquare, label: "Tareas", path: "/therapist/tasks" },
   { icon: BarChart3, label: "Reportes", path: "/therapist/reports" },
   { icon: FileText, label: "Documentos", path: "/therapist/documents" },
-  { icon: HelpCircle, label: "Soporte", path: "/therapist/support" },
 ];
 
 export const TherapistSidebar = () => {

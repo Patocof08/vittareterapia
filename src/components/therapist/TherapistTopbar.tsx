@@ -102,11 +102,11 @@ export const TherapistTopbar = ({ onMenuClick }: TherapistTopbarProps) => {
             <DropdownMenuContent className="w-56" align="end">
               <DropdownMenuLabel>Mi Cuenta</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => navigate("/terapeuta/perfil")}>
+              <DropdownMenuItem onClick={() => navigate("/therapist/profile")}>
                 <User className="mr-2 h-4 w-4" />
                 <span>Perfil</span>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate("/terapeuta/soporte")}>
+              <DropdownMenuItem onClick={() => navigate("/therapist/support")}>
                 <HelpCircle className="mr-2 h-4 w-4" />
                 <span>Ayuda</span>
               </DropdownMenuItem>
