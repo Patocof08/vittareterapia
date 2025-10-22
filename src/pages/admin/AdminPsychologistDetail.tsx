@@ -130,6 +130,31 @@ export default function AdminPsychologistDetail() {
     }
   };
 
+  const handleDownloadDocument = async (filePath: string, fileName: string) => {
+    try {
+      const { data, error } = await supabase.storage
+        .from("psychologist-files")
+        .download(filePath);
+
+      if (error) throw error;
+
+      // Create a blob URL and trigger download
+      const url = URL.createObjectURL(data);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast.success("Documento descargado");
+    } catch (error) {
+      console.error("Error downloading document:", error);
+      toast.error("Error al descargar documento");
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "approved":
@@ -316,7 +341,11 @@ export default function AdminPsychologistDetail() {
                           </p>
                         </div>
                       </div>
-                      <Button size="sm" variant="ghost">
+                      <Button 
+                        size="sm" 
+                        variant="ghost"
+                        onClick={() => handleDownloadDocument(doc.file_path, doc.file_name)}
+                      >
                         <Download className="w-4 h-4" />
                       </Button>
                     </div>
