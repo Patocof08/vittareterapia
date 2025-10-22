@@ -122,9 +122,8 @@ const Therapists = () => {
 
       if (error) throw error;
 
-      setSavedPreferences(data as PatientPreferences);
-      setUsePreferences(true);
-      toast.success("Preferencias guardadas correctamente");
+        setSavedPreferences(data as PatientPreferences);
+        toast.success("Preferencias guardadas correctamente");
     } catch (error) {
       console.error("Error saving preferences:", error);
       toast.error("Error al guardar preferencias");
@@ -332,7 +331,6 @@ const Therapists = () => {
                     approaches={therapist.therapeutic_approaches || []}
                     languages={therapist.languages || []}
                     availability="Disponible"
-                  />
                   />
                 ))}
               </div>

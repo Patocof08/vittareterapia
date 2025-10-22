@@ -153,7 +153,6 @@ const Index = () => {
                     languages={therapist.languages || []}
                     availability="Disponible"
                   />
-                  />
                 ))}
               </div>
               <div className="text-center">
