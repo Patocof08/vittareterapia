@@ -67,16 +67,16 @@ export default function ClientDashboard() {
         </Card>
 
         <Card className="hover:shadow-md transition-shadow cursor-pointer">
-          <Link to="/portal/ajustes">
+          <Link to="/portal/tareas">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
-                Ajustes
+                Mis Tareas
               </CardTitle>
-              <CreditCard className="h-4 w-4 text-muted-foreground" />
+              <CheckCircle className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <p className="text-xs text-muted-foreground">
-                Gestiona tu cuenta
+                Ver tareas asignadas
               </p>
             </CardContent>
           </Link>

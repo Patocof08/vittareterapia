@@ -55,9 +55,9 @@ export const ClientTopbar = () => {
             <DropdownMenuContent className="w-56" align="end">
               <DropdownMenuLabel>Mi Cuenta</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => navigate("/portal/perfil")}>
+              <DropdownMenuItem onClick={() => navigate("/portal/ajustes")}>
                 <User className="mr-2 h-4 w-4" />
-                <span>Perfil</span>
+                <span>Ajustes</span>
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => navigate("/faq")}>
                 <HelpCircle className="mr-2 h-4 w-4" />
