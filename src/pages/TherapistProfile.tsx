@@ -162,15 +162,6 @@ const TherapistProfile = () => {
                 </div>
               </div>
 
-              {/* Rating */}
-              <div className="flex items-center space-x-2 mb-4">
-                <div className="flex items-center">
-                  <Star className="w-5 h-5 fill-secondary text-secondary" />
-                  <span className="ml-1 text-lg font-semibold">4.8</span>
-                </div>
-                <span className="text-sm text-muted-foreground">(127 reseñas)</span>
-              </div>
-
               {/* Specialties */}
               <div className="flex flex-wrap gap-1.5 mb-6">
                 {therapist.specialties?.map((specialty: string) => (
