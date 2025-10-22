@@ -76,7 +76,9 @@ export const TherapistCard = ({
               >
                 {name}
               </Link>
-              <p className="text-sm text-muted-foreground mt-1">{specialty}</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Enfoque: {approaches[0] || 'No especificado'}
+              </p>
             </div>
             <button
               onClick={handleFavorite}
@@ -101,11 +103,11 @@ export const TherapistCard = ({
             </div>
           )}
 
-          {/* Approaches */}
-          <div className="flex flex-wrap gap-2 mt-3">
-            {approaches.slice(0, 3).map((approach) => (
-              <Badge key={approach} variant="secondary" className="text-xs">
-                {approach}
+          {/* Specialties */}
+          <div className="flex flex-wrap gap-1.5 mt-3">
+            {specialty.split(',').map((spec, idx) => (
+              <Badge key={idx} variant="secondary" className="text-[10px] px-2 py-0.5">
+                {spec.trim()}
               </Badge>
             ))}
           </div>
