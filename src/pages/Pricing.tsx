@@ -29,11 +29,9 @@ const Pricing = () => {
             <div className="mb-12">
               <div className="text-center mb-8">
                 <h2 className="text-3xl font-bold mb-2">Sesiones Individuales</h2>
-                <p className="text-muted-foreground">
-                  Sin compromiso, paga solo por lo que necesitas
-                </p>
+                <p className="text-muted-foreground">Sin compromiso, paga solo por lo que necesitas</p>
               </div>
-              
+
               <Card className="max-w-2xl mx-auto">
                 <CardHeader>
                   <CardTitle className="text-2xl">Sesión Individual</CardTitle>
@@ -43,12 +41,12 @@ const Pricing = () => {
                   <div className="space-y-4">
                     <div className="bg-primary/10 rounded-lg p-4">
                       <p className="text-sm text-muted-foreground mb-2">Precio por sesión</p>
-                      <p className="text-2xl font-bold">Desde $600 MXN</p>
+                      <p className="text-2xl font-bold">Desde $500 MXN</p>
                       <p className="text-sm text-muted-foreground mt-1">
                         El precio varía según el terapeuta que elijas
                       </p>
                     </div>
-                    
+
                     <ul className="space-y-3">
                       <li className="flex items-start gap-3">
                         <Check className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
@@ -82,9 +80,7 @@ const Pricing = () => {
             <div>
               <div className="text-center mb-8">
                 <h2 className="text-3xl font-bold mb-2">Paquetes con Descuento</h2>
-                <p className="text-muted-foreground">
-                  Suscripciones mensuales con tu terapeuta favorito
-                </p>
+                <p className="text-muted-foreground">Suscripciones mensuales con tu terapeuta favorito</p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -101,9 +97,7 @@ const Pricing = () => {
                     <div className="bg-primary/10 rounded-lg p-4">
                       <p className="text-sm text-muted-foreground mb-2">Ahorro mensual</p>
                       <p className="text-2xl font-bold">10% de descuento</p>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        sobre el precio del terapeuta
-                      </p>
+                      <p className="text-sm text-muted-foreground mt-1">sobre el precio del terapeuta</p>
                     </div>
 
                     <ul className="space-y-3">
@@ -148,9 +142,7 @@ const Pricing = () => {
                 {/* Paquete 8 Sesiones */}
                 <Card className="border-2 border-primary hover:shadow-lg transition-all relative">
                   <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                    <Badge className="bg-primary text-primary-foreground px-4 py-1">
-                      Más Popular
-                    </Badge>
+                    <Badge className="bg-primary text-primary-foreground px-4 py-1">Más Popular</Badge>
                   </div>
                   <CardHeader className="pt-8">
                     <div className="flex items-center justify-between mb-2">
@@ -163,9 +155,7 @@ const Pricing = () => {
                     <div className="bg-primary/10 rounded-lg p-4">
                       <p className="text-sm text-muted-foreground mb-2">Ahorro mensual</p>
                       <p className="text-2xl font-bold">20% de descuento</p>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        sobre el precio del terapeuta
-                      </p>
+                      <p className="text-sm text-muted-foreground mt-1">sobre el precio del terapeuta</p>
                     </div>
 
                     <ul className="space-y-3">
@@ -219,34 +209,34 @@ const Pricing = () => {
                     <p className="flex items-start gap-2">
                       <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0 mt-2" />
                       <span>
-                        <strong className="text-foreground">Precios personalizados:</strong> Cada terapeuta 
-                        establece su precio de sesión individual. Los descuentos del paquete (10% o 20%) 
-                        se aplican sobre ese precio base.
+                        <strong className="text-foreground">Precios personalizados:</strong> Cada terapeuta establece su
+                        precio de sesión individual. Los descuentos del paquete (10% o 20%) se aplican sobre ese precio
+                        base.
                       </span>
                     </p>
                     <p className="flex items-start gap-2">
                       <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0 mt-2" />
                       <span>
-                        <strong className="text-foreground">Rollover automático:</strong> El 25% del total 
-                        de sesiones del paquete (no solo las no utilizadas) se transfiere automáticamente 
-                        al siguiente mes. Por ejemplo, en el paquete de 8 sesiones, siempre se transfieren 
-                        2 sesiones (25% de 8), sin importar cuántas uses.
+                        <strong className="text-foreground">Rollover automático:</strong> El 25% del total de sesiones
+                        del paquete (no solo las no utilizadas) se transfiere automáticamente al siguiente mes. Por
+                        ejemplo, en el paquete de 8 sesiones, siempre se transfieren 2 sesiones (25% de 8), sin importar
+                        cuántas uses.
                       </span>
                     </p>
                     <p className="flex items-start gap-2">
                       <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0 mt-2" />
                       <span>
-                        <strong className="text-foreground">Suscripción flexible:</strong> Los paquetes 
-                        se renuevan automáticamente cada mes para mantener tu continuidad terapéutica. 
-                        Puedes cancelar en cualquier momento sin penalización.
+                        <strong className="text-foreground">Suscripción flexible:</strong> Los paquetes se renuevan
+                        automáticamente cada mes para mantener tu continuidad terapéutica. Puedes cancelar en cualquier
+                        momento sin penalización.
                       </span>
                     </p>
                     <p className="flex items-start gap-2">
                       <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0 mt-2" />
                       <span>
-                        <strong className="text-foreground">Por terapeuta:</strong> Las suscripciones 
-                        son específicas para cada terapeuta. Si trabajas con múltiples terapeutas, 
-                        puedes tener paquetes separados con cada uno.
+                        <strong className="text-foreground">Por terapeuta:</strong> Las suscripciones son específicas
+                        para cada terapeuta. Si trabajas con múltiples terapeutas, puedes tener paquetes separados con
+                        cada uno.
                       </span>
                     </p>
                   </div>
@@ -262,7 +252,7 @@ const Pricing = () => {
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
             <h2 className="text-3xl font-bold mb-8 text-center">Ejemplo de precios</h2>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <Card>
                 <CardHeader>
@@ -285,7 +275,9 @@ const Pricing = () => {
               <Card className="border-primary/50">
                 <CardHeader>
                   <CardTitle className="text-lg">Paquete 4 Sesiones</CardTitle>
-                  <Badge variant="secondary" className="w-fit">10% OFF</Badge>
+                  <Badge variant="secondary" className="w-fit">
+                    10% OFF
+                  </Badge>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
@@ -367,10 +359,10 @@ const Pricing = () => {
                     <div>
                       <h3 className="font-semibold mb-2">Gestión de suscripciones</h3>
                       <p className="text-sm text-muted-foreground">
-                        Puedes cancelar tu suscripción en cualquier momento desde tu portal de cliente.
-                        Al cancelar, seguirás teniendo acceso hasta el final del período de facturación actual.
-                        No se realizan reembolsos por periodos parciales, pero las sesiones no utilizadas se
-                        respetan según el sistema de rollover.
+                        Puedes cancelar tu suscripción en cualquier momento desde tu portal de cliente. Al cancelar,
+                        seguirás teniendo acceso hasta el final del período de facturación actual. No se realizan
+                        reembolsos por periodos parciales, pero las sesiones no utilizadas se respetan según el sistema
+                        de rollover.
                       </p>
                     </div>
                   </div>
@@ -384,8 +376,8 @@ const Pricing = () => {
                     <div>
                       <h3 className="font-semibold mb-2">Facturación</h3>
                       <p className="text-sm text-muted-foreground">
-                        Emitimos facturas fiscales (CFDI) para todos los pagos. Puedes solicitarla al momento del
-                        pago o después desde tu cuenta. Las facturas se envían en un plazo máximo de 72 horas.
+                        Emitimos facturas fiscales (CFDI) para todos los pagos. Puedes solicitarla al momento del pago o
+                        después desde tu cuenta. Las facturas se envían en un plazo máximo de 72 horas.
                       </p>
                     </div>
                   </div>
