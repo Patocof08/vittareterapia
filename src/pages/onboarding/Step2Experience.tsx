@@ -124,6 +124,9 @@ export const Step2Experience = () => {
               value={formData.years_experience}
               onChange={(e) => handleChange("years_experience", parseInt(e.target.value) || 0)}
             />
+            <p className="text-xs text-muted-foreground">
+              Nota: Una vez establecida, la experiencia se actualizará automáticamente cada año
+            </p>
           </div>
 
           {/* Therapeutic Approaches */}

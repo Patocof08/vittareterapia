@@ -10,7 +10,7 @@ import { Upload, User } from "lucide-react";
 import { toast } from "sonner";
 
 const languages = ["Español", "Inglés", "Francés", "Alemán", "Portugués", "Italiano"];
-const modalities = ["Videollamada", "Presencial", "Chat"];
+const modalities = ["Videollamada", "Presencial"];
 
 export const Step1PersonalData = () => {
   const { data, updateData, nextStep, uploadFile } = useOnboardingContext();

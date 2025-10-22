@@ -52,7 +52,7 @@ interface Document {
 }
 
 const languages = ["Español", "Inglés", "Francés", "Alemán", "Portugués", "Italiano"];
-const modalities = ["Videollamada", "Presencial", "Chat"];
+const modalities = ["Videollamada", "Presencial"];
 
 const suggestedApproaches = [
   "Terapia Cognitivo-Conductual (TCC)",
@@ -227,19 +227,16 @@ export default function TherapistSettings() {
     if (!user || !profileData || !psychologistId) return;
 
     try {
-      // Update profile
+      // Update profile (excluding email, phone, and years_experience)
       const { error: profileError } = await supabase
         .from("psychologist_profiles")
         .update({
           first_name: profileData.first_name,
           last_name: profileData.last_name,
-          email: profileData.email,
-          phone: profileData.phone,
           city: profileData.city,
           country: profileData.country,
           bio_short: profileData.bio_short,
           bio_extended: profileData.bio_extended,
-          years_experience: profileData.years_experience,
           specialties: profileData.specialties,
           therapeutic_approaches: profileData.therapeutic_approaches,
           languages: profileData.languages,
@@ -516,19 +513,19 @@ export default function TherapistSettings() {
                   <Input
                     type="email"
                     value={profileData?.email || ""}
-                    onChange={(e) =>
-                      setProfileData({ ...profileData!, email: e.target.value })
-                    }
+                    disabled
+                    className="opacity-60 cursor-not-allowed"
                   />
+                  <p className="text-xs text-muted-foreground mt-1">El correo no se puede modificar</p>
                 </div>
                 <div>
                   <Label>Teléfono</Label>
                   <Input
                     value={profileData?.phone || ""}
-                    onChange={(e) =>
-                      setProfileData({ ...profileData!, phone: e.target.value })
-                    }
+                    disabled
+                    className="opacity-60 cursor-not-allowed"
                   />
+                  <p className="text-xs text-muted-foreground mt-1">El teléfono no se puede modificar</p>
                 </div>
               </div>
 
@@ -620,16 +617,13 @@ export default function TherapistSettings() {
                 <Label>Años de experiencia</Label>
                 <Input
                   type="number"
-                  min="0"
-                  max="50"
                   value={profileData?.years_experience || 0}
-                  onChange={(e) =>
-                    setProfileData({
-                      ...profileData!,
-                      years_experience: parseInt(e.target.value) || 0,
-                    })
-                  }
+                  disabled
+                  className="opacity-60 cursor-not-allowed"
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  La experiencia se actualiza automáticamente cada año
+                </p>
               </div>
 
               {/* Therapeutic Approaches */}
