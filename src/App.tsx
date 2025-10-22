@@ -37,8 +37,7 @@ import ClientDashboard from "./pages/client/ClientDashboard";
 import ClientBooking from "./pages/client/ClientBooking";
 import ClientSessions from "./pages/client/ClientSessions";
 import ClientMessages from "./pages/client/ClientMessages";
-import ClientPayments from "./pages/client/ClientPayments";
-import ClientProfile from "./pages/client/ClientProfile";
+import ClientSettings from "./pages/client/ClientSettings";
 import ClientTasks from "./pages/client/ClientTasks";
 import Auth from "./pages/Auth";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -107,8 +106,7 @@ const App = () => {
             <Route path="tareas" element={<ClientTasks />} />
             <Route path="agendar" element={<ClientBooking />} />
             <Route path="sesiones" element={<ClientSessions />} />
-            <Route path="pagos" element={<ClientPayments />} />
-            <Route path="perfil" element={<ClientProfile />} />
+            <Route path="ajustes" element={<ClientSettings />} />
           </Route>
 
           {/* Admin Panel Routes - Protected */}
