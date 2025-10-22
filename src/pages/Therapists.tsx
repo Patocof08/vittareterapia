@@ -84,7 +84,6 @@ const Therapists = () => {
             .from("patient_preferences")
             .select("*")
             .eq("user_id", user.id)
-            .eq("is_active", true)
             .maybeSingle();
 
           if (!error && data) {
@@ -140,8 +139,8 @@ const Therapists = () => {
     }
   };
 
-  // Apply matching algorithm if preferences exist
-  const rankedTherapists = savedPreferences 
+  // Apply matching algorithm if preferences exist AND are active
+  const rankedTherapists = savedPreferences?.is_active
     ? rankTherapists(
         therapists.map(t => {
           const pricing = t.pricing?.[0];
@@ -221,7 +220,7 @@ const Therapists = () => {
               <Sparkles className="w-5 h-5" />
               {savedPreferences ? 'Actualizar' : 'Configurar'} atención personalizada (2 min)
             </Button>
-            {savedPreferences && (
+            {savedPreferences && savedPreferences.is_active && (
               <>
                 <Badge variant="secondary" className="text-sm py-2 px-4">
                   <Sparkles className="w-4 h-4 mr-2" />
@@ -234,10 +233,10 @@ const Therapists = () => {
                     if (user) {
                       await supabase
                         .from("patient_preferences")
-                        .delete()
+                        .update({ is_active: false })
                         .eq("user_id", user.id);
-                      setSavedPreferences(null);
-                      toast.success("Preferencias eliminadas - mostrando todos los terapeutas");
+                      setSavedPreferences({ ...savedPreferences, is_active: false });
+                      toast.success("Mostrando todos los terapeutas");
                     }
                   }}
                   className="gap-2"
@@ -246,6 +245,26 @@ const Therapists = () => {
                   Ver todos
                 </Button>
               </>
+            )}
+            {savedPreferences && !savedPreferences.is_active && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  if (user) {
+                    await supabase
+                      .from("patient_preferences")
+                      .update({ is_active: true })
+                      .eq("user_id", user.id);
+                    setSavedPreferences({ ...savedPreferences, is_active: true });
+                    toast.success("Recomendaciones activadas");
+                  }
+                }}
+                className="gap-2"
+              >
+                <Sparkles className="w-4 h-4" />
+                Activar recomendaciones
+              </Button>
             )}
           </div>
         </div>
@@ -397,8 +416,8 @@ const Therapists = () => {
                   const pricing = therapist.pricing?.[0];
                   
                   return (
-                    <div key={therapist.id} className="relative">
-                      {savedPreferences && match.matchLevel !== 'compatible' && (
+                  <div key={therapist.id} className="relative">
+                      {savedPreferences?.is_active && match.matchLevel !== 'compatible' && (
                         <div className="absolute -top-3 left-4 z-10">
                           <Badge 
                             variant={match.matchLevel === 'top' ? 'default' : 'secondary'}
@@ -420,7 +439,7 @@ const Therapists = () => {
                         languages={therapist.languages || []}
                         availability="Disponible"
                       />
-                      {savedPreferences && match.reasons.length > 0 && (
+                      {savedPreferences?.is_active && match.reasons.length > 0 && (
                         <div className="mt-2 flex flex-wrap gap-2">
                           {match.reasons.slice(0, 3).map((reason, idx) => (
                             <Badge key={idx} variant="outline" className="text-xs">
