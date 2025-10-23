@@ -108,6 +108,11 @@ export default function ClientSessions() {
   const handleCancelAppointment = async () => {
     if (!selectedAppointment) return;
     try {
+      const sessionTime = new Date(selectedAppointment.start_time);
+      const now = new Date();
+      const hoursUntilSession = (sessionTime.getTime() - now.getTime()) / (1000 * 60 * 60);
+      const isCancelledLate = hoursUntilSession < 24;
+
       // @ts-ignore - Types will regenerate automatically
       const { error } = await supabase
         // @ts-ignore - Types will regenerate automatically
@@ -115,7 +120,9 @@ export default function ClientSessions() {
         .update({
           status: "cancelled",
           cancelled_by: user?.id,
-          cancellation_reason: "Cancelado por el paciente",
+          cancellation_reason: isCancelledLate 
+            ? "Cancelado menos de 24h antes - Se cobra sesión" 
+            : "Cancelado por el paciente",
         })
         .eq("id", selectedAppointment.id);
 
@@ -124,27 +131,38 @@ export default function ClientSessions() {
       // Si es suscripción, devolver crédito
       const { data: payment } = await supabase
         .from("payments")
-        .select("subscription_id")
+        .select("id, subscription_id")
         .eq("appointment_id", selectedAppointment.id)
         .single();
 
-      if (payment?.subscription_id) {
-        // Obtener suscripción actual
-        const { data: subscription } = await supabase
-          .from("client_subscriptions")
-          .select("sessions_used, sessions_remaining")
-          .eq("id", payment.subscription_id)
-          .single();
-
-        if (subscription) {
-          // Incrementar sesiones disponibles
+      if (payment) {
+        // Si se cancela con más de 24 horas, marcar pago como cancelado (no se cobra)
+        if (!isCancelledLate) {
           await supabase
+            .from("payments")
+            .update({ payment_status: "cancelled" })
+            .eq("id", payment.id);
+        }
+        // Si se cancela con menos de 24 horas, el pago se mantiene como "pending" (se cobra)
+
+        if (payment.subscription_id) {
+          // Obtener suscripción actual
+          const { data: subscription } = await supabase
             .from("client_subscriptions")
-            .update({
-              sessions_used: Math.max(0, subscription.sessions_used - 1),
-              sessions_remaining: subscription.sessions_remaining + 1,
-            })
-            .eq("id", payment.subscription_id);
+            .select("sessions_used, sessions_remaining")
+            .eq("id", payment.subscription_id)
+            .single();
+
+          if (subscription && !isCancelledLate) {
+            // Solo devolver crédito si se canceló con más de 24 horas
+            await supabase
+              .from("client_subscriptions")
+              .update({
+                sessions_used: Math.max(0, subscription.sessions_used - 1),
+                sessions_remaining: subscription.sessions_remaining + 1,
+              })
+              .eq("id", payment.subscription_id);
+          }
         }
       }
 
@@ -155,6 +173,7 @@ export default function ClientSessions() {
       toast.error("Error al cancelar la cita");
     } finally {
       setCancelDialogOpen(false);
+      setLateDialogOpen(false);
       setSelectedAppointment(null);
     }
   };
@@ -174,6 +193,20 @@ export default function ClientSessions() {
         .eq("id", selectedAppointment.id);
 
       if (error) throw error;
+
+      // Marcar el pago como cancelado (no se cobra porque se canceló con más de 24h)
+      const { data: payment } = await supabase
+        .from("payments")
+        .select("id")
+        .eq("appointment_id", selectedAppointment.id)
+        .single();
+
+      if (payment) {
+        await supabase
+          .from("payments")
+          .update({ payment_status: "cancelled" })
+          .eq("id", payment.id);
+      }
 
       if (refundOption === "credit") {
         toast.success("Cita cancelada. El crédito se ha agregado a tu cuenta.");

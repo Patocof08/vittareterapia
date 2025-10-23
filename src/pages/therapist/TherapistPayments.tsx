@@ -29,6 +29,8 @@ interface EarningsStats {
 
 export default function TherapistPayments() {
   const [payments, setPayments] = useState<Payment[]>([]);
+  const [filteredPayments, setFilteredPayments] = useState<Payment[]>([]);
+  const [statusFilter, setStatusFilter] = useState<string>("active"); // "active", "all", "cancelled"
   const [stats, setStats] = useState<EarningsStats>({
     monthlyIncome: 0,
     monthlySessions: 0,
@@ -95,12 +97,39 @@ export default function TherapistPayments() {
         pendingPayments: pending.reduce((sum, p) => sum + Number(p.amount), 0),
         totalEarnings: completed.reduce((sum, p) => sum + Number(p.amount), 0),
       });
+
+      // Apply default filter
+      applyFilter("active", transformedPayments);
     } catch (error) {
       console.error("Error fetching payments:", error);
       toast.error("Error al cargar los pagos");
     } finally {
       setLoading(false);
     }
+  };
+
+  const applyFilter = (filter: string, paymentsToFilter = payments) => {
+    setStatusFilter(filter);
+    let filtered = [...paymentsToFilter];
+
+    switch (filter) {
+      case "active":
+        // Mostrar pendientes y completadas (excluir canceladas)
+        filtered = paymentsToFilter.filter(p => 
+          p.payment_status === "pending" || p.payment_status === "completed"
+        );
+        break;
+      case "cancelled":
+        // Solo mostrar canceladas
+        filtered = paymentsToFilter.filter(p => p.payment_status === "cancelled");
+        break;
+      case "all":
+        // Mostrar todas
+        filtered = paymentsToFilter;
+        break;
+    }
+
+    setFilteredPayments(filtered);
   };
 
   const getPaymentTypeLabel = (type: string) => {
@@ -121,6 +150,10 @@ export default function TherapistPayments() {
       pending: { 
         label: "Pendiente", 
         className: "bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-950 dark:text-yellow-400 dark:border-yellow-800" 
+      },
+      cancelled: {
+        label: "Cancelado (sin cargo)",
+        className: "bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-950 dark:text-gray-400 dark:border-gray-800"
       },
     };
     return config[status] || { label: status, className: "" };
@@ -186,22 +219,58 @@ export default function TherapistPayments() {
       {/* Payment History */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="w-5 h-5" />
-            Historial de Pagos
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <FileText className="w-5 h-5" />
+              Historial de Pagos
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => applyFilter("active")}
+                className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                  statusFilter === "active"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                }`}
+              >
+                Activos
+              </button>
+              <button
+                onClick={() => applyFilter("cancelled")}
+                className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                  statusFilter === "cancelled"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                }`}
+              >
+                Cancelados
+              </button>
+              <button
+                onClick={() => applyFilter("all")}
+                className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                  statusFilter === "all"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                }`}
+              >
+                Todos
+              </button>
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {payments.length === 0 ? (
+          {filteredPayments.length === 0 ? (
             <div className="text-center py-12">
               <FileText className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
               <p className="text-muted-foreground">
-                No hay transacciones registradas todavía
+                {statusFilter === "cancelled" 
+                  ? "No hay pagos cancelados" 
+                  : "No hay transacciones registradas todavía"}
               </p>
             </div>
           ) : (
             <div className="space-y-4">
-              {payments.map((payment) => {
+              {filteredPayments.map((payment) => {
                 const statusInfo = getStatusBadge(payment.payment_status);
                 return (
                   <div
