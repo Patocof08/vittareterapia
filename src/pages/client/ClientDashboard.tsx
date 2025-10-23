@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 export default function ClientDashboard() {
   const { user } = useAuth();
   const [nextSession, setNextSession] = useState<any>(null);
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -44,6 +45,25 @@ export default function ClientDashboard() {
           });
         } else {
           setNextSession(null);
+        }
+
+        // Load unread messages count
+        const { data: conversationsData } = await supabase
+          .from("conversations")
+          .select("id")
+          .eq("client_id", user.id);
+
+        if (conversationsData && conversationsData.length > 0) {
+          const conversationIds = conversationsData.map(c => c.id);
+          
+          const { count } = await supabase
+            .from("messages")
+            .select("*", { count: 'exact', head: true })
+            .in("conversation_id", conversationIds)
+            .eq("is_read", false)
+            .neq("sender_id", user.id);
+
+          setUnreadMessagesCount(count || 0);
         }
       } catch (error) {
         console.error("Error loading next session:", error);
@@ -110,8 +130,9 @@ export default function ClientDashboard() {
               <MessageSquare className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
+              <div className="text-2xl font-bold">{unreadMessagesCount}</div>
               <p className="text-xs text-muted-foreground">
-                Chat con tu psicólogo
+                {unreadMessagesCount === 0 ? "Sin mensajes nuevos" : `${unreadMessagesCount} mensaje${unreadMessagesCount !== 1 ? 's' : ''} sin leer`}
               </p>
             </CardContent>
           </Link>
