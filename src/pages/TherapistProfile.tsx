@@ -4,6 +4,8 @@ import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import { Star, Video, Globe, GraduationCap, Award, Heart, ArrowLeft } from "lucide-react";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
@@ -22,6 +24,7 @@ const TherapistProfile = () => {
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [selectedTime, setSelectedTime] = useState("");
+  const [modality, setModality] = useState<"Videollamada" | "Presencial">("Videollamada");
   const [showBookingDialog, setShowBookingDialog] = useState(false);
   const [showAuthPopup, setShowAuthPopup] = useState(false);
 
@@ -157,7 +160,7 @@ const TherapistProfile = () => {
           start_time: startTime.toISOString(),
           end_time: endTime.toISOString(),
           status: "pending",
-          modality: "Videollamada",
+          modality: modality,
         });
 
         if (error) throw error;
@@ -195,7 +198,7 @@ const TherapistProfile = () => {
           start_time: startTime.toISOString(),
           end_time: endTime.toISOString(),
           status: "pending",
-          modality: "Videollamada",
+          modality: modality,
         });
 
         if (apptError) throw apptError;
@@ -379,6 +382,20 @@ const TherapistProfile = () => {
                       className="rounded-lg border border-border"
                       disabled={(date) => date < new Date()}
                     />
+                  </div>
+
+                  <div>
+                    <h3 className="font-semibold mb-3">Modalidad</h3>
+                    <RadioGroup value={modality} onValueChange={(v: any) => setModality(v)}>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="Videollamada" id="videollamada" />
+                        <Label htmlFor="videollamada">Videollamada</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="Presencial" id="presencial" />
+                        <Label htmlFor="presencial">Presencial</Label>
+                      </div>
+                    </RadioGroup>
                   </div>
 
                   <div>
