@@ -17,8 +17,6 @@ interface PatientInfo {
   id: string;
   full_name: string;
   avatar_url: string | null;
-  email: string;
-  phone: string | null;
 }
 
 interface Session {
@@ -71,10 +69,10 @@ export default function PatientDetail() {
         if (!profile) return;
         setPsychologistId(profile.id);
 
-        // Get patient info
+        // Get patient info (only non-sensitive data)
         const { data: patientData } = await supabase
           .from("profiles")
-          .select("*")
+          .select("id, full_name, avatar_url")
           .eq("id", patientId)
           .single();
 
@@ -244,10 +242,6 @@ export default function PatientDetail() {
           </Avatar>
           <div>
             <h1 className="text-3xl font-bold text-foreground">{patient.full_name}</h1>
-            <p className="text-muted-foreground">{patient.email}</p>
-            {patient.phone && (
-              <p className="text-sm text-muted-foreground">{patient.phone}</p>
-            )}
           </div>
         </div>
       </div>
