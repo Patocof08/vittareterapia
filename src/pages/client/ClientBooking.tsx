@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "lucide-react";
+import { Calendar, ArrowLeft } from "lucide-react";
 
 export default function ClientBooking() {
   const [searchParams] = useSearchParams();
@@ -56,13 +56,22 @@ export default function ClientBooking() {
   if (psychologistId) {
     return (
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">
-            Agendar Sesión
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Selecciona fecha y hora disponibles
-          </p>
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate("/portal/agendar")}
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">
+              Agendar Sesión
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              Selecciona fecha y hora disponibles
+            </p>
+          </div>
         </div>
 
         <BookingCalendar psychologistId={psychologistId} />
