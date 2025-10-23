@@ -86,6 +86,15 @@ export default function ClientMessages() {
           const newMessage = payload.new as Message;
           setMessages(prev => [...prev, newMessage]);
           
+          // Update conversation list with new message
+          setConversations(prev =>
+            prev.map(c =>
+              c.id === selectedConversation.id
+                ? { ...c, last_message: newMessage.content, last_message_at: newMessage.created_at }
+                : c
+            ).sort((a, b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime())
+          );
+          
           // Mark as read if message is from psychologist
           if (newMessage.sender_id !== user?.id) {
             markMessagesAsRead();
@@ -377,56 +386,58 @@ export default function ClientMessages() {
                 </div>
 
                 {/* Messages area */}
-                <ScrollArea className="flex-1 p-4">
-                  {messages.length === 0 ? (
-                    <div className="flex items-center justify-center h-full">
-                      <div className="text-center">
-                        <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-50 text-muted-foreground" />
-                        <p className="text-muted-foreground">No hay mensajes aún</p>
-                        <p className="text-sm mt-1 text-muted-foreground">
-                          Inicia una conversación con tu psicólogo
-                        </p>
+                <div className="flex-1 overflow-hidden">
+                  <ScrollArea className="h-full p-4">
+                    {messages.length === 0 ? (
+                      <div className="flex items-center justify-center h-full min-h-[300px]">
+                        <div className="text-center">
+                          <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-50 text-muted-foreground" />
+                          <p className="text-muted-foreground">No hay mensajes aún</p>
+                          <p className="text-sm mt-1 text-muted-foreground">
+                            Inicia una conversación con tu psicólogo
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {messages.map((message) => {
-                        const isClient = message.sender_id === user?.id;
-                        return (
-                          <div
-                            key={message.id}
-                            className={`flex ${isClient ? "justify-end" : "justify-start"}`}
-                          >
+                    ) : (
+                      <div className="space-y-4">
+                        {messages.map((message) => {
+                          const isClient = message.sender_id === user?.id;
+                          return (
                             <div
-                              className={`max-w-[70%] p-3 rounded-lg ${
-                                isClient
-                                  ? "bg-primary text-primary-foreground"
-                                  : "bg-accent"
-                              }`}
+                              key={message.id}
+                              className={`flex ${isClient ? "justify-end" : "justify-start"}`}
                             >
-                              <p className="text-sm whitespace-pre-wrap break-words">
-                                {message.content}
-                              </p>
-                              <p
-                                className={`text-xs mt-1 ${
+                              <div
+                                className={`max-w-[70%] p-3 rounded-lg ${
                                   isClient
-                                    ? "text-primary-foreground/70"
-                                    : "text-muted-foreground"
+                                    ? "bg-primary text-primary-foreground"
+                                    : "bg-accent"
                                 }`}
                               >
-                                {format(new Date(message.created_at), "HH:mm", { locale: es })}
-                              </p>
+                                <p className="text-sm whitespace-pre-wrap break-words">
+                                  {message.content}
+                                </p>
+                                <p
+                                  className={`text-xs mt-1 ${
+                                    isClient
+                                      ? "text-primary-foreground/70"
+                                      : "text-muted-foreground"
+                                  }`}
+                                >
+                                  {format(new Date(message.created_at), "HH:mm", { locale: es })}
+                                </p>
+                              </div>
                             </div>
-                          </div>
-                        );
-                      })}
-                      <div ref={messagesEndRef} />
-                    </div>
-                  )}
-                </ScrollArea>
+                          );
+                        })}
+                        <div ref={messagesEndRef} />
+                      </div>
+                    )}
+                  </ScrollArea>
+                </div>
 
                 {/* Input area */}
-                <div className="border-t p-4">
+                <div className="border-t p-4 flex-shrink-0">
                   <div className="flex gap-2">
                     <Input
                       placeholder="Escribe un mensaje..."

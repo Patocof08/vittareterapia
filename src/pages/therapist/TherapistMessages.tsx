@@ -412,44 +412,46 @@ export default function TherapistMessages() {
             ) : (
               <>
                 {/* Messages */}
-                <ScrollArea className="flex-1 p-4">
-                  <div className="space-y-4">
-                    {messages.map((message) => {
-                      const isTherapist = message.sender_id === user?.id;
-                      return (
-                        <div
-                          key={message.id}
-                          className={`flex ${isTherapist ? "justify-end" : "justify-start"}`}
-                        >
+                <div className="flex-1 overflow-hidden">
+                  <ScrollArea className="h-full p-4">
+                    <div className="space-y-4">
+                      {messages.map((message) => {
+                        const isTherapist = message.sender_id === user?.id;
+                        return (
                           <div
-                            className={`max-w-[70%] p-3 rounded-lg ${
-                              isTherapist
-                                ? "bg-primary text-primary-foreground"
-                                : "bg-accent"
-                            }`}
+                            key={message.id}
+                            className={`flex ${isTherapist ? "justify-end" : "justify-start"}`}
                           >
-                            <p className="text-sm whitespace-pre-wrap break-words">
-                              {message.content}
-                            </p>
-                            <p
-                              className={`text-xs mt-1 ${
+                            <div
+                              className={`max-w-[70%] p-3 rounded-lg ${
                                 isTherapist
-                                  ? "text-primary-foreground/70"
-                                  : "text-muted-foreground"
+                                  ? "bg-primary text-primary-foreground"
+                                  : "bg-accent"
                               }`}
                             >
-                              {format(new Date(message.created_at), "HH:mm", { locale: es })}
-                            </p>
+                              <p className="text-sm whitespace-pre-wrap break-words">
+                                {message.content}
+                              </p>
+                              <p
+                                className={`text-xs mt-1 ${
+                                  isTherapist
+                                    ? "text-primary-foreground/70"
+                                    : "text-muted-foreground"
+                                }`}
+                              >
+                                {format(new Date(message.created_at), "HH:mm", { locale: es })}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
-                    <div ref={messagesEndRef} />
-                  </div>
-                </ScrollArea>
+                        );
+                      })}
+                      <div ref={messagesEndRef} />
+                    </div>
+                  </ScrollArea>
+                </div>
 
                 {/* Message input */}
-                <div className="border-t p-4">
+                <div className="border-t p-4 flex-shrink-0">
                   <div className="flex gap-2">
                     <Input
                       placeholder="Escribe un mensaje..."
