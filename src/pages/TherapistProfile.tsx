@@ -170,20 +170,24 @@ const TherapistProfile = () => {
 
         // Create payment record for single session
         // @ts-ignore - Types will regenerate automatically
-        const { error: paymentError } = await supabase.from("payments").insert({
-          client_id: user.id,
-          psychologist_id: id,
-          appointment_id: appointment.id,
-          amount: pricing?.session_price || 0,
-          payment_type: "single_session",
-          payment_status: "pending",
-          description: `Sesión individual - ${format(startTime, "dd 'de' MMMM, yyyy 'a las' HH:mm", { locale: es })}`,
-        });
+        const { data: payment, error: paymentError } = await supabase
+          .from("payments")
+          .insert({
+            client_id: user.id,
+            psychologist_id: id,
+            appointment_id: appointment.id,
+            amount: pricing?.session_price || 0,
+            payment_type: "single_session",
+            payment_status: "pending",
+            description: `Sesión individual - ${format(startTime, "dd 'de' MMMM, yyyy 'a las' HH:mm", { locale: es })}`,
+          })
+          .select()
+          .single();
 
-        if (paymentError) console.error("Error creating payment:", paymentError);
+        if (paymentError) throw paymentError;
 
-        toast.success("Cita agendada con éxito. Procede al pago para confirmar.");
-        navigate("/portal/sesiones");
+        // Redirect to checkout
+        navigate(`/portal/checkout?payment_id=${payment.id}`);
       } else {
         // Create subscription with package
         const sessionsTotal = type === "package_4" ? 4 : 8;
@@ -226,20 +230,24 @@ const TherapistProfile = () => {
 
         // Create payment record for package
         // @ts-ignore - Types will regenerate automatically
-        const { error: paymentError } = await supabase.from("payments").insert({
-          client_id: user.id,
-          psychologist_id: id,
-          subscription_id: subscription.id,
-          amount: packagePrice || 0,
-          payment_type: type,
-          payment_status: "pending",
-          description: `Paquete de ${sessionsTotal} sesiones con ${discountPercentage}% de descuento`,
-        });
+        const { data: payment, error: paymentError } = await supabase
+          .from("payments")
+          .insert({
+            client_id: user.id,
+            psychologist_id: id,
+            subscription_id: subscription.id,
+            amount: packagePrice || 0,
+            payment_type: type,
+            payment_status: "pending",
+            description: `Paquete de ${sessionsTotal} sesiones con ${discountPercentage}% de descuento`,
+          })
+          .select()
+          .single();
 
-        if (paymentError) console.error("Error creating payment:", paymentError);
+        if (paymentError) throw paymentError;
 
-        toast.success(`Paquete de ${sessionsTotal} sesiones adquirido. Procede al pago para activar.`);
-        navigate("/portal/suscripciones");
+        // Redirect to checkout
+        navigate(`/portal/checkout?payment_id=${payment.id}`);
       }
     } catch (error: any) {
       console.error("Error booking:", error);

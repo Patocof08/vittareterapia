@@ -52,7 +52,7 @@ export default function ClientPayments() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Fetch payments with psychologist info
+      // Fetch only completed payments with psychologist info
       const { data: paymentsData, error } = await supabase
         .from("payments")
         .select(`
@@ -64,6 +64,7 @@ export default function ClientPayments() {
           invoice:invoices(id, invoice_number)
         `)
         .eq("client_id", user.id)
+        .eq("payment_status", "completed")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -76,14 +77,13 @@ export default function ClientPayments() {
       
       setPayments(transformedPayments);
 
-      // Calculate stats
+      // Calculate stats - only completed payments
       const completed = (paymentsData || []).filter(p => p.payment_status === 'completed');
-      const pending = (paymentsData || []).filter(p => p.payment_status === 'pending');
       
       setStats({
         totalPaid: completed.reduce((sum, p) => sum + Number(p.amount), 0),
         sessionsPaid: completed.length,
-        pending: pending.reduce((sum, p) => sum + Number(p.amount), 0),
+        pending: 0,
       });
     } catch (error) {
       console.error("Error fetching payments:", error);
@@ -177,12 +177,17 @@ export default function ClientPayments() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Pendientes
+              Último Pago
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">
-              ${stats.pending.toFixed(2)}
+              {payments.length > 0 ? `$${Number(payments[0].amount).toFixed(2)}` : "$0.00"}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {payments.length > 0 
+                ? format(new Date(payments[0].created_at), "dd/MM/yyyy", { locale: es })
+                : "Sin pagos"}
             </p>
           </CardContent>
         </Card>
