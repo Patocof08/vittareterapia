@@ -446,8 +446,8 @@ export default function TherapistMessages() {
         </Card>
 
         {/* Chat area */}
-        <Card className="lg:col-span-2 flex flex-col">
-          <CardHeader className="border-b">
+        <Card className="lg:col-span-2 flex flex-col overflow-hidden">
+          <CardHeader className="border-b flex-shrink-0">
             <CardTitle className="flex items-center gap-3">
               {selectedConversation ? (
                 <>
@@ -464,7 +464,7 @@ export default function TherapistMessages() {
               )}
             </CardTitle>
           </CardHeader>
-          <CardContent className="flex-1 flex flex-col p-0">
+          <CardContent className="flex-1 flex flex-col p-0 min-h-0">
             {!selectedConversation ? (
               <div className="flex-1 flex items-center justify-center">
                 <div className="text-center">
@@ -478,7 +478,7 @@ export default function TherapistMessages() {
               <>
                 {/* Messages */}
                 <div
-                  className="flex-1 overflow-y-auto p-4"
+                  className="flex-1 overflow-y-auto p-4 min-h-0"
                   ref={messagesContainerRef}
                   onScroll={handleScroll}
                 >
