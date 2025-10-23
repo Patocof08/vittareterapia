@@ -26,6 +26,7 @@ const TherapistProfile = () => {
   const [selectedTime, setSelectedTime] = useState("");
   const [showBookingDialog, setShowBookingDialog] = useState(false);
   const [showAuthPopup, setShowAuthPopup] = useState(false);
+  const [bookedSlots, setBookedSlots] = useState<string[]>([]);
 
   useEffect(() => {
     const loadTherapist = async () => {
@@ -74,6 +75,37 @@ const TherapistProfile = () => {
     }
   }, [id]);
 
+  // Load booked appointments when date changes
+  useEffect(() => {
+    const loadBookedSlots = async () => {
+      if (!selectedDate || !id) return;
+
+      const startOfDay = new Date(selectedDate);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(selectedDate);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      // @ts-ignore - Types will regenerate automatically
+      const { data: appointments } = await supabase
+        .from("appointments")
+        .select("start_time, end_time")
+        .eq("psychologist_id", id)
+        .gte("start_time", startOfDay.toISOString())
+        .lte("start_time", endOfDay.toISOString())
+        .in("status", ["pending", "confirmed"]);
+
+      if (appointments) {
+        const booked = appointments.map((apt) => {
+          const start = new Date(apt.start_time);
+          return `${start.getHours().toString().padStart(2, '0')}:${start.getMinutes().toString().padStart(2, '0')}`;
+        });
+        setBookedSlots(booked);
+      }
+    };
+
+    loadBookedSlots();
+  }, [selectedDate, id]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -119,7 +151,11 @@ const TherapistProfile = () => {
       const [endHour] = slot.end_time.split(':').map(Number);
       
       for (let hour = startHour; hour < endHour; hour++) {
-        times.push(`${hour.toString().padStart(2, '0')}:00`);
+        const timeSlot = `${hour.toString().padStart(2, '0')}:00`;
+        // Only add if not already booked
+        if (!bookedSlots.includes(timeSlot)) {
+          times.push(timeSlot);
+        }
       }
     });
 
