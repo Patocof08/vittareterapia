@@ -42,6 +42,8 @@ export default function TherapistDashboard() {
           .maybeSingle();
 
         if (profileData) {
+          console.log("Profile data:", profileData);
+          console.log("Pricing data:", profileData.pricing);
           setProfile(profileData as any);
 
           // Fetch sessions for today
@@ -176,10 +178,28 @@ export default function TherapistDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              ${profile?.pricing?.[0]?.session_price || 0}
+              ${(() => {
+                if (!profile?.pricing) return 0;
+                if (Array.isArray(profile.pricing) && profile.pricing.length > 0) {
+                  return profile.pricing[0].session_price;
+                }
+                if (typeof profile.pricing === 'object' && 'session_price' in profile.pricing) {
+                  return (profile.pricing as any).session_price;
+                }
+                return 0;
+              })()}
             </div>
             <p className="text-xs text-muted-foreground">
-              {profile?.pricing?.[0] ? 'Configurado' : 'Por configurar'}
+              {(() => {
+                if (!profile?.pricing) return 'Por configurar';
+                if (Array.isArray(profile.pricing) && profile.pricing.length > 0) {
+                  return 'Configurado';
+                }
+                if (typeof profile.pricing === 'object' && 'session_price' in profile.pricing) {
+                  return 'Configurado';
+                }
+                return 'Por configurar';
+              })()}
             </p>
           </CardContent>
         </Card>
