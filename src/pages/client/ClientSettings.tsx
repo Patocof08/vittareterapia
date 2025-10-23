@@ -13,6 +13,17 @@ import { passwordSchema } from "@/lib/validation";
 import { logger } from "@/lib/logger";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useToast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useNavigate } from "react-router-dom";
 
 interface ProfileData {
   full_name: string;
@@ -24,8 +35,10 @@ interface ProfileData {
 export default function ClientSettings() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("profile");
   const [loading, setLoading] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [profileData, setProfileData] = useState<ProfileData>({
     full_name: "",
     email: user?.email || "",
@@ -196,6 +209,36 @@ export default function ClientSettings() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!user) return;
+
+    setLoading(true);
+    try {
+      // Delete user account - this will cascade delete all related data
+      const { error } = await supabase.auth.admin.deleteUser(user.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Cuenta eliminada",
+        description: "Tu cuenta ha sido eliminada permanentemente."
+      });
+
+      // Sign out and redirect to home
+      await supabase.auth.signOut();
+      navigate("/");
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo eliminar la cuenta",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+      setShowDeleteDialog(false);
     }
   };
 
@@ -560,7 +603,12 @@ export default function ClientSettings() {
                 <Button variant="outline" size="sm">
                   Descargar Mis Datos
                 </Button>
-                <Button variant="destructive" size="sm">
+                <Button 
+                  variant="destructive" 
+                  size="sm"
+                  onClick={() => setShowDeleteDialog(true)}
+                  disabled={loading}
+                >
                   Eliminar Cuenta Permanentemente
                 </Button>
               </div>
@@ -568,6 +616,36 @@ export default function ClientSettings() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Delete Account Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Estás completamente seguro?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. Esto eliminará permanentemente tu cuenta
+              y todos tus datos de nuestros servidores, incluyendo:
+              <ul className="list-disc list-inside mt-2 space-y-1">
+                <li>Tu perfil y datos personales</li>
+                <li>Todas tus sesiones programadas</li>
+                <li>Tu historial de sesiones</li>
+                <li>Mensajes y conversaciones</li>
+                <li>Suscripciones y paquetes</li>
+              </ul>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={loading}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteAccount}
+              disabled={loading}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {loading ? "Eliminando..." : "Sí, eliminar mi cuenta"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
