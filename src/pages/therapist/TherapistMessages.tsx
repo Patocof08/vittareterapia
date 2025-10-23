@@ -1,32 +1,264 @@
-import { useState } from "react";
-import { MessageSquare, Send, Paperclip, AlertCircle } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { MessageSquare, Send, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-// Datos de mensajes/pacientes aún no conectados a la base
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
+
+interface Conversation {
+  id: string;
+  psychologist_id: string;
+  client_id: string;
+  last_message_at: string;
+  client_name: string;
+  client_avatar: string | null;
+  unread_count: number;
+  last_message?: string;
+}
+
+interface Message {
+  id: string;
+  conversation_id: string;
+  sender_id: string;
+  content: string;
+  is_read: boolean;
+  created_at: string;
+}
 
 export default function TherapistMessages() {
-  const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
+  const { user } = useAuth();
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [messageText, setMessageText] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
+  const [psychologistId, setPsychologistId] = useState<string | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const handleSendMessage = () => {
-    if (!messageText.trim()) {
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  useEffect(() => {
+    if (user) {
+      loadPsychologistProfile();
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (psychologistId) {
+      loadConversations();
+    }
+  }, [psychologistId]);
+
+  useEffect(() => {
+    if (selectedConversation) {
+      loadMessages(selectedConversation.id);
+      markMessagesAsRead(selectedConversation.id);
+    }
+  }, [selectedConversation]);
+
+  // Realtime subscription for new messages
+  useEffect(() => {
+    if (!selectedConversation) return;
+
+    const channel = supabase
+      .channel('messages-channel')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `conversation_id=eq.${selectedConversation.id}`
+        },
+        (payload) => {
+          const newMessage = payload.new as Message;
+          setMessages(prev => [...prev, newMessage]);
+          
+          // Mark as read if we're viewing the conversation
+          if (newMessage.sender_id !== user?.id) {
+            markMessagesAsRead(selectedConversation.id);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [selectedConversation, user]);
+
+  const loadPsychologistProfile = async () => {
+    if (!user) return;
+
+    const { data: profile } = await supabase
+      .from("psychologist_profiles")
+      .select("id")
+      .eq("user_id", user.id)
+      .single();
+
+    if (profile) {
+      setPsychologistId(profile.id);
+    }
+  };
+
+  const loadConversations = async () => {
+    if (!psychologistId) return;
+
+    try {
+      setLoading(true);
+
+      // Get conversations
+      const { data: convos, error: convosError } = await supabase
+        .from("conversations")
+        .select("*")
+        .eq("psychologist_id", psychologistId)
+        .order("last_message_at", { ascending: false });
+
+      if (convosError) throw convosError;
+
+      if (!convos || convos.length === 0) {
+        setConversations([]);
+        setLoading(false);
+        return;
+      }
+
+      // Get client profiles
+      const clientIds = convos.map(c => c.client_id);
+      const { data: profiles, error: profilesError } = await supabase
+        .from("profiles")
+        .select("id, full_name, avatar_url")
+        .in("id", clientIds);
+
+      if (profilesError) throw profilesError;
+
+      // Get unread counts and last messages for each conversation
+      const enrichedConvos = await Promise.all(
+        convos.map(async (convo) => {
+          const profile = profiles?.find(p => p.id === convo.client_id);
+          
+          // Get unread count
+          const { count } = await supabase
+            .from("messages")
+            .select("*", { count: "exact", head: true })
+            .eq("conversation_id", convo.id)
+            .eq("is_read", false)
+            .neq("sender_id", user!.id);
+
+          // Get last message
+          const { data: lastMsg } = await supabase
+            .from("messages")
+            .select("content")
+            .eq("conversation_id", convo.id)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .single();
+
+          return {
+            ...convo,
+            client_name: profile?.full_name || "Cliente",
+            client_avatar: profile?.avatar_url || null,
+            unread_count: count || 0,
+            last_message: lastMsg?.content || ""
+          };
+        })
+      );
+
+      setConversations(enrichedConvos);
+    } catch (error) {
+      console.error("Error loading conversations:", error);
+      toast.error("Error al cargar conversaciones");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadMessages = async (conversationId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("messages")
+        .select("*")
+        .eq("conversation_id", conversationId)
+        .order("created_at", { ascending: true });
+
+      if (error) throw error;
+      setMessages(data || []);
+    } catch (error) {
+      console.error("Error loading messages:", error);
+      toast.error("Error al cargar mensajes");
+    }
+  };
+
+  const markMessagesAsRead = async (conversationId: string) => {
+    if (!user) return;
+
+    try {
+      await supabase
+        .from("messages")
+        .update({ is_read: true })
+        .eq("conversation_id", conversationId)
+        .neq("sender_id", user.id)
+        .eq("is_read", false);
+
+      // Update local unread count
+      setConversations(prev =>
+        prev.map(c =>
+          c.id === conversationId ? { ...c, unread_count: 0 } : c
+        )
+      );
+    } catch (error) {
+      console.error("Error marking messages as read:", error);
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if (!messageText.trim() || !selectedConversation || !user) {
       toast.error("Escribe un mensaje antes de enviar");
       return;
     }
-    toast.success("Mensaje enviado");
-    setMessageText("");
+
+    setSending(true);
+    try {
+      const { error } = await supabase
+        .from("messages")
+        .insert({
+          conversation_id: selectedConversation.id,
+          sender_id: user.id,
+          content: messageText.trim(),
+          is_read: false
+        });
+
+      if (error) throw error;
+
+      setMessageText("");
+      loadConversations(); // Refresh to update last message
+    } catch (error) {
+      console.error("Error sending message:", error);
+      toast.error("Error al enviar mensaje");
+    } finally {
+      setSending(false);
+    }
   };
 
-  // Pacientes con mensajes
-  const patientsWithMessages: any[] = [];
-
-  // Mensajes del paciente seleccionado
-  const selectedMessages: any[] = [];
-
-  const selectedPatient: any = null;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-muted-foreground">Cargando conversaciones...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -37,7 +269,7 @@ export default function TherapistMessages() {
         </p>
       </div>
 
-      {/* Aviso de emergencias */}
+      {/* Emergency warning */}
       <Card className="border-destructive/50 bg-destructive/5">
         <CardContent className="pt-6">
           <div className="flex gap-3">
@@ -56,64 +288,83 @@ export default function TherapistMessages() {
         </CardContent>
       </Card>
 
-      {/* Interfaz de mensajería */}
+      {/* Messaging interface */}
       <div className="grid lg:grid-cols-3 gap-6 h-[600px]">
-        {/* Lista de conversaciones */}
-        <Card className="lg:col-span-1">
+        {/* Conversations list */}
+        <Card className="lg:col-span-1 flex flex-col">
           <CardHeader>
             <CardTitle>Conversaciones</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {patientsWithMessages.length === 0 ? (
-                <p className="text-muted-foreground text-center py-8">
-                  No hay conversaciones
-                </p>
-              ) : (
-                patientsWithMessages.map((patient) => {
-                  const unreadCount = 0;
-                  const lastMessageText = "";
-
-                  return (
+          <CardContent className="flex-1 overflow-hidden">
+            <ScrollArea className="h-full">
+              <div className="space-y-2 pr-4">
+                {conversations.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-8">
+                    No hay conversaciones
+                  </p>
+                ) : (
+                  conversations.map((convo) => (
                     <button
-                      key={patient.id}
-                      onClick={() => setSelectedPatientId(patient.id)}
+                      key={convo.id}
+                      onClick={() => setSelectedConversation(convo)}
                       className={`w-full p-3 rounded-lg text-left transition-colors ${
-                        selectedPatientId === patient.id
-                          ? "bg-primary/10 border-primary/20"
+                        selectedConversation?.id === convo.id
+                          ? "bg-primary/10 border-primary"
                           : "hover:bg-accent"
-                      } border border-border`}
+                      } border`}
                     >
-                      <div className="flex items-center justify-between mb-1">
-                        <p className="font-medium text-foreground">
-                          {patient.name}
-                        </p>
-                        {unreadCount > 0 && (
-                          <span className="bg-destructive text-destructive-foreground text-xs font-semibold px-2 py-0.5 rounded-full">
-                            {unreadCount}
-                          </span>
-                        )}
+                      <div className="flex items-center gap-3 mb-2">
+                        <Avatar className="w-10 h-10">
+                          <AvatarImage src={convo.client_avatar || ""} />
+                          <AvatarFallback>
+                            {convo.client_name.substring(0, 2).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <p className="font-medium text-foreground truncate">
+                              {convo.client_name}
+                            </p>
+                            {convo.unread_count > 0 && (
+                              <span className="bg-primary text-primary-foreground text-xs font-semibold px-2 py-0.5 rounded-full ml-2">
+                                {convo.unread_count}
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                      <p className="text-sm text-muted-foreground line-clamp-1">
-                        {lastMessageText}
+                      <p className="text-sm text-muted-foreground line-clamp-1 pl-[52px]">
+                        {convo.last_message || "No hay mensajes"}
                       </p>
                     </button>
-                  );
-                })
-              )}
-            </div>
+                  ))
+                )}
+              </div>
+            </ScrollArea>
           </CardContent>
         </Card>
 
-        {/* Chat */}
+        {/* Chat area */}
         <Card className="lg:col-span-2 flex flex-col">
-          <CardHeader>
-            <CardTitle>
-              {selectedPatient ? selectedPatient.name : "Selecciona una conversación"}
+          <CardHeader className="border-b">
+            <CardTitle className="flex items-center gap-3">
+              {selectedConversation ? (
+                <>
+                  <Avatar className="w-8 h-8">
+                    <AvatarImage src={selectedConversation.client_avatar || ""} />
+                    <AvatarFallback>
+                      {selectedConversation.client_name.substring(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  {selectedConversation.client_name}
+                </>
+              ) : (
+                "Selecciona una conversación"
+              )}
             </CardTitle>
           </CardHeader>
-          <CardContent className="flex-1 flex flex-col">
-            {!selectedPatientId ? (
+          <CardContent className="flex-1 flex flex-col p-0">
+            {!selectedConversation ? (
               <div className="flex-1 flex items-center justify-center">
                 <div className="text-center">
                   <MessageSquare className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
@@ -124,43 +375,46 @@ export default function TherapistMessages() {
               </div>
             ) : (
               <>
-                {/* Mensajes */}
-                <div className="flex-1 overflow-y-auto space-y-4 mb-4">
-                  {selectedMessages.map((message) => (
-                    <div
-                      key={message.id}
-                      className={`flex ${
-                        message.sender === "therapist" ? "justify-end" : "justify-start"
-                      }`}
-                    >
-                      <div
-                        className={`max-w-[70%] p-3 rounded-lg ${
-                          message.sender === "therapist"
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-accent text-accent-foreground"
-                        }`}
-                      >
-                        <p className="text-sm">{message.text}</p>
-                        <p
-                          className={`text-xs mt-1 ${
-                            message.sender === "therapist"
-                              ? "text-primary-foreground/70"
-                              : "text-muted-foreground"
-                          }`}
+                {/* Messages */}
+                <ScrollArea className="flex-1 p-4">
+                  <div className="space-y-4">
+                    {messages.map((message) => {
+                      const isTherapist = message.sender_id === user?.id;
+                      return (
+                        <div
+                          key={message.id}
+                          className={`flex ${isTherapist ? "justify-end" : "justify-start"}`}
                         >
-                          {new Date(message.timestamp).toLocaleString()}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                          <div
+                            className={`max-w-[70%] p-3 rounded-lg ${
+                              isTherapist
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-accent"
+                            }`}
+                          >
+                            <p className="text-sm whitespace-pre-wrap break-words">
+                              {message.content}
+                            </p>
+                            <p
+                              className={`text-xs mt-1 ${
+                                isTherapist
+                                  ? "text-primary-foreground/70"
+                                  : "text-muted-foreground"
+                              }`}
+                            >
+                              {format(new Date(message.created_at), "HH:mm", { locale: es })}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    <div ref={messagesEndRef} />
+                  </div>
+                </ScrollArea>
 
-                {/* Input de mensaje */}
-                <div className="border-t border-border pt-4">
+                {/* Message input */}
+                <div className="border-t p-4">
                   <div className="flex gap-2">
-                    <Button variant="outline" size="icon">
-                      <Paperclip className="w-4 h-4" />
-                    </Button>
                     <Input
                       placeholder="Escribe un mensaje..."
                       value={messageText}
@@ -171,8 +425,9 @@ export default function TherapistMessages() {
                           handleSendMessage();
                         }
                       }}
+                      disabled={sending}
                     />
-                    <Button onClick={handleSendMessage}>
+                    <Button onClick={handleSendMessage} disabled={sending}>
                       <Send className="w-4 h-4" />
                     </Button>
                   </div>
