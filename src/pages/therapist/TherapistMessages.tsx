@@ -87,6 +87,15 @@ export default function TherapistMessages() {
           const newMessage = payload.new as Message;
           setMessages(prev => [...prev, newMessage]);
           
+          // Update conversation list with new message
+          setConversations(prev =>
+            prev.map(c =>
+              c.id === selectedConversation.id
+                ? { ...c, last_message: newMessage.content, last_message_at: newMessage.created_at }
+                : c
+            ).sort((a, b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime())
+          );
+          
           // Mark as read if we're viewing the conversation
           if (newMessage.sender_id !== user?.id) {
             markMessagesAsRead(selectedConversation.id);
@@ -270,7 +279,7 @@ export default function TherapistMessages() {
       if (error) throw error;
 
       setMessageText("");
-      loadConversations(); // Refresh to update last message
+      // No need to reload conversations - realtime subscription will handle it
     } catch (error) {
       console.error("Error sending message:", error);
       toast.error("Error al enviar mensaje");
