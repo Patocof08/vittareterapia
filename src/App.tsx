@@ -42,6 +42,8 @@ import ClientMessages from "./pages/client/ClientMessages";
 import ClientSettings from "./pages/client/ClientSettings";
 import ClientSubscriptions from "./pages/client/ClientSubscriptions";
 import ClientTasks from "./pages/client/ClientTasks";
+import ClientPayments from "./pages/client/ClientPayments";
+import ClientProfile from "./pages/client/ClientProfile";
 import Auth from "./pages/Auth";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminVerifications from "./pages/admin/AdminVerifications";
@@ -112,6 +114,8 @@ const App = () => {
             <Route path="agendar" element={<ClientBooking />} />
             <Route path="sesiones" element={<ClientSessions />} />
             <Route path="suscripciones" element={<ClientSubscriptions />} />
+            <Route path="pagos" element={<ClientPayments />} />
+            <Route path="perfil" element={<ClientProfile />} />
             <Route path="ajustes" element={<ClientSettings />} />
           </Route>
 

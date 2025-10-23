@@ -183,7 +183,7 @@ const TherapistProfile = () => {
         if (paymentError) console.error("Error creating payment:", paymentError);
 
         toast.success("Cita agendada con éxito. Procede al pago para confirmar.");
-        navigate("/client/sessions");
+        navigate("/portal/sesiones");
       } else {
         // Create subscription with package
         const sessionsTotal = type === "package_4" ? 4 : 8;
@@ -239,7 +239,7 @@ const TherapistProfile = () => {
         if (paymentError) console.error("Error creating payment:", paymentError);
 
         toast.success(`Paquete de ${sessionsTotal} sesiones adquirido. Procede al pago para activar.`);
-        navigate("/client/subscriptions");
+        navigate("/portal/suscripciones");
       }
     } catch (error: any) {
       console.error("Error booking:", error);
