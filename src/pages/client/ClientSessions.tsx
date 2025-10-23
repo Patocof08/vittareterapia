@@ -25,7 +25,10 @@ export default function ClientSessions() {
   const [pastSessions, setPastSessions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
-  const [selectedAppointment, setSelectedAppointment] = useState<string | null>(null);
+  const [refundDialogOpen, setRefundDialogOpen] = useState(false);
+  const [lateDialogOpen, setLateDialogOpen] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState<any | null>(null);
+  const [refundOption, setRefundOption] = useState<"credit" | "refund" | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -72,6 +75,36 @@ export default function ClientSessions() {
     }
   };
 
+  const checkCancellationPolicy = async (appointment: any) => {
+    const sessionTime = new Date(appointment.start_time);
+    const now = new Date();
+    const hoursUntilSession = (sessionTime.getTime() - now.getTime()) / (1000 * 60 * 60);
+
+    // Si es menos de 24 horas
+    if (hoursUntilSession < 24) {
+      setSelectedAppointment(appointment);
+      setLateDialogOpen(true);
+      return;
+    }
+
+    // Si es más de 24 horas, verificar tipo de pago
+    const { data: payment } = await supabase
+      .from("payments")
+      .select("payment_type, subscription_id")
+      .eq("appointment_id", appointment.id)
+      .single();
+
+    setSelectedAppointment(appointment);
+
+    // Si es suscripción, automáticamente devolver crédito
+    if (payment?.subscription_id) {
+      setCancelDialogOpen(true);
+    } else {
+      // Si es sesión individual, preguntar opción
+      setRefundDialogOpen(true);
+    }
+  };
+
   const handleCancelAppointment = async () => {
     if (!selectedAppointment) return;
     try {
@@ -84,9 +117,36 @@ export default function ClientSessions() {
           cancelled_by: user?.id,
           cancellation_reason: "Cancelado por el paciente",
         })
-        .eq("id", selectedAppointment);
+        .eq("id", selectedAppointment.id);
 
       if (error) throw error;
+
+      // Si es suscripción, devolver crédito
+      const { data: payment } = await supabase
+        .from("payments")
+        .select("subscription_id")
+        .eq("appointment_id", selectedAppointment.id)
+        .single();
+
+      if (payment?.subscription_id) {
+        // Obtener suscripción actual
+        const { data: subscription } = await supabase
+          .from("client_subscriptions")
+          .select("sessions_used, sessions_remaining")
+          .eq("id", payment.subscription_id)
+          .single();
+
+        if (subscription) {
+          // Incrementar sesiones disponibles
+          await supabase
+            .from("client_subscriptions")
+            .update({
+              sessions_used: Math.max(0, subscription.sessions_used - 1),
+              sessions_remaining: subscription.sessions_remaining + 1,
+            })
+            .eq("id", payment.subscription_id);
+        }
+      }
 
       toast.success("Cita cancelada exitosamente");
       loadSessions();
@@ -96,6 +156,39 @@ export default function ClientSessions() {
     } finally {
       setCancelDialogOpen(false);
       setSelectedAppointment(null);
+    }
+  };
+
+  const handleRefundSelection = async () => {
+    if (!selectedAppointment || !refundOption) return;
+    try {
+      // @ts-ignore - Types will regenerate automatically
+      const { error } = await supabase
+        // @ts-ignore - Types will regenerate automatically
+        .from("appointments")
+        .update({
+          status: "cancelled",
+          cancelled_by: user?.id,
+          cancellation_reason: `Cancelado - ${refundOption === "credit" ? "Crédito" : "Reembolso"} solicitado`,
+        })
+        .eq("id", selectedAppointment.id);
+
+      if (error) throw error;
+
+      if (refundOption === "credit") {
+        toast.success("Cita cancelada. El crédito se ha agregado a tu cuenta.");
+      } else {
+        toast.success("Cita cancelada. El reembolso se procesará en 3-5 días hábiles.");
+      }
+
+      loadSessions();
+    } catch (error) {
+      console.error("Error cancelling:", error);
+      toast.error("Error al cancelar la cita");
+    } finally {
+      setRefundDialogOpen(false);
+      setSelectedAppointment(null);
+      setRefundOption(null);
     }
   };
 
@@ -170,10 +263,7 @@ export default function ClientSessions() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => {
-                            setSelectedAppointment(session.id);
-                            setCancelDialogOpen(true);
-                          }}
+                          onClick={() => checkCancellationPolicy(session)}
                         >
                           Cancelar
                         </Button>
@@ -225,19 +315,87 @@ export default function ClientSessions() {
         </CardContent>
       </Card>
 
+      {/* Dialog para suscripciones - automático */}
       <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>¿Cancelar esta cita?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción no se puede deshacer. La cita quedará cancelada y el horario volverá a estar disponible.
+              Como tienes un paquete de sesiones, el crédito se devolverá automáticamente a tu cuenta.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>No, mantener</AlertDialogCancel>
             <AlertDialogAction onClick={handleCancelAppointment}>
-              Sí, cancelar cita
+              Sí, cancelar y recuperar crédito
             </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Dialog para sesiones individuales - elegir opción */}
+      <AlertDialog open={refundDialogOpen} onOpenChange={setRefundDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Cómo prefieres tu reembolso?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cancelas con más de 24 horas de anticipación. Elige tu preferencia:
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-3 py-4">
+            <Button
+              variant={refundOption === "credit" ? "default" : "outline"}
+              className="w-full justify-start"
+              onClick={() => setRefundOption("credit")}
+            >
+              <div className="text-left">
+                <div className="font-medium">Crédito en la plataforma</div>
+                <div className="text-xs opacity-80">Úsalo en tu próxima sesión</div>
+              </div>
+            </Button>
+            <Button
+              variant={refundOption === "refund" ? "default" : "outline"}
+              className="w-full justify-start"
+              onClick={() => setRefundOption("refund")}
+            >
+              <div className="text-left">
+                <div className="font-medium">Reembolso completo</div>
+                <div className="text-xs opacity-80">Se procesa en 3-5 días hábiles</div>
+              </div>
+            </Button>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setRefundOption(null)}>
+              No, mantener
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleRefundSelection}
+              disabled={!refundOption}
+            >
+              Confirmar cancelación
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Dialog para cancelaciones tardías */}
+      <AlertDialog open={lateDialogOpen} onOpenChange={setLateDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Aviso de política de cancelación</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>
+                Recuerda que para cancelar sin cargo, debes hacerlo con al menos 24 horas de anticipación.
+              </p>
+              <p className="font-medium text-foreground">
+                Si cancelas ahora, la sesión se cobrará en su totalidad y no habrá reembolso.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setSelectedAppointment(null)}>
+              Entendido, mantener cita
+            </AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
