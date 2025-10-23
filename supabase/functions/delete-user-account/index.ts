@@ -25,24 +25,16 @@ Deno.serve(async (req) => {
       )
     }
 
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_PUBLISHABLE_KEY') ?? Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: authHeader },
-        },
-      }
-    )
+    // Extract user id from JWT (request is already JWT-verified by Functions)
+    const token = authHeader.replace('Bearer ', '')
+    let userId: string | null = null
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]))
+      userId = payload.sub as string
+    } catch (_) {}
 
-    // Get the user from the authorization header
-    const {
-      data: { user },
-      error: userError,
-    } = await supabaseClient.auth.getUser()
-
-    if (userError || !user) {
-      console.error('Error getting user:', userError)
+    if (!userId) {
+      console.error('Invalid JWT: cannot extract user id')
       return new Response(
         JSON.stringify({ error: 'Unauthorized' }),
         { 
@@ -52,7 +44,9 @@ Deno.serve(async (req) => {
       )
     }
 
-    console.log('Deleting user account:', user.id)
+    console.log('Deleting user account:', userId)
+
+    
 
     // Create a Supabase Admin client with service role
     const supabaseAdmin = createClient(
@@ -66,9 +60,8 @@ Deno.serve(async (req) => {
       }
     )
 
-    // Delete the user using admin client
     const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(
-      user.id
+      userId
     )
 
     if (deleteError) {
@@ -82,7 +75,7 @@ Deno.serve(async (req) => {
       )
     }
 
-    console.log('User deleted successfully:', user.id)
+    console.log('User deleted successfully:', userId)
 
     return new Response(
       JSON.stringify({ message: 'Account deleted successfully' }),
