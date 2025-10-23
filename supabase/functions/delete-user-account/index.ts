@@ -46,8 +46,6 @@ Deno.serve(async (req) => {
 
     console.log('Deleting user account:', userId)
 
-    
-
     // Create a Supabase Admin client with service role
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -60,22 +58,79 @@ Deno.serve(async (req) => {
       }
     )
 
-    const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(
-      userId
-    )
+    // Clean up dependent application data to avoid FK issues
+    try {
+      // Delete client subscription history and subscriptions where user is client
+      const { data: clientSubs } = await supabaseAdmin
+        .from('client_subscriptions')
+        .select('id')
+        .eq('client_id', userId)
 
-    if (deleteError) {
-      console.error('Error deleting user:', deleteError)
-      return new Response(
-        JSON.stringify({ error: deleteError.message }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 400 
-        }
-      )
+      const clientSubIds = (clientSubs ?? []).map((s: any) => s.id)
+      if (clientSubIds.length) {
+        await supabaseAdmin.from('subscription_history').delete().in('subscription_id', clientSubIds)
+        await supabaseAdmin.from('client_subscriptions').delete().in('id', clientSubIds)
+      }
+
+      // Psychologist-related cleanup
+      const { data: psychProfiles } = await supabaseAdmin
+        .from('psychologist_profiles')
+        .select('id')
+        .eq('user_id', userId)
+
+      const psychIds = (psychProfiles ?? []).map((p: any) => p.id)
+      if (psychIds.length) {
+        await supabaseAdmin.from('psychologist_documents').delete().in('psychologist_id', psychIds)
+        await supabaseAdmin.from('psychologist_availability').delete().in('psychologist_id', psychIds)
+        await supabaseAdmin.from('psychologist_pricing').delete().in('psychologist_id', psychIds)
+        await supabaseAdmin.from('client_subscriptions').delete().in('psychologist_id', psychIds)
+        await supabaseAdmin.from('appointments').delete().in('psychologist_id', psychIds)
+        await supabaseAdmin.from('session_clinical_notes').delete().in('psychologist_id', psychIds)
+        await supabaseAdmin.from('psychologist_verifications').delete().in('psychologist_id', psychIds)
+        await supabaseAdmin.from('psychologist_profiles').delete().eq('user_id', userId)
+      }
+
+      // Appointments and notes where user is patient
+      const { data: appts } = await supabaseAdmin
+        .from('appointments')
+        .select('id')
+        .eq('patient_id', userId)
+
+      const apptIds = (appts ?? []).map((a: any) => a.id)
+      if (apptIds.length) {
+        await supabaseAdmin.from('session_clinical_notes').delete().in('appointment_id', apptIds)
+        await supabaseAdmin.from('appointments').delete().in('id', apptIds)
+      }
+      // Notes directly by patient id as safety
+      await supabaseAdmin.from('session_clinical_notes').delete().eq('patient_id', userId)
+
+      // Preferences, profile, roles
+      await supabaseAdmin.from('patient_preferences').delete().eq('user_id', userId)
+      await supabaseAdmin.from('profiles').delete().eq('id', userId)
+      await supabaseAdmin.from('user_roles').delete().eq('user_id', userId)
+    } catch (cleanupError) {
+      console.warn('User data cleanup encountered issues (continuing):', cleanupError)
     }
 
-    console.log('User deleted successfully:', userId)
+    // Try hard delete
+    let { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId)
+
+    // Fallback to soft delete if hard delete fails due to DB constraints
+    if (deleteError) {
+      console.error('Error deleting user (hard delete):', deleteError)
+      const res = await (supabaseAdmin as any).auth.admin.deleteUser(userId, { shouldSoftDelete: true })
+      deleteError = res.error
+      if (deleteError) {
+        console.error('Soft delete also failed:', deleteError)
+        return new Response(
+          JSON.stringify({ error: deleteError.message || 'Database error deleting user' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        )
+      }
+      console.log('User soft-deleted successfully:', userId)
+    } else {
+      console.log('User deleted successfully:', userId)
+    }
 
     return new Response(
       JSON.stringify({ message: 'Account deleted successfully' }),
