@@ -82,12 +82,13 @@ export default function PatientDetail() {
           setPatient(patientData);
         }
 
-        // Get sessions with clinical notes
+        // Get sessions with clinical notes (only completed sessions)
         const { data: sessionsData } = await supabase
           .from("appointments")
           .select("*")
           .eq("psychologist_id", profile.id)
           .eq("patient_id", patientId)
+          .eq("status", "completed")
           .order("start_time", { ascending: false });
 
         if (sessionsData) {
@@ -172,12 +173,13 @@ export default function PatientDetail() {
 
       toast.success("Notas guardadas exitosamente");
 
-      // Refresh sessions
+      // Refresh sessions (only completed sessions)
       const { data: sessionsData } = await supabase
         .from("appointments")
         .select("*")
         .eq("psychologist_id", psychologistId)
         .eq("patient_id", patientId)
+        .eq("status", "completed")
         .order("start_time", { ascending: false });
 
       if (sessionsData) {
