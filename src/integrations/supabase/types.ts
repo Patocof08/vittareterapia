@@ -655,17 +655,6 @@ export type Database = {
         Args: { _sessions_used: number; _total_sessions: number }
         Returns: number
       }
-      get_therapist_patients: {
-        Args: never
-        Returns: {
-          avatar_url: string
-          email: string
-          full_name: string
-          last_session: string
-          patient_id: string
-          session_count: number
-        }[]
-      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]

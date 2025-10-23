@@ -28,38 +28,53 @@ export default function TherapistPatients() {
       if (!user) return;
 
       try {
-        console.log("Calling get_therapist_patients RPC...");
-        
-        // Call the secure RPC function to get therapist's patients
-        const { data, error } = await supabase
-          .rpc("get_therapist_patients");
+        // Get psychologist profile
+        const { data: profile } = await supabase
+          .from("psychologist_profiles")
+          .select("id")
+          .eq("user_id", user.id)
+          .single();
 
-        if (error) {
-          console.error("Error fetching patients:", error);
-          return;
+        if (!profile) return;
+
+        // Get unique patients from appointments
+        const { data: appointments } = await supabase
+          .from("appointments")
+          .select(`
+            patient_id,
+            start_time,
+            patient:profiles!appointments_patient_id_fkey(id, full_name, avatar_url, email)
+          `)
+          .eq("psychologist_id", profile.id)
+          .order("start_time", { ascending: false });
+
+        if (appointments) {
+          // Group by patient and count sessions
+          const patientMap = new Map<string, Patient>();
+
+          appointments.forEach((apt: any) => {
+            if (apt.patient) {
+              const patientId = apt.patient.id;
+              if (patientMap.has(patientId)) {
+                const existing = patientMap.get(patientId)!;
+                existing.sessionCount += 1;
+              } else {
+                patientMap.set(patientId, {
+                  id: apt.patient.id,
+                  full_name: apt.patient.full_name || "Sin nombre",
+                  avatar_url: apt.patient.avatar_url,
+                  email: apt.patient.email,
+                  sessionCount: 1,
+                  lastSession: apt.start_time,
+                });
+              }
+            }
+          });
+
+          setPatients(Array.from(patientMap.values()));
         }
-
-        console.log("RPC returned:", data);
-
-        if (!data) {
-          setLoading(false);
-          return;
-        }
-
-        // Map RPC results to Patient interface
-        const mappedPatients: Patient[] = data.map((row: any) => ({
-          id: row.patient_id,
-          full_name: row.full_name || "Sin nombre",
-          avatar_url: row.avatar_url,
-          email: row.email || "",
-          sessionCount: row.session_count,
-          lastSession: row.last_session,
-        }));
-
-        console.log("Mapped patients:", mappedPatients);
-        setPatients(mappedPatients);
-      } catch (err) {
-        console.error("Unexpected error:", err);
+      } catch (error) {
+        console.error("Error fetching patients:", error);
       } finally {
         setLoading(false);
       }
