@@ -390,12 +390,18 @@ export default function ClientSessions() {
               <p className="font-medium text-foreground">
                 Si cancelas ahora, la sesión se cobrará en su totalidad y no habrá reembolso.
               </p>
+              <p className="text-sm mt-2">
+                ¿Deseas continuar con la cancelación?
+              </p>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setSelectedAppointment(null)}>
-              Entendido, mantener cita
+              No, mantener cita
             </AlertDialogCancel>
+            <AlertDialogAction onClick={handleCancelAppointment}>
+              Sí, cancelar de todos modos
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
