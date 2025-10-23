@@ -50,7 +50,7 @@ export default function ClientBooking() {
           if (appointments && appointments.length > 0) {
             const { data: psychologist, error: psychError } = await supabase
               .from("psychologist_profiles")
-              .select("id, first_name, last_name, profile_photo_url, bio_short, specialties")
+              .select("id, first_name, last_name, profile_photo_url, therapeutic_approaches, specialties")
               .eq("id", appointments[0].psychologist_id)
               .single();
 
@@ -128,15 +128,17 @@ export default function ClientBooking() {
               <h3 className="text-lg font-semibold">
                 {previousPsychologist.first_name} {previousPsychologist.last_name}
               </h3>
-              {previousPsychologist.bio_short && (
-                <p className="text-sm text-muted-foreground mt-1">
-                  {previousPsychologist.bio_short}
-                </p>
+              {previousPsychologist.therapeutic_approaches && previousPsychologist.therapeutic_approaches.length > 0 && (
+                <div className="mt-2">
+                  <p className="text-sm font-medium text-foreground">
+                    Enfoque: <span className="font-normal text-muted-foreground">{previousPsychologist.therapeutic_approaches.join(", ")}</span>
+                  </p>
+                </div>
               )}
               {previousPsychologist.specialties && previousPsychologist.specialties.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-2">
+                <div className="flex flex-wrap gap-1.5 mt-2">
                   {previousPsychologist.specialties.slice(0, 3).map((specialty: string, index: number) => (
-                    <span key={index} className="text-xs bg-secondary text-secondary-foreground px-2 py-1 rounded">
+                    <span key={index} className="text-[10px] bg-secondary text-secondary-foreground px-1.5 py-0.5 rounded">
                       {specialty}
                     </span>
                   ))}
