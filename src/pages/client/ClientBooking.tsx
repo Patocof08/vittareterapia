@@ -161,7 +161,7 @@ export default function ClientBooking() {
           <p className="text-muted-foreground mb-4">
             Aún no has agendado sesiones. Busca un psicólogo para comenzar.
           </p>
-          <Button onClick={() => navigate("/portal/psicologos")}>
+          <Button onClick={() => navigate("/therapists")}>
             Buscar Psicólogos
           </Button>
         </Card>
