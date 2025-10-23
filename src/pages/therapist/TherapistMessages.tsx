@@ -42,7 +42,7 @@ export default function TherapistMessages() {
   const [psychologistId, setPsychologistId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
-  const PAGE_SIZE = 30;
+  const PAGE_SIZE = 6;
   const [oldestCursor, setOldestCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
