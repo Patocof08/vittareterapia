@@ -1,6 +1,7 @@
-import { DollarSign, TrendingUp, FileText, Calendar } from "lucide-react";
+import { DollarSign, TrendingUp, FileText, Calendar, Filter } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { format, startOfMonth, endOfMonth } from "date-fns";
@@ -15,8 +16,13 @@ interface Payment {
   payment_status: string;
   created_at: string;
   completed_at: string;
+  appointment_id?: string;
   client: {
     full_name: string;
+  };
+  appointment?: {
+    status: string;
+    cancellation_reason?: string;
   };
 }
 
@@ -57,13 +63,17 @@ export default function TherapistPayments() {
 
       if (!psychProfile) return;
 
-      // Fetch payments with client info
+      // Fetch payments with client info and appointment details
       const { data: paymentsData, error } = await supabase
         .from("payments")
         .select(`
           *,
           client:profiles!fk_payment_client(
             full_name
+          ),
+          appointment:appointments!fk_payment_appointment(
+            status,
+            cancellation_reason
           )
         `)
         .eq("psychologist_id", psychProfile.id)
@@ -74,7 +84,8 @@ export default function TherapistPayments() {
       // Transform data
       const transformedPayments = (paymentsData || []).map(p => ({
         ...p,
-        client: Array.isArray(p.client) ? p.client[0] : p.client
+        client: Array.isArray(p.client) ? p.client[0] : p.client,
+        appointment: Array.isArray(p.appointment) ? p.appointment[0] : p.appointment
       }));
 
       setPayments(transformedPayments);
@@ -114,13 +125,26 @@ export default function TherapistPayments() {
 
     switch (filter) {
       case "active":
-        // Mostrar pendientes y completadas (excluir canceladas)
+        // Solo pendientes normales (no canceladas)
         filtered = paymentsToFilter.filter(p => 
-          p.payment_status === "pending" || p.payment_status === "completed"
+          p.payment_status === "pending" && 
+          (!p.appointment || p.appointment.status !== "cancelled")
+        );
+        break;
+      case "completed":
+        // Solo completadas
+        filtered = paymentsToFilter.filter(p => p.payment_status === "completed");
+        break;
+      case "late_cancelled":
+        // Canceladas menos de 24h (se cobran - pending con appointment cancelled)
+        filtered = paymentsToFilter.filter(p => 
+          p.payment_status === "pending" && 
+          p.appointment?.status === "cancelled" &&
+          p.appointment?.cancellation_reason?.includes("menos de 24h")
         );
         break;
       case "cancelled":
-        // Solo mostrar canceladas
+        // Canceladas a tiempo (sin cargo)
         filtered = paymentsToFilter.filter(p => p.payment_status === "cancelled");
         break;
       case "all":
@@ -141,7 +165,27 @@ export default function TherapistPayments() {
     return labels[type] || type;
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (payment: Payment) => {
+    const status = payment.payment_status;
+    const appointment = payment.appointment;
+    const cancelReason = appointment?.cancellation_reason || "";
+    
+    // Si está cancelado y fue a tiempo (sin cargo)
+    if (status === "cancelled") {
+      return {
+        label: "Cancelado a tiempo",
+        className: "bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-950 dark:text-gray-400 dark:border-gray-800"
+      };
+    }
+    
+    // Si está pendiente y fue cancelado tarde (se cobra)
+    if (status === "pending" && appointment?.status === "cancelled" && cancelReason.includes("menos de 24h")) {
+      return {
+        label: "Cancelado tarde - Cobrado",
+        className: "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950 dark:text-orange-400 dark:border-orange-800"
+      };
+    }
+    
     const config: Record<string, { label: string; className: string }> = {
       completed: { 
         label: "Completado", 
@@ -150,10 +194,6 @@ export default function TherapistPayments() {
       pending: { 
         label: "Pendiente", 
         className: "bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-950 dark:text-yellow-400 dark:border-yellow-800" 
-      },
-      cancelled: {
-        label: "Cancelado (sin cargo)",
-        className: "bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-950 dark:text-gray-400 dark:border-gray-800"
       },
     };
     return config[status] || { label: status, className: "" };
@@ -224,38 +264,19 @@ export default function TherapistPayments() {
               <FileText className="w-5 h-5" />
               Historial de Pagos
             </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => applyFilter("active")}
-                className={`px-3 py-1 text-sm rounded-md transition-colors ${
-                  statusFilter === "active"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-                }`}
-              >
-                Activos
-              </button>
-              <button
-                onClick={() => applyFilter("cancelled")}
-                className={`px-3 py-1 text-sm rounded-md transition-colors ${
-                  statusFilter === "cancelled"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-                }`}
-              >
-                Cancelados
-              </button>
-              <button
-                onClick={() => applyFilter("all")}
-                className={`px-3 py-1 text-sm rounded-md transition-colors ${
-                  statusFilter === "all"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-                }`}
-              >
-                Todos
-              </button>
-            </div>
+            <Select value={statusFilter} onValueChange={applyFilter}>
+              <SelectTrigger className="w-[200px]">
+                <Filter className="w-4 h-4 mr-2" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">Pendientes</SelectItem>
+                <SelectItem value="completed">Completados</SelectItem>
+                <SelectItem value="late_cancelled">Cancelados tarde</SelectItem>
+                <SelectItem value="cancelled">Cancelados a tiempo</SelectItem>
+                <SelectItem value="all">Todos</SelectItem>
+              </SelectContent>
+            </Select>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -264,14 +285,20 @@ export default function TherapistPayments() {
               <FileText className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
               <p className="text-muted-foreground">
                 {statusFilter === "cancelled" 
-                  ? "No hay pagos cancelados" 
+                  ? "No hay pagos cancelados a tiempo" 
+                  : statusFilter === "late_cancelled"
+                  ? "No hay pagos cancelados tarde"
+                  : statusFilter === "completed"
+                  ? "No hay pagos completados"
+                  : statusFilter === "active"
+                  ? "No hay pagos pendientes"
                   : "No hay transacciones registradas todavía"}
               </p>
             </div>
           ) : (
             <div className="space-y-4">
               {filteredPayments.map((payment) => {
-                const statusInfo = getStatusBadge(payment.payment_status);
+                const statusInfo = getStatusBadge(payment);
                 return (
                   <div
                     key={payment.id}
