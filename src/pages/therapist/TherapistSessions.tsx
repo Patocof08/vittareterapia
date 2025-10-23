@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Video, Search, Filter, ExternalLink } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ import { useAuth } from "@/hooks/useAuth";
 
 export default function TherapistSessions() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [statusFilter, setStatusFilter] = useState<string>("activas");
   const [searchTerm, setSearchTerm] = useState("");
   const [sessions, setSessions] = useState<any[]>([]);
@@ -256,7 +258,12 @@ export default function TherapistSessions() {
                         Marcar como completada
                       </Button>
                     )}
-                    <Button variant="ghost">Ver detalles del paciente</Button>
+                    <Button 
+                      variant="ghost"
+                      onClick={() => navigate(`/therapist/patients/${session.patient_id}`)}
+                    >
+                      Ver detalles del paciente
+                    </Button>
                   </div>
                 </div>
               </CardContent>
