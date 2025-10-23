@@ -54,17 +54,22 @@ export const TherapistSidebar = () => {
 
         if (!conversationsData || conversationsData.length === 0) return;
 
-        const conversationIds = conversationsData.map(c => c.id);
-        
-        // Count unread messages
-        const { count } = await supabase
-          .from("messages")
-          .select("*", { count: 'exact', head: true })
-          .in("conversation_id", conversationIds)
-          .eq("is_read", false)
-          .neq("sender_id", user.id);
+        // Count how many conversations have unread messages
+        let conversationsWithUnread = 0;
+        for (const conv of conversationsData) {
+          const { count } = await supabase
+            .from("messages")
+            .select("*", { count: 'exact', head: true })
+            .eq("conversation_id", conv.id)
+            .eq("is_read", false)
+            .neq("sender_id", user.id);
 
-        setUnreadCount(count || 0);
+          if (count && count > 0) {
+            conversationsWithUnread++;
+          }
+        }
+
+        setUnreadCount(conversationsWithUnread);
       } catch (error) {
         console.error("Error fetching unread count:", error);
       }
