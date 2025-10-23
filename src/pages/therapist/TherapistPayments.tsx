@@ -97,12 +97,23 @@ export default function TherapistPayments() {
       const monthStart = startOfMonth(now);
       const monthEnd = endOfMonth(now);
 
-      const completed = transformedPayments.filter(p => p.payment_status === 'completed');
+      // Completados: sesiones completadas O canceladas tarde (se cobran)
+      const completed = transformedPayments.filter(p => 
+        p.appointment?.status === "completed" ||
+        (p.appointment?.status === "cancelled" && p.appointment?.cancellation_reason?.includes("menos de 24h"))
+      );
+      
       const monthlyCompleted = completed.filter(p => {
         const paymentDate = new Date(p.completed_at || p.created_at);
         return paymentDate >= monthStart && paymentDate <= monthEnd;
       });
-      const pending = transformedPayments.filter(p => p.payment_status === 'pending');
+      
+      // Pendientes: sesiones activas que aún no se toman
+      const pending = transformedPayments.filter(p => 
+        p.appointment && 
+        p.appointment.status !== "cancelled" && 
+        p.appointment.status !== "completed"
+      );
 
       setStats({
         monthlyIncome: monthlyCompleted.reduce((sum, p) => sum + Number(p.amount), 0),
