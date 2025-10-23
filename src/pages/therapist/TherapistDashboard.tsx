@@ -46,7 +46,7 @@ export default function TherapistDashboard() {
           console.log("Pricing data:", profileData.pricing);
           setProfile(profileData as any);
 
-          // Fetch sessions for today
+          // Fetch sessions for today (exclude cancelled)
           const todayStart = startOfDay(new Date());
           const todayEnd = endOfDay(new Date());
 
@@ -57,6 +57,7 @@ export default function TherapistDashboard() {
               patient:profiles!appointments_patient_id_fkey(full_name, avatar_url)
             `)
             .eq("psychologist_id", profileData.id)
+            .neq("status", "cancelled")
             .gte("start_time", todayStart.toISOString())
             .lte("start_time", todayEnd.toISOString())
             .order("start_time", { ascending: true });
@@ -65,7 +66,7 @@ export default function TherapistDashboard() {
             setTodaySessions(todayData);
           }
 
-          // Fetch sessions for this week
+          // Fetch sessions for this week (exclude cancelled)
           const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
           const weekEnd = endOfWeek(new Date(), { weekStartsOn: 1 });
 
@@ -73,6 +74,7 @@ export default function TherapistDashboard() {
             .from("appointments")
             .select("id")
             .eq("psychologist_id", profileData.id)
+            .neq("status", "cancelled")
             .gte("start_time", weekStart.toISOString())
             .lte("start_time", weekEnd.toISOString());
 

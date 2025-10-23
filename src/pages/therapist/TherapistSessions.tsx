@@ -16,7 +16,7 @@ import { useAuth } from "@/hooks/useAuth";
 
 export default function TherapistSessions() {
   const { user } = useAuth();
-  const [statusFilter, setStatusFilter] = useState<string>("todas");
+  const [statusFilter, setStatusFilter] = useState<string>("activas");
   const [searchTerm, setSearchTerm] = useState("");
   const [sessions, setSessions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -108,8 +108,17 @@ export default function TherapistSessions() {
   const filteredSessions = sessions.filter((session) => {
     const name = session.profile?.full_name?.toLowerCase() || "";
     const matchesSearch = name.includes(searchTerm.toLowerCase());
-    const matchesStatus =
-      statusFilter === "todas" || session.status === statusFilter;
+    
+    let matchesStatus = false;
+    if (statusFilter === "todas") {
+      matchesStatus = true;
+    } else if (statusFilter === "activas") {
+      // Activas = confirmed o pending (no cancelled ni completed)
+      matchesStatus = session.status === "confirmed" || session.status === "pending";
+    } else {
+      matchesStatus = session.status === statusFilter;
+    }
+    
     return matchesSearch && matchesStatus;
   });
 
@@ -152,6 +161,7 @@ export default function TherapistSessions() {
                 <SelectValue placeholder="Estado" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="activas">Activas</SelectItem>
                 <SelectItem value="todas">Todas</SelectItem>
                 <SelectItem value="confirmed">Confirmadas</SelectItem>
                 <SelectItem value="pending">Pendientes</SelectItem>
