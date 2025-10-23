@@ -41,13 +41,27 @@ export default function TherapistMessages() {
   const [sending, setSending] = useState(false);
   const [psychologistId, setPsychologistId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const PAGE_SIZE = 30;
+  const [oldestCursor, setOldestCursor] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const skipAutoScrollRef = useRef(false);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    } else {
+      messagesEndRef.current?.scrollIntoView({ behavior });
+    }
   };
 
   useEffect(() => {
-    scrollToBottom();
+    if (skipAutoScrollRef.current) {
+      skipAutoScrollRef.current = false;
+      return;
+    }
+    scrollToBottom("auto");
   }, [messages]);
 
   useEffect(() => {
@@ -223,20 +237,71 @@ export default function TherapistMessages() {
 
   const loadMessages = async (conversationId: string) => {
     try {
+      setLoading(true);
       const { data, error } = await supabase
         .from("messages")
         .select("*")
         .eq("conversation_id", conversationId)
-        .order("created_at", { ascending: true });
+        .order("created_at", { ascending: false })
+        .limit(PAGE_SIZE);
 
       if (error) throw error;
-      setMessages(data || []);
+      const ordered = (data || []).reverse();
+      setMessages(ordered);
+      setHasMore((data?.length || 0) === PAGE_SIZE);
+      setOldestCursor(ordered[0]?.created_at ?? null);
+
+      // Ensure we start at the bottom
+      requestAnimationFrame(() => scrollToBottom("auto"));
     } catch (error) {
       console.error("Error loading messages:", error);
       toast.error("Error al cargar mensajes");
+    } finally {
+      setLoading(false);
     }
   };
 
+  const loadOlderMessages = async (conversationId: string) => {
+    if (!oldestCursor || loadingMore) return;
+
+    try {
+      setLoadingMore(true);
+      const container = messagesContainerRef.current;
+      const prevHeight = container?.scrollHeight ?? 0;
+
+      const { data, error } = await supabase
+        .from("messages")
+        .select("*")
+        .eq("conversation_id", conversationId)
+        .lt("created_at", oldestCursor)
+        .order("created_at", { ascending: false })
+        .limit(PAGE_SIZE);
+
+      if (error) throw error;
+      const olderAsc = (data || []).reverse();
+
+      // Prevent auto-scroll to bottom when prepending
+      skipAutoScrollRef.current = true;
+      setMessages((prev) => [...olderAsc, ...prev]);
+      setHasMore((data?.length || 0) === PAGE_SIZE);
+      setOldestCursor(olderAsc[0]?.created_at ?? oldestCursor);
+
+      requestAnimationFrame(() => {
+        const newHeight = container?.scrollHeight ?? 0;
+        if (container) container.scrollTop = newHeight - prevHeight;
+      });
+    } catch (error) {
+      console.error("Error loading older messages:", error);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    if (e.currentTarget.scrollTop <= 50 && hasMore && selectedConversation) {
+      loadOlderMessages(selectedConversation.id);
+    }
+  };
   const markMessagesAsRead = async (conversationId: string) => {
     if (!user) return;
 
@@ -412,42 +477,49 @@ export default function TherapistMessages() {
             ) : (
               <>
                 {/* Messages */}
-                <div className="flex-1 overflow-hidden">
-                  <ScrollArea className="h-full p-4">
-                    <div className="space-y-4">
-                      {messages.map((message) => {
-                        const isTherapist = message.sender_id === user?.id;
-                        return (
+                <div
+                  className="flex-1 overflow-y-auto p-4"
+                  ref={messagesContainerRef}
+                  onScroll={handleScroll}
+                >
+                  {loadingMore && hasMore && (
+                    <p className="text-center text-xs text-muted-foreground mb-2">
+                      Cargando mensajes anteriores...
+                    </p>
+                  )}
+                  <div className="space-y-4">
+                    {messages.map((message) => {
+                      const isTherapist = message.sender_id === user?.id;
+                      return (
+                        <div
+                          key={message.id}
+                          className={`flex ${isTherapist ? "justify-end" : "justify-start"}`}
+                        >
                           <div
-                            key={message.id}
-                            className={`flex ${isTherapist ? "justify-end" : "justify-start"}`}
+                            className={`max-w-[70%] p-3 rounded-lg ${
+                              isTherapist
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-accent"
+                            }`}
                           >
-                            <div
-                              className={`max-w-[70%] p-3 rounded-lg ${
+                            <p className="text-sm whitespace-pre-wrap break-words">
+                              {message.content}
+                            </p>
+                            <p
+                              className={`text-xs mt-1 ${
                                 isTherapist
-                                  ? "bg-primary text-primary-foreground"
-                                  : "bg-accent"
+                                  ? "text-primary-foreground/70"
+                                  : "text-muted-foreground"
                               }`}
                             >
-                              <p className="text-sm whitespace-pre-wrap break-words">
-                                {message.content}
-                              </p>
-                              <p
-                                className={`text-xs mt-1 ${
-                                  isTherapist
-                                    ? "text-primary-foreground/70"
-                                    : "text-muted-foreground"
-                                }`}
-                              >
-                                {format(new Date(message.created_at), "HH:mm", { locale: es })}
-                              </p>
-                            </div>
+                              {format(new Date(message.created_at), "HH:mm", { locale: es })}
+                            </p>
                           </div>
-                        );
-                      })}
-                      <div ref={messagesEndRef} />
-                    </div>
-                  </ScrollArea>
+                        </div>
+                      );
+                    })}
+                    <div ref={messagesEndRef} />
+                  </div>
                 </div>
 
                 {/* Message input */}
