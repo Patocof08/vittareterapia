@@ -37,7 +37,7 @@ interface EarningsStats {
 export default function TherapistPayments() {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [filteredPayments, setFilteredPayments] = useState<Payment[]>([]);
-  const [statusFilter, setStatusFilter] = useState<string>("active"); // "active", "all", "cancelled"
+  const [statusFilter, setStatusFilter] = useState<string>("pending"); // "completed", "pending", "cancelled"
   const [stats, setStats] = useState<EarningsStats>({
     monthlyIncome: 0,
     monthlySessions: 0,
@@ -112,7 +112,7 @@ export default function TherapistPayments() {
       });
 
       // Apply default filter
-      applyFilter("active", transformedPayments);
+      applyFilter("pending", transformedPayments);
     } catch (error) {
       console.error("Error fetching payments:", error);
       toast.error("Error al cargar los pagos");
@@ -126,37 +126,25 @@ export default function TherapistPayments() {
     let filtered = [...paymentsToFilter];
 
     switch (filter) {
-      case "active":
-        // Activos: pendientes (no canceladas) + completadas
-        filtered = paymentsToFilter.filter(p =>
-          (p.payment_status === "pending" && (!p.appointment || p.appointment.status !== "cancelled")) ||
-          p.payment_status === "completed"
+      case "completed":
+        // Completadas: sesiones tomadas O canceladas tarde (se cobran)
+        filtered = paymentsToFilter.filter(p => 
+          p.payment_status === "completed" ||
+          (p.appointment?.status === "cancelled" && p.appointment?.cancellation_reason?.includes("menos de 24h"))
         );
         break;
       case "pending":
-        // Pendientes (sesiones que se van a tomar, no canceladas y no completadas)
+        // Pendientes: sesiones activas que aún no se toman
         filtered = paymentsToFilter.filter(p => 
           p.payment_status === "pending" && 
           (!p.appointment || p.appointment.status !== "cancelled")
         );
         break;
-      case "completed":
-        // Completadas
-        filtered = paymentsToFilter.filter(p => p.payment_status === "completed");
-        break;
-      case "cancelled_on_time":
-        // Canceladas a tiempo (sin cargo) - considerar pagos aún 'pending' pero cita cancelada sin 'menos de 24h'
+      case "cancelled":
+        // Canceladas a tiempo (sin cargo)
         filtered = paymentsToFilter.filter(p => 
-          (p.payment_status === "cancelled") ||
-          (p.appointment?.status === "cancelled" && !(p.appointment?.cancellation_reason?.includes("menos de 24h")))
-        );
-        break;
-      case "cancelled_late":
-        // Canceladas tarde (se cobran - siguen abiertas/pending)
-        filtered = paymentsToFilter.filter(p => 
-          p.payment_status === "pending" && 
-          p.appointment?.status === "cancelled" &&
-          p.appointment?.cancellation_reason?.includes("menos de 24h")
+          p.payment_status === "cancelled" ||
+          (p.appointment?.status === "cancelled" && !p.appointment?.cancellation_reason?.includes("menos de 24h"))
         );
         break;
       case "all":
@@ -182,27 +170,19 @@ export default function TherapistPayments() {
     const appointment = payment.appointment;
     const cancelReason = appointment?.cancellation_reason || "";
     
-    // Cancelación a tiempo (sin cargo) por estado de cita, independientemente del estado del pago
-    if (appointment?.status === "cancelled" && !cancelReason.includes("menos de 24h")) {
+    // Cancelado tarde (se cobra) - mostrar como completado
+    if (appointment?.status === "cancelled" && cancelReason.includes("menos de 24h")) {
       return {
-        label: "Cancelado a tiempo",
-        className: "bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-950 dark:text-gray-400 dark:border-gray-800"
-      };
-    }
-
-    // Si está cancelado y fue a tiempo (sin cargo) por estado de pago
-    if (status === "cancelled") {
-      return {
-        label: "Cancelado a tiempo",
-        className: "bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-950 dark:text-gray-400 dark:border-gray-800"
+        label: "Completado (Cancelado tarde)",
+        className: "bg-green-50 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-400 dark:border-green-800"
       };
     }
     
-    // Si está pendiente y fue cancelado tarde (se cobra)
-    if (status === "pending" && appointment?.status === "cancelled" && cancelReason.includes("menos de 24h")) {
+    // Cancelado a tiempo (sin cargo)
+    if (status === "cancelled" || (appointment?.status === "cancelled" && !cancelReason.includes("menos de 24h"))) {
       return {
-        label: "Cancelado tarde - Cobrado",
-        className: "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950 dark:text-orange-400 dark:border-orange-800"
+        label: "Cancelado",
+        className: "bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-950 dark:text-gray-400 dark:border-gray-800"
       };
     }
     
@@ -290,11 +270,9 @@ export default function TherapistPayments() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="active">Activos</SelectItem>
                 <SelectItem value="pending">Pendientes</SelectItem>
                 <SelectItem value="completed">Completados</SelectItem>
-                <SelectItem value="cancelled_on_time">Cancelados a tiempo</SelectItem>
-                <SelectItem value="cancelled_late">Cancelados tarde</SelectItem>
+                <SelectItem value="cancelled">Cancelados</SelectItem>
                 <SelectItem value="all">Todos</SelectItem>
               </SelectContent>
             </Select>
@@ -305,16 +283,12 @@ export default function TherapistPayments() {
             <div className="text-center py-12">
               <FileText className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
               <p className="text-muted-foreground">
-                {statusFilter === "cancelled_on_time" 
-                  ? "No hay pagos cancelados a tiempo" 
-                  : statusFilter === "cancelled_late"
-                  ? "No hay pagos cancelados tarde"
-                  : statusFilter === "completed"
+                {statusFilter === "completed"
                   ? "No hay pagos completados"
                   : statusFilter === "pending"
                   ? "No hay pagos pendientes"
-                  : statusFilter === "active"
-                  ? "No hay pagos activos"
+                  : statusFilter === "cancelled"
+                  ? "No hay pagos cancelados"
                   : "No hay transacciones registradas todavía"}
               </p>
             </div>
