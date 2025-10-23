@@ -165,6 +165,70 @@ export type Database = {
         }
         Relationships: []
       }
+      invoices: {
+        Row: {
+          amount: number
+          client_id: string
+          created_at: string
+          currency: string
+          due_at: string | null
+          id: string
+          invoice_number: string
+          issued_at: string
+          payment_id: string
+          pdf_url: string | null
+          psychologist_id: string
+        }
+        Insert: {
+          amount: number
+          client_id: string
+          created_at?: string
+          currency?: string
+          due_at?: string | null
+          id?: string
+          invoice_number: string
+          issued_at?: string
+          payment_id: string
+          pdf_url?: string | null
+          psychologist_id: string
+        }
+        Update: {
+          amount?: number
+          client_id?: string
+          created_at?: string
+          currency?: string
+          due_at?: string | null
+          id?: string
+          invoice_number?: string
+          issued_at?: string
+          payment_id?: string
+          pdf_url?: string | null
+          psychologist_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_invoice_client"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_invoice_payment"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_invoice_psychologist"
+            columns: ["psychologist_id"]
+            isOneToOne: false
+            referencedRelation: "psychologist_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           content: string
@@ -268,6 +332,86 @@ export type Database = {
           work_comfort?: string
         }
         Relationships: []
+      }
+      payments: {
+        Row: {
+          amount: number
+          appointment_id: string | null
+          client_id: string
+          completed_at: string | null
+          created_at: string
+          currency: string
+          description: string | null
+          id: string
+          payment_method: string | null
+          payment_status: string
+          payment_type: string
+          psychologist_id: string
+          subscription_id: string | null
+          transaction_reference: string | null
+        }
+        Insert: {
+          amount: number
+          appointment_id?: string | null
+          client_id: string
+          completed_at?: string | null
+          created_at?: string
+          currency?: string
+          description?: string | null
+          id?: string
+          payment_method?: string | null
+          payment_status?: string
+          payment_type: string
+          psychologist_id: string
+          subscription_id?: string | null
+          transaction_reference?: string | null
+        }
+        Update: {
+          amount?: number
+          appointment_id?: string | null
+          client_id?: string
+          completed_at?: string | null
+          created_at?: string
+          currency?: string
+          description?: string | null
+          id?: string
+          payment_method?: string | null
+          payment_status?: string
+          payment_type?: string
+          psychologist_id?: string
+          subscription_id?: string | null
+          transaction_reference?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_payment_appointment"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_payment_client"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_payment_psychologist"
+            columns: ["psychologist_id"]
+            isOneToOne: false
+            referencedRelation: "psychologist_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_payment_subscription"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "client_subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -714,6 +858,7 @@ export type Database = {
         Args: { _sessions_used: number; _total_sessions: number }
         Returns: number
       }
+      generate_invoice_number: { Args: never; Returns: string }
       get_therapist_patients: {
         Args: never
         Returns: {

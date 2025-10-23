@@ -11,6 +11,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { BookingTypeDialog } from "@/components/client/BookingTypeDialog";
 import { AuthPopup } from "@/components/AuthPopup";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
 
 const TherapistProfile = () => {
   const { id } = useParams();
@@ -151,39 +153,61 @@ const TherapistProfile = () => {
       if (type === "single") {
         // Create single appointment
         // @ts-ignore - Types will regenerate automatically
-        const { error } = await supabase.from("appointments").insert({
-          patient_id: user.id,
-          psychologist_id: id,
-          start_time: startTime.toISOString(),
-          end_time: endTime.toISOString(),
-          status: "pending",
-          modality: "Videollamada",
-        });
+        const { data: appointment, error } = await supabase
+          .from("appointments")
+          .insert({
+            patient_id: user.id,
+            psychologist_id: id,
+            start_time: startTime.toISOString(),
+            end_time: endTime.toISOString(),
+            status: "pending",
+            modality: "Videollamada",
+          })
+          .select()
+          .single();
 
         if (error) throw error;
-        toast.success("Cita agendada con éxito");
+
+        // Create payment record for single session
+        // @ts-ignore - Types will regenerate automatically
+        const { error: paymentError } = await supabase.from("payments").insert({
+          client_id: user.id,
+          psychologist_id: id,
+          appointment_id: appointment.id,
+          amount: pricing?.session_price || 0,
+          payment_type: "single_session",
+          payment_status: "pending",
+          description: `Sesión individual - ${format(startTime, "dd 'de' MMMM, yyyy 'a las' HH:mm", { locale: es })}`,
+        });
+
+        if (paymentError) console.error("Error creating payment:", paymentError);
+
+        toast.success("Cita agendada con éxito. Procede al pago para confirmar.");
         navigate("/client/sessions");
       } else {
         // Create subscription with package
         const sessionsTotal = type === "package_4" ? 4 : 8;
+        const discountPercentage = type === "package_4" ? 10 : 20;
         const packagePrice = type === "package_4" ? pricing?.package_4_price : pricing?.package_8_price;
 
         // @ts-ignore - Types will regenerate automatically
-        const { error: subError } = await supabase.from("client_subscriptions")
-        // @ts-ignore - Types will regenerate automatically
-        .insert({
-          client_id: user.id,
-          psychologist_id: id,
-          session_price: pricing?.session_price || 0,
-          discount_percentage: 0,
-          sessions_total: sessionsTotal,
-          sessions_used: 1, // First session is being booked
-          sessions_remaining: sessionsTotal - 1,
-          package_type: type,
-          status: "active",
-          auto_renew: false,
-          current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
-        });
+        const { data: subscription, error: subError } = await supabase
+          .from("client_subscriptions")
+          .insert({
+            client_id: user.id,
+            psychologist_id: id,
+            session_price: pricing?.session_price || 0,
+            discount_percentage: discountPercentage,
+            sessions_total: sessionsTotal,
+            sessions_used: 1,
+            sessions_remaining: sessionsTotal - 1,
+            package_type: type,
+            status: "active",
+            auto_renew: false,
+            current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          })
+          .select()
+          .single();
 
         if (subError) throw subError;
 
@@ -200,7 +224,21 @@ const TherapistProfile = () => {
 
         if (apptError) throw apptError;
 
-        toast.success(`Paquete de ${sessionsTotal} sesiones adquirido y primera cita agendada`);
+        // Create payment record for package
+        // @ts-ignore - Types will regenerate automatically
+        const { error: paymentError } = await supabase.from("payments").insert({
+          client_id: user.id,
+          psychologist_id: id,
+          subscription_id: subscription.id,
+          amount: packagePrice || 0,
+          payment_type: type,
+          payment_status: "pending",
+          description: `Paquete de ${sessionsTotal} sesiones con ${discountPercentage}% de descuento`,
+        });
+
+        if (paymentError) console.error("Error creating payment:", paymentError);
+
+        toast.success(`Paquete de ${sessionsTotal} sesiones adquirido. Procede al pago para activar.`);
         navigate("/client/subscriptions");
       }
     } catch (error: any) {
