@@ -120,35 +120,57 @@ export default function TherapistMessages() {
     try {
       setLoading(true);
 
-      // Get conversations
-      const { data: convos, error: convosError } = await supabase
-        .from("conversations")
-        .select("*")
-        .eq("psychologist_id", psychologistId)
-        .order("last_message_at", { ascending: false });
+      // Get all patients (from appointments)
+      const { data: appointments } = await supabase
+        .from("appointments")
+        .select("patient_id")
+        .eq("psychologist_id", psychologistId);
 
-      if (convosError) throw convosError;
-
-      if (!convos || convos.length === 0) {
+      if (!appointments || appointments.length === 0) {
         setConversations([]);
         setLoading(false);
         return;
       }
 
-      // Get client profiles
-      const clientIds = convos.map(c => c.client_id);
-      const { data: profiles, error: profilesError } = await supabase
-        .from("profiles")
-        .select("id, full_name, avatar_url")
-        .in("id", clientIds);
+      // Get unique patient IDs
+      const patientIds = [...new Set(appointments.map(a => a.patient_id))];
 
-      if (profilesError) throw profilesError;
+      // Get or create conversations for each patient
+      const conversationsData = await Promise.all(
+        patientIds.map(async (patientId) => {
+          // Check if conversation exists
+          let { data: convo } = await supabase
+            .from("conversations")
+            .select("*")
+            .eq("psychologist_id", psychologistId)
+            .eq("client_id", patientId)
+            .maybeSingle();
 
-      // Get unread counts and last messages for each conversation
-      const enrichedConvos = await Promise.all(
-        convos.map(async (convo) => {
-          const profile = profiles?.find(p => p.id === convo.client_id);
-          
+          // Create conversation if it doesn't exist
+          if (!convo) {
+            const { data: newConvo, error: createError } = await supabase
+              .from("conversations")
+              .insert({
+                psychologist_id: psychologistId,
+                client_id: patientId
+              })
+              .select()
+              .single();
+
+            if (createError) {
+              console.error("Error creating conversation:", createError);
+              return null;
+            }
+            convo = newConvo;
+          }
+
+          // Get patient profile
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("id, full_name, avatar_url")
+            .eq("id", patientId)
+            .single();
+
           // Get unread count
           const { count } = await supabase
             .from("messages")
@@ -164,19 +186,24 @@ export default function TherapistMessages() {
             .eq("conversation_id", convo.id)
             .order("created_at", { ascending: false })
             .limit(1)
-            .single();
+            .maybeSingle();
 
           return {
             ...convo,
             client_name: profile?.full_name || "Cliente",
             client_avatar: profile?.avatar_url || null,
             unread_count: count || 0,
-            last_message: lastMsg?.content || ""
+            last_message: lastMsg?.content || "Inicia la conversación"
           };
         })
       );
 
-      setConversations(enrichedConvos);
+      // Filter out nulls and sort by last message
+      const validConversations = conversationsData
+        .filter(c => c !== null)
+        .sort((a, b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime());
+
+      setConversations(validConversations);
     } catch (error) {
       console.error("Error loading conversations:", error);
       toast.error("Error al cargar conversaciones");
