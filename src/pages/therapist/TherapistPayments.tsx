@@ -23,6 +23,7 @@ interface Payment {
   appointment?: {
     status: string;
     cancellation_reason?: string;
+    start_time: string;
   };
 }
 
@@ -73,7 +74,8 @@ export default function TherapistPayments() {
           ),
           appointment:appointments!fk_payment_appointment(
             status,
-            cancellation_reason
+            cancellation_reason,
+            start_time
           )
         `)
         .eq("psychologist_id", psychProfile.id)
@@ -110,7 +112,7 @@ export default function TherapistPayments() {
       });
 
       // Apply default filter
-      applyFilter("active", transformedPayments);
+      applyFilter("pending", transformedPayments);
     } catch (error) {
       console.error("Error fetching payments:", error);
       toast.error("Error al cargar los pagos");
@@ -124,28 +126,28 @@ export default function TherapistPayments() {
     let filtered = [...paymentsToFilter];
 
     switch (filter) {
-      case "active":
-        // Solo pendientes normales (no canceladas)
+      case "pending":
+        // Pendientes (sesiones que se van a tomar pero no completadas)
         filtered = paymentsToFilter.filter(p => 
           p.payment_status === "pending" && 
           (!p.appointment || p.appointment.status !== "cancelled")
         );
         break;
       case "completed":
-        // Solo completadas
+        // Completadas
         filtered = paymentsToFilter.filter(p => p.payment_status === "completed");
         break;
-      case "late_cancelled":
-        // Canceladas menos de 24h (se cobran - pending con appointment cancelled)
+      case "cancelled_on_time":
+        // Canceladas a tiempo (sin cargo)
+        filtered = paymentsToFilter.filter(p => p.payment_status === "cancelled");
+        break;
+      case "cancelled_late":
+        // Canceladas tarde (se cobran - siguen abiertas)
         filtered = paymentsToFilter.filter(p => 
           p.payment_status === "pending" && 
           p.appointment?.status === "cancelled" &&
           p.appointment?.cancellation_reason?.includes("menos de 24h")
         );
-        break;
-      case "cancelled":
-        // Canceladas a tiempo (sin cargo)
-        filtered = paymentsToFilter.filter(p => p.payment_status === "cancelled");
         break;
       case "all":
         // Mostrar todas
@@ -270,10 +272,10 @@ export default function TherapistPayments() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="active">Pendientes</SelectItem>
+                <SelectItem value="pending">Pendientes</SelectItem>
                 <SelectItem value="completed">Completados</SelectItem>
-                <SelectItem value="late_cancelled">Cancelados tarde</SelectItem>
-                <SelectItem value="cancelled">Cancelados a tiempo</SelectItem>
+                <SelectItem value="cancelled_on_time">Cancelados a tiempo</SelectItem>
+                <SelectItem value="cancelled_late">Cancelados tarde</SelectItem>
                 <SelectItem value="all">Todos</SelectItem>
               </SelectContent>
             </Select>
@@ -284,13 +286,13 @@ export default function TherapistPayments() {
             <div className="text-center py-12">
               <FileText className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
               <p className="text-muted-foreground">
-                {statusFilter === "cancelled" 
+                {statusFilter === "cancelled_on_time" 
                   ? "No hay pagos cancelados a tiempo" 
-                  : statusFilter === "late_cancelled"
+                  : statusFilter === "cancelled_late"
                   ? "No hay pagos cancelados tarde"
                   : statusFilter === "completed"
                   ? "No hay pagos completados"
-                  : statusFilter === "active"
+                  : statusFilter === "pending"
                   ? "No hay pagos pendientes"
                   : "No hay transacciones registradas todavía"}
               </p>
@@ -312,9 +314,10 @@ export default function TherapistPayments() {
                         Cliente: {payment.client?.full_name || "N/A"}
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
-                        {format(new Date(payment.created_at), "dd 'de' MMMM, yyyy", {
-                          locale: es,
-                        })}
+                        Fecha de sesión: {payment.appointment?.start_time 
+                          ? format(new Date(payment.appointment.start_time), "dd 'de' MMMM, yyyy", { locale: es })
+                          : format(new Date(payment.created_at), "dd 'de' MMMM, yyyy", { locale: es })
+                        }
                       </p>
                     </div>
                     <div className="flex items-center gap-3">
