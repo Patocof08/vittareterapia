@@ -218,7 +218,7 @@ export default function ClientDashboard() {
                 No tienes sesiones programadas
               </p>
               <Button asChild>
-                <Link to="/therapists">
+                <Link to="/portal/agendar">
                   <Search className="w-4 h-4 mr-2" />
                   Buscar terapeuta
                 </Link>
