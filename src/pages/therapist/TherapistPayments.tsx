@@ -112,7 +112,7 @@ export default function TherapistPayments() {
       });
 
       // Apply default filter
-      applyFilter("pending", transformedPayments);
+      applyFilter("active", transformedPayments);
     } catch (error) {
       console.error("Error fetching payments:", error);
       toast.error("Error al cargar los pagos");
@@ -126,8 +126,15 @@ export default function TherapistPayments() {
     let filtered = [...paymentsToFilter];
 
     switch (filter) {
+      case "active":
+        // Activos: pendientes (no canceladas) + completadas
+        filtered = paymentsToFilter.filter(p =>
+          (p.payment_status === "pending" && (!p.appointment || p.appointment.status !== "cancelled")) ||
+          p.payment_status === "completed"
+        );
+        break;
       case "pending":
-        // Pendientes (sesiones que se van a tomar pero no completadas)
+        // Pendientes (sesiones que se van a tomar, no canceladas y no completadas)
         filtered = paymentsToFilter.filter(p => 
           p.payment_status === "pending" && 
           (!p.appointment || p.appointment.status !== "cancelled")
@@ -138,11 +145,14 @@ export default function TherapistPayments() {
         filtered = paymentsToFilter.filter(p => p.payment_status === "completed");
         break;
       case "cancelled_on_time":
-        // Canceladas a tiempo (sin cargo)
-        filtered = paymentsToFilter.filter(p => p.payment_status === "cancelled");
+        // Canceladas a tiempo (sin cargo) - considerar pagos aún 'pending' pero cita cancelada sin 'menos de 24h'
+        filtered = paymentsToFilter.filter(p => 
+          (p.payment_status === "cancelled") ||
+          (p.appointment?.status === "cancelled" && !(p.appointment?.cancellation_reason?.includes("menos de 24h")))
+        );
         break;
       case "cancelled_late":
-        // Canceladas tarde (se cobran - siguen abiertas)
+        // Canceladas tarde (se cobran - siguen abiertas/pending)
         filtered = paymentsToFilter.filter(p => 
           p.payment_status === "pending" && 
           p.appointment?.status === "cancelled" &&
@@ -172,7 +182,15 @@ export default function TherapistPayments() {
     const appointment = payment.appointment;
     const cancelReason = appointment?.cancellation_reason || "";
     
-    // Si está cancelado y fue a tiempo (sin cargo)
+    // Cancelación a tiempo (sin cargo) por estado de cita, independientemente del estado del pago
+    if (appointment?.status === "cancelled" && !cancelReason.includes("menos de 24h")) {
+      return {
+        label: "Cancelado a tiempo",
+        className: "bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-950 dark:text-gray-400 dark:border-gray-800"
+      };
+    }
+
+    // Si está cancelado y fue a tiempo (sin cargo) por estado de pago
     if (status === "cancelled") {
       return {
         label: "Cancelado a tiempo",
@@ -272,6 +290,7 @@ export default function TherapistPayments() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="active">Activos</SelectItem>
                 <SelectItem value="pending">Pendientes</SelectItem>
                 <SelectItem value="completed">Completados</SelectItem>
                 <SelectItem value="cancelled_on_time">Cancelados a tiempo</SelectItem>
@@ -294,6 +313,8 @@ export default function TherapistPayments() {
                   ? "No hay pagos completados"
                   : statusFilter === "pending"
                   ? "No hay pagos pendientes"
+                  : statusFilter === "active"
+                  ? "No hay pagos activos"
                   : "No hay transacciones registradas todavía"}
               </p>
             </div>
