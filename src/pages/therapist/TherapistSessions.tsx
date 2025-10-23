@@ -18,7 +18,7 @@ import { useAuth } from "@/hooks/useAuth";
 export default function TherapistSessions() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [statusFilter, setStatusFilter] = useState<string>("todas");
+  const [statusFilter, setStatusFilter] = useState<string>("pendiente");
   const [searchTerm, setSearchTerm] = useState("");
   const [sessions, setSessions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
