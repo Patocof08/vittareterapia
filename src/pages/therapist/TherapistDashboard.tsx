@@ -24,6 +24,7 @@ export default function TherapistDashboard() {
   const [profile, setProfile] = useState<TherapistProfile | null>(null);
   const [todaySessions, setTodaySessions] = useState<any[]>([]);
   const [weekSessions, setWeekSessions] = useState<any[]>([]);
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -80,6 +81,25 @@ export default function TherapistDashboard() {
 
           if (weekData) {
             setWeekSessions(weekData);
+          }
+
+          // Fetch unread messages count
+          const { data: conversationsData } = await supabase
+            .from("conversations")
+            .select("id")
+            .eq("psychologist_id", profileData.id);
+
+          if (conversationsData && conversationsData.length > 0) {
+            const conversationIds = conversationsData.map(c => c.id);
+            
+            const { count } = await supabase
+              .from("messages")
+              .select("*", { count: 'exact', head: true })
+              .in("conversation_id", conversationIds)
+              .eq("is_read", false)
+              .neq("sender_id", user.id);
+
+            setUnreadMessagesCount(count || 0);
           }
         }
       } catch (error) {
@@ -214,9 +234,9 @@ export default function TherapistDashboard() {
             <MessageSquare className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">0</div>
+            <div className="text-2xl font-bold">{unreadMessagesCount}</div>
             <p className="text-xs text-muted-foreground">
-              Sin mensajes pendientes
+              {unreadMessagesCount === 0 ? "Sin mensajes pendientes" : `${unreadMessagesCount} mensaje${unreadMessagesCount !== 1 ? 's' : ''} sin leer`}
             </p>
           </CardContent>
         </Card>
