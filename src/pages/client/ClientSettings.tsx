@@ -217,8 +217,10 @@ export default function ClientSettings() {
 
     setLoading(true);
     try {
-      // Delete user account - this will cascade delete all related data
-      const { error } = await supabase.auth.admin.deleteUser(user.id);
+      // Call edge function to delete user account
+      const { error } = await supabase.functions.invoke('delete-user-account', {
+        method: 'POST'
+      });
 
       if (error) throw error;
 
