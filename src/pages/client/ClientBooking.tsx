@@ -14,43 +14,58 @@ export default function ClientBooking() {
   const psychologistId = searchParams.get("psychologist");
   const { user } = useAuth();
   const [previousPsychologist, setPreviousPsychologist] = useState<any>(null);
+  const [pricing, setPricing] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadPreviousPsychologist = async () => {
-      if (!user || psychologistId) {
+    const loadData = async () => {
+      if (!user) {
         setLoading(false);
         return;
       }
 
       try {
-        const { data: appointments, error } = await supabase
-          .from("appointments")
-          .select("psychologist_id")
-          .eq("patient_id", user.id)
-          .order("start_time", { ascending: false })
-          .limit(1);
+        if (psychologistId) {
+          // Load pricing for the selected psychologist
+          const { data: pricingData, error: pricingError } = await supabase
+            .from("psychologist_pricing")
+            .select("*")
+            .eq("psychologist_id", psychologistId)
+            .maybeSingle();
 
-        if (error) throw error;
+          if (pricingError) throw pricingError;
+          setPricing(pricingData);
+          setLoading(false);
+        } else {
+          // Load previous psychologist
+          const { data: appointments, error } = await supabase
+            .from("appointments")
+            .select("psychologist_id")
+            .eq("patient_id", user.id)
+            .order("start_time", { ascending: false })
+            .limit(1);
 
-        if (appointments && appointments.length > 0) {
-          const { data: psychologist, error: psychError } = await supabase
-            .from("psychologist_profiles")
-            .select("id, first_name, last_name, profile_photo_url, bio_short, specialties")
-            .eq("id", appointments[0].psychologist_id)
-            .single();
+          if (error) throw error;
 
-          if (psychError) throw psychError;
-          setPreviousPsychologist(psychologist);
+          if (appointments && appointments.length > 0) {
+            const { data: psychologist, error: psychError } = await supabase
+              .from("psychologist_profiles")
+              .select("id, first_name, last_name, profile_photo_url, bio_short, specialties")
+              .eq("id", appointments[0].psychologist_id)
+              .single();
+
+            if (psychError) throw psychError;
+            setPreviousPsychologist(psychologist);
+          }
+          setLoading(false);
         }
       } catch (error) {
-        console.error("Error loading previous psychologist:", error);
-      } finally {
+        console.error("Error loading data:", error);
         setLoading(false);
       }
     };
 
-    loadPreviousPsychologist();
+    loadData();
   }, [user, psychologistId]);
 
   if (psychologistId) {
@@ -74,7 +89,13 @@ export default function ClientBooking() {
           </div>
         </div>
 
-        <BookingCalendar psychologistId={psychologistId} />
+        {loading ? (
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">Cargando...</p>
+          </div>
+        ) : (
+          <BookingCalendar psychologistId={psychologistId} pricing={pricing} />
+        )}
       </div>
     );
   }

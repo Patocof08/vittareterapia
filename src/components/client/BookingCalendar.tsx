@@ -9,18 +9,23 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { format, addMinutes, isSameDay, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
+import { BookingTypeDialog } from "@/components/client/BookingTypeDialog";
+import { useNavigate } from "react-router-dom";
 
 interface BookingCalendarProps {
   psychologistId: string;
+  pricing: any;
 }
 
-export function BookingCalendar({ psychologistId }: BookingCalendarProps) {
+export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProps) {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [selectedTime, setSelectedTime] = useState<string>("");
-  const [modality, setModality] = useState<"online" | "presencial">("online");
+  const [modality, setModality] = useState<"Videollamada" | "Presencial">("Videollamada");
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [showBookingDialog, setShowBookingDialog] = useState(false);
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (selectedDate) {
@@ -111,39 +116,79 @@ export function BookingCalendar({ psychologistId }: BookingCalendarProps) {
     }
   };
 
-  const handleBooking = async () => {
+  const handleBooking = () => {
     if (!selectedDate || !selectedTime || !user) {
       toast.error("Por favor selecciona fecha y hora");
       return;
     }
+    setShowBookingDialog(true);
+  };
+
+  const handleBookingTypeConfirm = async (type: "single" | "package_4" | "package_8") => {
+    if (!user || !selectedDate || !selectedTime) return;
 
     setLoading(true);
     try {
       const [hours, minutes] = selectedTime.split(":").map(Number);
       const startTime = new Date(selectedDate);
       startTime.setHours(hours, minutes, 0, 0);
-      const endTime = addMinutes(startTime, 50);
+      const endTime = addMinutes(startTime, pricing?.session_duration_minutes || 50);
 
-      // @ts-ignore - Types will regenerate automatically
-      const { error } = await supabase.from("appointments").insert({
-        patient_id: user.id,
-        psychologist_id: psychologistId,
-        start_time: startTime.toISOString(),
-        end_time: endTime.toISOString(),
-        status: "pending",
-        modality,
-      });
+      if (type === "single") {
+        // Create single appointment
+        const { error } = await supabase.from("appointments").insert({
+          patient_id: user.id,
+          psychologist_id: psychologistId,
+          start_time: startTime.toISOString(),
+          end_time: endTime.toISOString(),
+          status: "pending",
+          modality,
+        });
 
-      if (error) throw error;
+        if (error) throw error;
+        toast.success("Cita agendada con éxito");
+        navigate("/portal/sesiones");
+      } else {
+        // Create subscription with package
+        const sessionsTotal = type === "package_4" ? 4 : 8;
 
-      toast.success("Cita agendada con éxito");
-      setSelectedDate(undefined);
-      setSelectedTime("");
+        const { error: subError } = await supabase.from("client_subscriptions").insert({
+          client_id: user.id,
+          psychologist_id: psychologistId,
+          session_price: pricing?.session_price || 0,
+          discount_percentage: 0,
+          sessions_total: sessionsTotal,
+          sessions_used: 1,
+          sessions_remaining: sessionsTotal - 1,
+          package_type: type,
+          status: "active",
+          auto_renew: false,
+          current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        });
+
+        if (subError) throw subError;
+
+        // Create first appointment
+        const { error: apptError } = await supabase.from("appointments").insert({
+          patient_id: user.id,
+          psychologist_id: psychologistId,
+          start_time: startTime.toISOString(),
+          end_time: endTime.toISOString(),
+          status: "pending",
+          modality,
+        });
+
+        if (apptError) throw apptError;
+
+        toast.success(`Paquete de ${sessionsTotal} sesiones adquirido y primera cita agendada`);
+        navigate("/portal/suscripciones");
+      }
     } catch (error: any) {
       console.error("Error booking:", error);
-      toast.error(error.message || "Error al agendar la cita");
+      toast.error(error.message || "Error al procesar la reserva");
     } finally {
       setLoading(false);
+      setShowBookingDialog(false);
     }
   };
 
@@ -171,11 +216,11 @@ export function BookingCalendar({ psychologistId }: BookingCalendarProps) {
                 <Label>Modalidad</Label>
                 <RadioGroup value={modality} onValueChange={(v: any) => setModality(v)}>
                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="online" id="online" />
+                    <RadioGroupItem value="Videollamada" id="online" />
                     <Label htmlFor="online">Videollamada</Label>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="presencial" id="presencial" />
+                    <RadioGroupItem value="Presencial" id="presencial" />
                     <Label htmlFor="presencial">Presencial</Label>
                   </div>
                 </RadioGroup>
@@ -218,6 +263,15 @@ export function BookingCalendar({ psychologistId }: BookingCalendarProps) {
           )}
         </CardContent>
       </Card>
+
+      {pricing && (
+        <BookingTypeDialog
+          open={showBookingDialog}
+          onOpenChange={setShowBookingDialog}
+          pricing={pricing}
+          onConfirm={handleBookingTypeConfirm}
+        />
+      )}
     </div>
   );
 }
