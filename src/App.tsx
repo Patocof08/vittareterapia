@@ -34,6 +34,7 @@ import TherapistDocuments from "./pages/therapist/TherapistDocuments";
 import TherapistSupport from "./pages/therapist/TherapistSupport";
 import TherapistSettings from "./pages/therapist/TherapistSettings";
 import PendingVerification from "./pages/therapist/PendingVerification";
+import PatientDetail from "./pages/therapist/PatientDetail";
 import ClientDashboard from "./pages/client/ClientDashboard";
 import ClientBooking from "./pages/client/ClientBooking";
 import ClientSessions from "./pages/client/ClientSessions";
@@ -88,6 +89,7 @@ const App = () => {
             <Route path="sessions" element={<TherapistSessions />} />
             <Route path="messages" element={<TherapistMessages />} />
             <Route path="patients" element={<TherapistPatients />} />
+            <Route path="patients/:patientId" element={<PatientDetail />} />
             <Route path="payments" element={<TherapistPayments />} />
             <Route path="library" element={<TherapistLibrary />} />
             <Route path="tasks" element={<TherapistTasks />} />

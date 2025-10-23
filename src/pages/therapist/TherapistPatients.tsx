@@ -1,7 +1,93 @@
-import { Users } from "lucide-react";
+import { Users, Search } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+
+interface Patient {
+  id: string;
+  full_name: string;
+  avatar_url: string | null;
+  email: string;
+  sessionCount: number;
+  lastSession: string | null;
+}
 
 export default function TherapistPatients() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  useEffect(() => {
+    const fetchPatients = async () => {
+      if (!user) return;
+
+      try {
+        // Get psychologist profile
+        const { data: profile } = await supabase
+          .from("psychologist_profiles")
+          .select("id")
+          .eq("user_id", user.id)
+          .single();
+
+        if (!profile) return;
+
+        // Get unique patients from appointments
+        const { data: appointments } = await supabase
+          .from("appointments")
+          .select(`
+            patient_id,
+            start_time,
+            patient:profiles!appointments_patient_id_fkey(id, full_name, avatar_url, email)
+          `)
+          .eq("psychologist_id", profile.id)
+          .order("start_time", { ascending: false });
+
+        if (appointments) {
+          // Group by patient and count sessions
+          const patientMap = new Map<string, Patient>();
+
+          appointments.forEach((apt: any) => {
+            if (apt.patient) {
+              const patientId = apt.patient.id;
+              if (patientMap.has(patientId)) {
+                const existing = patientMap.get(patientId)!;
+                existing.sessionCount += 1;
+              } else {
+                patientMap.set(patientId, {
+                  id: apt.patient.id,
+                  full_name: apt.patient.full_name || "Sin nombre",
+                  avatar_url: apt.patient.avatar_url,
+                  email: apt.patient.email,
+                  sessionCount: 1,
+                  lastSession: apt.start_time,
+                });
+              }
+            }
+          });
+
+          setPatients(Array.from(patientMap.values()));
+        }
+      } catch (error) {
+        console.error("Error fetching patients:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPatients();
+  }, [user]);
+
+  const filteredPatients = patients.filter((patient) =>
+    patient.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    patient.email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <div className="space-y-6">
       <div>
@@ -17,14 +103,62 @@ export default function TherapistPatients() {
             <Users className="w-5 h-5" />
             Lista de Pacientes
           </CardTitle>
+          <div className="relative mt-4">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+            <Input
+              placeholder="Buscar paciente por nombre o email..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-12">
-            <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground">
-              No tienes pacientes registrados todavía
-            </p>
-          </div>
+          {loading ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">Cargando pacientes...</p>
+            </div>
+          ) : filteredPatients.length === 0 ? (
+            <div className="text-center py-12">
+              <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground">
+                {searchTerm ? "No se encontraron pacientes" : "No tienes pacientes registrados todavía"}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {filteredPatients.map((patient) => (
+                <div
+                  key={patient.id}
+                  onClick={() => navigate(`/therapist/patients/${patient.id}`)}
+                  className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
+                >
+                  <div className="flex items-center gap-4">
+                    <Avatar>
+                      <AvatarImage src={patient.avatar_url || ""} />
+                      <AvatarFallback>
+                        {patient.full_name.split(" ").map(n => n[0]).join("").toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-medium text-foreground">{patient.full_name}</p>
+                      <p className="text-sm text-muted-foreground">{patient.email}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-medium text-foreground">
+                      {patient.sessionCount} sesión{patient.sessionCount !== 1 ? "es" : ""}
+                    </p>
+                    {patient.lastSession && (
+                      <p className="text-xs text-muted-foreground">
+                        Última: {new Date(patient.lastSession).toLocaleDateString("es-MX")}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

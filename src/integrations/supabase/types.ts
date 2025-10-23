@@ -524,6 +524,62 @@ export type Database = {
           },
         ]
       }
+      session_clinical_notes: {
+        Row: {
+          appointment_id: string
+          assessment: string | null
+          attachments: Json | null
+          created_at: string
+          id: string
+          objective_notes: string | null
+          patient_id: string
+          plan: string | null
+          private_notes: string | null
+          psychologist_id: string
+          session_date: string
+          subjective_notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          appointment_id: string
+          assessment?: string | null
+          attachments?: Json | null
+          created_at?: string
+          id?: string
+          objective_notes?: string | null
+          patient_id: string
+          plan?: string | null
+          private_notes?: string | null
+          psychologist_id: string
+          session_date: string
+          subjective_notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          appointment_id?: string
+          assessment?: string | null
+          attachments?: Json | null
+          created_at?: string
+          id?: string
+          objective_notes?: string | null
+          patient_id?: string
+          plan?: string | null
+          private_notes?: string | null
+          psychologist_id?: string
+          session_date?: string
+          subjective_notes?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_clinical_notes_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscription_history: {
         Row: {
           amount_charged: number | null

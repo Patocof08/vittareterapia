@@ -6,6 +6,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { format, startOfWeek, endOfWeek, startOfDay, endOfDay } from "date-fns";
+import { es } from "date-fns/locale";
 
 interface TherapistProfile {
   id: string;
@@ -20,30 +22,73 @@ export default function TherapistDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<TherapistProfile | null>(null);
+  const [todaySessions, setTodaySessions] = useState<any[]>([]);
+  const [weekSessions, setWeekSessions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchProfile = async () => {
+    const fetchData = async () => {
       if (!user) return;
       
-      const { data } = await supabase
-        .from("psychologist_profiles")
-        .select(`
-          *,
-          pricing:psychologist_pricing(*)
-        `)
-        .eq("user_id", user.id)
-        .maybeSingle();
+      try {
+        // Fetch profile
+        const { data: profileData } = await supabase
+          .from("psychologist_profiles")
+          .select(`
+            *,
+            pricing:psychologist_pricing(*)
+          `)
+          .eq("user_id", user.id)
+          .maybeSingle();
 
-      if (data) {
-        setProfile(data as any);
+        if (profileData) {
+          setProfile(profileData as any);
+
+          // Fetch sessions for today
+          const todayStart = startOfDay(new Date());
+          const todayEnd = endOfDay(new Date());
+
+          const { data: todayData } = await supabase
+            .from("appointments")
+            .select(`
+              *,
+              patient:profiles!appointments_patient_id_fkey(full_name, avatar_url)
+            `)
+            .eq("psychologist_id", profileData.id)
+            .gte("start_time", todayStart.toISOString())
+            .lte("start_time", todayEnd.toISOString())
+            .order("start_time", { ascending: true });
+
+          if (todayData) {
+            setTodaySessions(todayData);
+          }
+
+          // Fetch sessions for this week
+          const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
+          const weekEnd = endOfWeek(new Date(), { weekStartsOn: 1 });
+
+          const { data: weekData } = await supabase
+            .from("appointments")
+            .select("id")
+            .eq("psychologist_id", profileData.id)
+            .gte("start_time", weekStart.toISOString())
+            .lte("start_time", weekEnd.toISOString());
+
+          if (weekData) {
+            setWeekSessions(weekData);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      } finally {
+        setLoading(false);
       }
     };
 
-    fetchProfile();
+    fetchData();
   }, [user]);
 
-  // Por ahora no hay datos reales de sesiones, mensajes o tareas
-  const todaySessions: any[] = [];
+  // Placeholder for future features
   const unreadMessages: any[] = [];
   const pendingTasks: any[] = [];
 
@@ -100,9 +145,9 @@ export default function TherapistDashboard() {
             <Video className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">0</div>
+            <div className="text-2xl font-bold">{weekSessions.length}</div>
             <p className="text-xs text-muted-foreground">
-              Sin sesiones programadas aún
+              {weekSessions.length === 0 ? "Sin sesiones programadas aún" : `${weekSessions.length} sesión${weekSessions.length !== 1 ? 'es' : ''} programada${weekSessions.length !== 1 ? 's' : ''}`}
             </p>
           </CardContent>
         </Card>
@@ -166,7 +211,9 @@ export default function TherapistDashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {todaySessions.length === 0 ? (
+            {loading ? (
+              <p className="text-muted-foreground text-center py-8">Cargando...</p>
+            ) : todaySessions.length === 0 ? (
               <p className="text-muted-foreground text-center py-8">
                 No tienes sesiones programadas para hoy
               </p>
@@ -179,16 +226,27 @@ export default function TherapistDashboard() {
                   >
                     <div>
                       <p className="font-medium text-foreground">
-                        {session.patientName}
+                        {session.patient?.full_name || "Paciente"}
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        {session.time} - {session.duration} min
+                        {format(new Date(session.start_time), "HH:mm", { locale: es })} - {format(new Date(session.end_time), "HH:mm", { locale: es })}
                       </p>
-                      <span className="inline-block mt-1 text-xs bg-primary/10 text-primary px-2 py-1 rounded">
-                        {session.status}
+                      <span className={`inline-block mt-1 text-xs px-2 py-1 rounded ${
+                        session.status === "confirmed" ? "bg-green-100 text-green-800" :
+                        session.status === "completed" ? "bg-blue-100 text-blue-800" :
+                        session.status === "cancelled" ? "bg-red-100 text-red-800" :
+                        "bg-yellow-100 text-yellow-800"
+                      }`}>
+                        {session.status === "confirmed" ? "Confirmada" :
+                         session.status === "completed" ? "Completada" :
+                         session.status === "cancelled" ? "Cancelada" : "Pendiente"}
                       </span>
                     </div>
-                    <Button size="sm" variant="outline">
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => navigate("/therapist/sessions")}
+                    >
                       Ver detalles
                     </Button>
                   </div>
