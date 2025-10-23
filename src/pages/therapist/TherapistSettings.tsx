@@ -52,7 +52,6 @@ interface Document {
 }
 
 const languages = ["Español", "Inglés", "Francés", "Alemán", "Portugués", "Italiano"];
-const modalities = ["Videollamada", "Presencial"];
 
 const suggestedApproaches = [
   "Terapia Cognitivo-Conductual (TCC)",
@@ -256,7 +255,7 @@ export default function TherapistSettings() {
           therapeutic_approaches: profileData.therapeutic_approaches,
           languages: profileData.languages,
           populations: profileData.populations,
-          modalities: profileData.modalities,
+          modalities: ["Videollamada"],
         })
         .eq("user_id", user.id);
 
@@ -596,35 +595,12 @@ export default function TherapistSettings() {
                 </div>
               </div>
 
-              {/* Modalities */}
-              <div className="space-y-3">
-                <Label>Modalidad de atención</Label>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  {modalities.map((mod) => (
-                    <div key={mod} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`mod-${mod}`}
-                        checked={profileData?.modalities.includes(mod)}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            setProfileData({
-                              ...profileData!,
-                              modalities: [...(profileData?.modalities || []), mod],
-                            });
-                          } else {
-                            setProfileData({
-                              ...profileData!,
-                              modalities: (profileData?.modalities || []).filter((m) => m !== mod),
-                            });
-                          }
-                        }}
-                      />
-                      <Label htmlFor={`mod-${mod}`} className="cursor-pointer font-normal">
-                        {mod}
-                      </Label>
-                    </div>
-                  ))}
-                </div>
+              {/* Modality Info */}
+              <div className="p-4 bg-muted/50 rounded-lg border border-border">
+                <Label className="mb-2 block">Modalidad de atención</Label>
+                <p className="text-sm text-muted-foreground">
+                  Todas las sesiones se realizan por <strong>Videollamada</strong>
+                </p>
               </div>
 
               {/* Years of Experience */}

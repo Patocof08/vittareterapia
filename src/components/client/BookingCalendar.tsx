@@ -20,7 +20,6 @@ interface BookingCalendarProps {
 export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProps) {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [selectedTime, setSelectedTime] = useState<string>("");
-  const [modality, setModality] = useState<"Videollamada" | "Presencial">("Videollamada");
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [showBookingDialog, setShowBookingDialog] = useState(false);
@@ -142,7 +141,7 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
           start_time: startTime.toISOString(),
           end_time: endTime.toISOString(),
           status: "pending",
-          modality,
+          modality: "Videollamada",
         });
 
         if (error) throw error;
@@ -175,7 +174,7 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
           start_time: startTime.toISOString(),
           end_time: endTime.toISOString(),
           status: "pending",
-          modality,
+          modality: "Videollamada",
         });
 
         if (apptError) throw apptError;
@@ -212,20 +211,6 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
 
           {selectedDate && (
             <>
-              <div className="space-y-3">
-                <Label>Modalidad</Label>
-                <RadioGroup value={modality} onValueChange={(v: any) => setModality(v)}>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="Videollamada" id="online" />
-                    <Label htmlFor="online">Videollamada</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="Presencial" id="presencial" />
-                    <Label htmlFor="presencial">Presencial</Label>
-                  </div>
-                </RadioGroup>
-              </div>
-
               <div className="space-y-3">
                 <Label>Horarios disponibles</Label>
                 {loading ? (

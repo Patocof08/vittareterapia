@@ -33,7 +33,6 @@ export const PersonalizedQuiz = ({ onComplete, onCancel }: PersonalizedQuizProps
   const [contextPreference, setContextPreference] = useState<string[]>([]);
   const [urgency, setUrgency] = useState("normal");
   const [preferredLanguage, setPreferredLanguage] = useState("Español");
-  const [modality, setModality] = useState("video");
 
   const canProceed = () => {
     switch (step) {
@@ -46,7 +45,7 @@ export const PersonalizedQuiz = ({ onComplete, onCancel }: PersonalizedQuizProps
       case 7: return true; // Budget is optional
       case 8: return true; // Personal preferences are optional
       case 9: return urgency !== "";
-      case 10: return preferredLanguage !== "" && modality !== "";
+      case 10: return preferredLanguage !== "";
       default: return false;
     }
   };
@@ -67,7 +66,7 @@ export const PersonalizedQuiz = ({ onComplete, onCancel }: PersonalizedQuizProps
       context_preference: contextPreference.length > 0 ? contextPreference : undefined,
       urgency: urgency as any,
       preferred_language: preferredLanguage,
-      modality: modality as any,
+      modality: "video" as any, // Always video
       is_active: true,
     };
     onComplete(preferences);
@@ -452,11 +451,11 @@ export const PersonalizedQuiz = ({ onComplete, onCancel }: PersonalizedQuizProps
           </div>
         )}
 
-        {/* Step 10: Language and modality */}
+        {/* Step 10: Language */}
         {step === 10 && (
           <div className="space-y-6">
             <div>
-              <Label className="text-lg font-semibold">Idioma y modalidad</Label>
+              <Label className="text-lg font-semibold">Idioma preferido</Label>
               <p className="text-sm text-muted-foreground mt-1">
                 Últimos detalles para personalizar tu búsqueda
               </p>
@@ -481,22 +480,11 @@ export const PersonalizedQuiz = ({ onComplete, onCancel }: PersonalizedQuizProps
                 </RadioGroup>
               </div>
 
-              <div>
-                <Label className="text-sm font-medium mb-2 block">Modalidad preferida</Label>
-                <RadioGroup value={modality} onValueChange={setModality}>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="video" id="video" />
-                    <Label htmlFor="video" className="font-normal cursor-pointer">
-                      Solo videollamada
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="mixed" id="mixed" />
-                    <Label htmlFor="mixed" className="font-normal cursor-pointer">
-                      Videollamada o presencial
-                    </Label>
-                  </div>
-                </RadioGroup>
+              <div className="p-4 bg-muted/50 rounded-lg border border-border">
+                <Label className="text-sm font-medium mb-2 block">Modalidad</Label>
+                <p className="text-sm text-muted-foreground">
+                  Todas las sesiones se realizan por <strong>Videollamada</strong>
+                </p>
               </div>
             </div>
           </div>

@@ -10,7 +10,6 @@ import { Upload, User } from "lucide-react";
 import { toast } from "sonner";
 
 const languages = ["Español", "Inglés", "Francés", "Alemán", "Portugués", "Italiano"];
-const modalities = ["Videollamada", "Presencial"];
 
 export const Step1PersonalData = () => {
   const { data, updateData, nextStep, uploadFile } = useOnboardingContext();
@@ -24,7 +23,7 @@ export const Step1PersonalData = () => {
     city: data.city || "",
     country: data.country || "",
     languages: data.languages || [],
-    modalities: data.modalities || [],
+    modalities: ["Videollamada"], // Always videollamada
     profile_photo_url: data.profile_photo_url || "",
   });
 
@@ -91,10 +90,6 @@ export const Step1PersonalData = () => {
     }
     if (formData.languages.length === 0) {
       toast.error("Selecciona al menos un idioma");
-      return false;
-    }
-    if (formData.modalities.length === 0) {
-      toast.error("Selecciona al menos una modalidad");
       return false;
     }
     return true;
@@ -232,23 +227,11 @@ export const Step1PersonalData = () => {
             </div>
           </div>
 
-          {/* Modalities */}
-          <div className="space-y-3">
-            <Label>Modalidad de atención *</Label>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              {modalities.map((mod) => (
-                <div key={mod} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`mod-${mod}`}
-                    checked={formData.modalities.includes(mod)}
-                    onCheckedChange={() => toggleArrayItem("modalities", mod)}
-                  />
-                  <Label htmlFor={`mod-${mod}`} className="cursor-pointer font-normal">
-                    {mod}
-                  </Label>
-                </div>
-              ))}
-            </div>
+          {/* Info about modality */}
+          <div className="p-4 bg-muted/50 rounded-lg border border-border">
+            <p className="text-sm text-muted-foreground">
+              <strong>Modalidad:</strong> Todas las sesiones serán por videollamada
+            </p>
           </div>
         </CardContent>
       </Card>

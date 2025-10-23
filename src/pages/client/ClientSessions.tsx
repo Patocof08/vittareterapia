@@ -162,7 +162,7 @@ export default function ClientSessions() {
                         </span>
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">
-                        Modalidad: {session.modality === "online" ? "Videollamada" : "Presencial"}
+                        Videollamada
                       </p>
                     </div>
                     <div className="flex flex-col items-end gap-2">
