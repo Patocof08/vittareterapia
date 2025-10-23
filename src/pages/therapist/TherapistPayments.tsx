@@ -129,15 +129,16 @@ export default function TherapistPayments() {
       case "completed":
         // Completadas: sesiones tomadas O canceladas tarde (se cobran)
         filtered = paymentsToFilter.filter(p => 
-          p.payment_status === "completed" ||
+          (p.appointment?.status === "completed") ||
           (p.appointment?.status === "cancelled" && p.appointment?.cancellation_reason?.includes("menos de 24h"))
         );
         break;
       case "pending":
-        // Pendientes: sesiones activas que aún no se toman
+        // Pendientes: sesiones activas que aún no se toman (cita pendiente, no cancelada)
         filtered = paymentsToFilter.filter(p => 
-          p.payment_status === "pending" && 
-          (!p.appointment || p.appointment.status !== "cancelled")
+          p.appointment && 
+          p.appointment.status !== "cancelled" && 
+          p.appointment.status !== "completed"
         );
         break;
       case "cancelled":
@@ -166,7 +167,6 @@ export default function TherapistPayments() {
   };
 
   const getStatusBadge = (payment: Payment) => {
-    const status = payment.payment_status;
     const appointment = payment.appointment;
     const cancelReason = appointment?.cancellation_reason || "";
     
@@ -179,24 +179,34 @@ export default function TherapistPayments() {
     }
     
     // Cancelado a tiempo (sin cargo)
-    if (status === "cancelled" || (appointment?.status === "cancelled" && !cancelReason.includes("menos de 24h"))) {
+    if (payment.payment_status === "cancelled" || (appointment?.status === "cancelled" && !cancelReason.includes("menos de 24h"))) {
       return {
         label: "Cancelado",
         className: "bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-950 dark:text-gray-400 dark:border-gray-800"
       };
     }
     
-    const config: Record<string, { label: string; className: string }> = {
-      completed: { 
-        label: "Completado", 
-        className: "bg-green-50 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-400 dark:border-green-800" 
-      },
-      pending: { 
+    // Si la cita está pendiente (no cancelada), mostrar como pendiente
+    if (appointment && appointment.status !== "cancelled" && appointment.status !== "completed") {
+      return { 
         label: "Pendiente", 
         className: "bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-950 dark:text-yellow-400 dark:border-yellow-800" 
-      },
+      };
+    }
+    
+    // Si la cita está completada o el pago está completado sin cita cancelada
+    if (appointment?.status === "completed" || payment.payment_status === "completed") {
+      return { 
+        label: "Completado", 
+        className: "bg-green-50 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-400 dark:border-green-800" 
+      };
+    }
+    
+    // Default: mostrar el estado del pago
+    return { 
+      label: "Pendiente", 
+      className: "bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-950 dark:text-yellow-400 dark:border-yellow-800" 
     };
-    return config[status] || { label: status, className: "" };
   };
 
   if (loading) {
