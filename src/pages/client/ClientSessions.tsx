@@ -102,10 +102,9 @@ export default function ClientSessions() {
   const getStatusBadge = (status: string) => {
     const variants: Record<string, { label: string; className: string }> = {
       pending: { label: "Pendiente", className: "bg-yellow-50 text-yellow-700 border-yellow-200" },
-      confirmed: { label: "Confirmada", className: "bg-blue-50 text-blue-700 border-blue-200" },
       completed: { label: "Completada", className: "bg-green-50 text-green-700 border-green-200" },
       cancelled: { label: "Cancelada", className: "bg-red-50 text-red-700 border-red-200" },
-      rescheduled: { label: "Reprogramada", className: "bg-purple-50 text-purple-700 border-purple-200" },
+      no_show: { label: "Sin asistencia", className: "bg-gray-50 text-gray-700 border-gray-200" },
     };
     const variant = variants[status] || variants.pending;
     return <Badge variant="outline" className={variant.className}>{variant.label}</Badge>;

@@ -18,7 +18,7 @@ import { useAuth } from "@/hooks/useAuth";
 export default function TherapistSessions() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [statusFilter, setStatusFilter] = useState<string>("activas");
+  const [statusFilter, setStatusFilter] = useState<string>("todas");
   const [searchTerm, setSearchTerm] = useState("");
   const [sessions, setSessions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -114,11 +114,14 @@ export default function TherapistSessions() {
     let matchesStatus = false;
     if (statusFilter === "todas") {
       matchesStatus = true;
-    } else if (statusFilter === "activas") {
-      // Activas = confirmed o pending (no cancelled ni completed)
-      matchesStatus = session.status === "confirmed" || session.status === "pending";
-    } else {
-      matchesStatus = session.status === statusFilter;
+    } else if (statusFilter === "pendiente") {
+      matchesStatus = session.status === "pending";
+    } else if (statusFilter === "completada") {
+      matchesStatus = session.status === "completed";
+    } else if (statusFilter === "cancelada") {
+      matchesStatus = session.status === "cancelled";
+    } else if (statusFilter === "no_show") {
+      matchesStatus = session.status === "no_show";
     }
     
     return matchesSearch && matchesStatus;
@@ -163,12 +166,11 @@ export default function TherapistSessions() {
                 <SelectValue placeholder="Estado" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="activas">Activas</SelectItem>
                 <SelectItem value="todas">Todas</SelectItem>
-                <SelectItem value="confirmed">Confirmadas</SelectItem>
-                <SelectItem value="pending">Pendientes</SelectItem>
-                <SelectItem value="completed">Completadas</SelectItem>
-                <SelectItem value="cancelled">Canceladas</SelectItem>
+                <SelectItem value="pendiente">Pendientes</SelectItem>
+                <SelectItem value="completada">Completadas</SelectItem>
+                <SelectItem value="cancelada">Canceladas</SelectItem>
+                <SelectItem value="no_show">Sin asistencia</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -210,19 +212,21 @@ export default function TherapistSessions() {
                   </div>
                   <span
                     className={`px-3 py-1 rounded text-sm font-medium ${
-                      session.status === "confirmed"
-                        ? "bg-primary/10 text-primary"
-                        : session.status === "pending"
+                      session.status === "pending"
                         ? "bg-secondary/10 text-secondary"
                         : session.status === "completed"
                         ? "bg-accent text-accent-foreground"
+                        : session.status === "cancelled"
+                        ? "bg-destructive/10 text-destructive"
+                        : session.status === "no_show"
+                        ? "bg-muted text-muted-foreground"
                         : "bg-muted text-muted-foreground"
                     }`}
                   >
                     {session.status === "pending" ? "pendiente" :
-                     session.status === "confirmed" ? "confirmada" :
                      session.status === "completed" ? "completada" :
-                     session.status === "cancelled" ? "cancelada" : session.status}
+                     session.status === "cancelled" ? "cancelada" :
+                     session.status === "no_show" ? "sin asistencia" : session.status}
                   </span>
                 </div>
               </CardHeader>
@@ -240,7 +244,7 @@ export default function TherapistSessions() {
                   )}
 
                   <div className="flex flex-wrap gap-2">
-                    {session.video_link && session.status === "confirmed" && (
+                    {session.video_link && session.status === "pending" && (
                       <Button
                         onClick={() =>
                           handleStartSession(session.id, session.video_link)
@@ -250,7 +254,7 @@ export default function TherapistSessions() {
                         Iniciar videollamada
                       </Button>
                     )}
-                    {session.status === "confirmed" && (
+                    {session.status === "pending" && (
                       <Button
                         variant="outline"
                         onClick={() => handleCompleteSession(session.id)}
