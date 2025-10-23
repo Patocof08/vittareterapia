@@ -217,9 +217,18 @@ export default function ClientSettings() {
 
     setLoading(true);
     try {
+      // Get the current session to pass the access token
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        throw new Error('No hay sesión activa');
+      }
+
       // Call edge function to delete user account
-      const { error } = await supabase.functions.invoke('delete-user-account', {
-        method: 'POST'
+      const { data, error } = await supabase.functions.invoke('delete-user-account', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
       });
 
       if (error) throw error;
@@ -233,6 +242,7 @@ export default function ClientSettings() {
       await supabase.auth.signOut();
       navigate("/");
     } catch (error: any) {
+      console.error('Error deleting account:', error);
       toast({
         title: "Error",
         description: error.message || "No se pudo eliminar la cuenta",
