@@ -26,10 +26,21 @@ interface PsychologistInfo {
   avatar_url: string | null;
 }
 
+interface Conversation {
+  id: string;
+  psychologist_id: string;
+  client_id: string;
+  last_message_at: string;
+  psychologist_name: string;
+  psychologist_avatar: string | null;
+  unread_count: number;
+  last_message: string;
+}
+
 export default function ClientMessages() {
   const { user } = useAuth();
-  const [conversationId, setConversationId] = useState<string | null>(null);
-  const [psychologist, setPsychologist] = useState<PsychologistInfo | null>(null);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [messageText, setMessageText] = useState("");
   const [loading, setLoading] = useState(true);
@@ -46,20 +57,20 @@ export default function ClientMessages() {
 
   useEffect(() => {
     if (user) {
-      loadConversation();
+      loadConversations();
     }
   }, [user]);
 
   useEffect(() => {
-    if (conversationId) {
+    if (selectedConversation) {
       loadMessages();
       markMessagesAsRead();
     }
-  }, [conversationId]);
+  }, [selectedConversation]);
 
   // Realtime subscription
   useEffect(() => {
-    if (!conversationId) return;
+    if (!selectedConversation) return;
 
     const channel = supabase
       .channel('client-messages-channel')
@@ -69,7 +80,7 @@ export default function ClientMessages() {
           event: 'INSERT',
           schema: 'public',
           table: 'messages',
-          filter: `conversation_id=eq.${conversationId}`
+          filter: `conversation_id=eq.${selectedConversation.id}`
         },
         (payload) => {
           const newMessage = payload.new as Message;
@@ -86,128 +97,123 @@ export default function ClientMessages() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [conversationId, user]);
+  }, [selectedConversation, user]);
 
-  const loadConversation = async () => {
+  const loadConversations = async () => {
     if (!user) return;
 
     try {
       setLoading(true);
 
-      // Check if user has any appointments (to find their psychologist)
+      // Get all psychologists (from appointments)
       const { data: appointments } = await supabase
         .from("appointments")
         .select("psychologist_id")
-        .eq("patient_id", user.id)
-        .limit(1);
+        .eq("patient_id", user.id);
 
       if (!appointments || appointments.length === 0) {
+        setConversations([]);
         setLoading(false);
         return;
       }
 
-      const psychologistId = appointments[0].psychologist_id;
+      // Get unique psychologist IDs
+      const psychologistIds = [...new Set(appointments.map(a => a.psychologist_id))];
 
-      // Get or create conversation
-      let { data: convo, error: convoError } = await supabase
-        .from("conversations")
-        .select("*")
-        .eq("client_id", user.id)
-        .eq("psychologist_id", psychologistId)
-        .maybeSingle();
+      // Get or create conversations for each psychologist
+      const conversationsData = await Promise.all(
+        psychologistIds.map(async (psychologistId) => {
+          // Check if conversation exists
+          let { data: convo } = await supabase
+            .from("conversations")
+            .select("*")
+            .eq("client_id", user.id)
+            .eq("psychologist_id", psychologistId)
+            .maybeSingle();
 
-      if (convoError && convoError.code !== "PGRST116") {
-        throw convoError;
-      }
-
-      // Create conversation if it doesn't exist
-      if (!convo) {
-        const { data: newConvo, error: createError } = await supabase
-          .from("conversations")
-          .insert({
-            client_id: user.id,
-            psychologist_id: psychologistId
-          })
-          .select()
-          .single();
-
-        if (createError) throw createError;
-        convo = newConvo;
-      }
-
-      setConversationId(convo.id);
-
-      // Get psychologist profile info
-      const { data: psychProfile } = await supabase
-        .from("psychologist_profiles")
-        .select("id, first_name, last_name, profile_photo_url")
-        .eq("id", psychologistId)
-        .single();
-
-      if (psychProfile) {
-        // Get user_id from psychologist profile
-        const { data: userData } = await supabase
-          .from("profiles")
-          .select("id, full_name, avatar_url")
-          .eq("id", psychProfile.id)
-          .maybeSingle();
-
-        // Try to get from psychologist's user_id
-        if (!userData) {
-          const { data: psychUser } = await supabase
-            .from("psychologist_profiles")
-            .select("user_id")
-            .eq("id", psychologistId)
-            .single();
-
-          if (psychUser) {
-            const { data: userProfile } = await supabase
-              .from("profiles")
-              .select("id, full_name, avatar_url")
-              .eq("id", psychUser.user_id)
+          // Create conversation if it doesn't exist
+          if (!convo) {
+            const { data: newConvo, error: createError } = await supabase
+              .from("conversations")
+              .insert({
+                client_id: user.id,
+                psychologist_id: psychologistId
+              })
+              .select()
               .single();
 
-            if (userProfile) {
-              setPsychologist({
-                id: psychologistId,
-                full_name: userProfile.full_name || `${psychProfile.first_name} ${psychProfile.last_name}`,
-                avatar_url: userProfile.avatar_url || psychProfile.profile_photo_url
-              });
+            if (createError) {
+              console.error("Error creating conversation:", createError);
+              return null;
             }
+            convo = newConvo;
           }
-        } else {
-          setPsychologist({
-            id: psychologistId,
-            full_name: userData.full_name || `${psychProfile.first_name} ${psychProfile.last_name}`,
-            avatar_url: userData.avatar_url || psychProfile.profile_photo_url
-          });
-        }
 
-        // Fallback
-        if (!psychologist) {
-          setPsychologist({
-            id: psychologistId,
-            full_name: `${psychProfile.first_name} ${psychProfile.last_name}`,
-            avatar_url: psychProfile.profile_photo_url
-          });
-        }
+          // Get psychologist profile
+          const { data: psychProfile } = await supabase
+            .from("psychologist_profiles")
+            .select("id, first_name, last_name, profile_photo_url")
+            .eq("id", psychologistId)
+            .maybeSingle();
+
+          const psychName = psychProfile 
+            ? `${psychProfile.first_name} ${psychProfile.last_name}`
+            : "Psicólogo";
+
+          // Get unread count
+          const { count } = await supabase
+            .from("messages")
+            .select("*", { count: "exact", head: true })
+            .eq("conversation_id", convo.id)
+            .neq("sender_id", user.id)
+            .eq("is_read", false);
+
+          // Get last message
+          const { data: lastMsg } = await supabase
+            .from("messages")
+            .select("content")
+            .eq("conversation_id", convo.id)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          return {
+            ...convo,
+            psychologist_name: psychName,
+            psychologist_avatar: psychProfile?.profile_photo_url || null,
+            unread_count: count || 0,
+            last_message: lastMsg?.content || "Inicia la conversación"
+          };
+        })
+      );
+
+      // Filter out nulls and sort by last message
+      const validConversations = conversationsData
+        .filter(c => c !== null)
+        .sort((a, b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime());
+
+      setConversations(validConversations);
+      
+      // Auto-select first conversation if none selected
+      if (validConversations.length > 0 && !selectedConversation) {
+        setSelectedConversation(validConversations[0]);
       }
     } catch (error) {
-      console.error("Error loading conversation:", error);
-      toast.error("Error al cargar la conversación");
+      console.error("Error loading conversations:", error);
+      toast.error("Error al cargar conversaciones");
     } finally {
       setLoading(false);
     }
   };
 
   const loadMessages = async () => {
-    if (!conversationId) return;
+    if (!selectedConversation) return;
 
     try {
       const { data, error } = await supabase
         .from("messages")
         .select("*")
-        .eq("conversation_id", conversationId)
+        .eq("conversation_id", selectedConversation.id)
         .order("created_at", { ascending: true });
 
       if (error) throw error;
@@ -219,13 +225,13 @@ export default function ClientMessages() {
   };
 
   const markMessagesAsRead = async () => {
-    if (!conversationId || !user) return;
+    if (!selectedConversation || !user) return;
 
     try {
       await supabase
         .from("messages")
         .update({ is_read: true })
-        .eq("conversation_id", conversationId)
+        .eq("conversation_id", selectedConversation.id)
         .neq("sender_id", user.id)
         .eq("is_read", false);
     } catch (error) {
@@ -234,7 +240,7 @@ export default function ClientMessages() {
   };
 
   const handleSendMessage = async () => {
-    if (!messageText.trim() || !conversationId || !user) {
+    if (!messageText.trim() || !selectedConversation || !user) {
       toast.error("Escribe un mensaje antes de enviar");
       return;
     }
@@ -244,7 +250,7 @@ export default function ClientMessages() {
       const { error } = await supabase
         .from("messages")
         .insert({
-          conversation_id: conversationId,
+          conversation_id: selectedConversation.id,
           sender_id: user.id,
           content: messageText.trim(),
           is_read: false
@@ -268,19 +274,19 @@ export default function ClientMessages() {
     );
   }
 
-  if (!conversationId || !psychologist) {
+  if (conversations.length === 0 && !loading) {
     return (
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Mensajes</h1>
-          <p className="text-muted-foreground mt-1">Chat con tu psicólogo</p>
+          <p className="text-muted-foreground mt-1">Chat con tus psicólogos</p>
         </div>
         <Card>
           <CardContent className="py-12">
             <div className="text-center">
               <MessageSquare className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
               <p className="text-muted-foreground">
-                Aún no tienes un psicólogo asignado
+                Aún no tienes psicólogos asignados
               </p>
               <p className="text-sm text-muted-foreground mt-2">
                 Agenda tu primera sesión para comenzar
@@ -296,108 +302,162 @@ export default function ClientMessages() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-foreground">Mensajes</h1>
-        <p className="text-muted-foreground mt-1">Chat con tu psicólogo</p>
+        <p className="text-muted-foreground mt-1">Chat con tus psicólogos</p>
       </div>
 
-      <Card className="min-h-[600px] flex flex-col">
-        <CardHeader className="border-b">
-          <div className="flex items-center gap-3">
-            <Avatar className="w-10 h-10">
-              <AvatarImage src={psychologist.avatar_url || ""} />
-              <AvatarFallback>
-                {psychologist.full_name.substring(0, 2).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <CardTitle>{psychologist.full_name}</CardTitle>
-              <p className="text-sm text-muted-foreground">Tu psicólogo</p>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="flex-1 flex flex-col p-0">
-          {/* Emergency warning */}
-          <div className="bg-destructive/10 border-b border-destructive/20 p-4">
-            <p className="text-sm text-destructive font-medium">
-              ⚠️ Este no es un servicio de emergencias
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Si necesitas ayuda inmediata, contacta a los servicios de emergencia o
-              la Línea de la Vida: 800 911 2000
-            </p>
-          </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Conversations list */}
+        <Card className="md:col-span-1">
+          <CardHeader>
+            <CardTitle>Conversaciones</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <ScrollArea className="h-[600px]">
+              {conversations.map((convo) => (
+                <button
+                  key={convo.id}
+                  onClick={() => setSelectedConversation(convo)}
+                  className={`w-full p-4 flex items-start gap-3 hover:bg-accent transition-colors ${
+                    selectedConversation?.id === convo.id ? "bg-accent" : ""
+                  }`}
+                >
+                  <Avatar className="w-10 h-10 flex-shrink-0">
+                    <AvatarImage src={convo.psychologist_avatar || ""} />
+                    <AvatarFallback>
+                      {convo.psychologist_name.substring(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 text-left min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="font-semibold truncate">{convo.psychologist_name}</p>
+                      {convo.unread_count > 0 && (
+                        <span className="bg-primary text-primary-foreground text-xs rounded-full px-2 py-0.5 flex-shrink-0">
+                          {convo.unread_count}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground truncate mt-1">
+                      {convo.last_message}
+                    </p>
+                  </div>
+                </button>
+              ))}
+            </ScrollArea>
+          </CardContent>
+        </Card>
 
-          {/* Messages area */}
-          <ScrollArea className="flex-1 p-4">
-            {messages.length === 0 ? (
-              <div className="flex items-center justify-center h-full">
-                <div className="text-center">
-                  <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-50 text-muted-foreground" />
-                  <p className="text-muted-foreground">No hay mensajes aún</p>
-                  <p className="text-sm mt-1 text-muted-foreground">
-                    Inicia una conversación con tu psicólogo
+        {/* Chat area */}
+        <Card className="md:col-span-2 min-h-[600px] flex flex-col">
+          {selectedConversation ? (
+            <>
+              <CardHeader className="border-b">
+                <div className="flex items-center gap-3">
+                  <Avatar className="w-10 h-10">
+                    <AvatarImage src={selectedConversation.psychologist_avatar || ""} />
+                    <AvatarFallback>
+                      {selectedConversation.psychologist_name.substring(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <CardTitle>{selectedConversation.psychologist_name}</CardTitle>
+                    <p className="text-sm text-muted-foreground">Tu psicólogo</p>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="flex-1 flex flex-col p-0">
+                {/* Emergency warning */}
+                <div className="bg-destructive/10 border-b border-destructive/20 p-4">
+                  <p className="text-sm text-destructive font-medium">
+                    ⚠️ Este no es un servicio de emergencias
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Si necesitas ayuda inmediata, contacta a los servicios de emergencia o
+                    la Línea de la Vida: 800 911 2000
                   </p>
                 </div>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {messages.map((message) => {
-                  const isClient = message.sender_id === user?.id;
-                  return (
-                    <div
-                      key={message.id}
-                      className={`flex ${isClient ? "justify-end" : "justify-start"}`}
-                    >
-                      <div
-                        className={`max-w-[70%] p-3 rounded-lg ${
-                          isClient
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-accent"
-                        }`}
-                      >
-                        <p className="text-sm whitespace-pre-wrap break-words">
-                          {message.content}
-                        </p>
-                        <p
-                          className={`text-xs mt-1 ${
-                            isClient
-                              ? "text-primary-foreground/70"
-                              : "text-muted-foreground"
-                          }`}
-                        >
-                          {format(new Date(message.created_at), "HH:mm", { locale: es })}
+
+                {/* Messages area */}
+                <ScrollArea className="flex-1 p-4">
+                  {messages.length === 0 ? (
+                    <div className="flex items-center justify-center h-full">
+                      <div className="text-center">
+                        <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-50 text-muted-foreground" />
+                        <p className="text-muted-foreground">No hay mensajes aún</p>
+                        <p className="text-sm mt-1 text-muted-foreground">
+                          Inicia una conversación con tu psicólogo
                         </p>
                       </div>
                     </div>
-                  );
-                })}
-                <div ref={messagesEndRef} />
-              </div>
-            )}
-          </ScrollArea>
+                  ) : (
+                    <div className="space-y-4">
+                      {messages.map((message) => {
+                        const isClient = message.sender_id === user?.id;
+                        return (
+                          <div
+                            key={message.id}
+                            className={`flex ${isClient ? "justify-end" : "justify-start"}`}
+                          >
+                            <div
+                              className={`max-w-[70%] p-3 rounded-lg ${
+                                isClient
+                                  ? "bg-primary text-primary-foreground"
+                                  : "bg-accent"
+                              }`}
+                            >
+                              <p className="text-sm whitespace-pre-wrap break-words">
+                                {message.content}
+                              </p>
+                              <p
+                                className={`text-xs mt-1 ${
+                                  isClient
+                                    ? "text-primary-foreground/70"
+                                    : "text-muted-foreground"
+                                }`}
+                              >
+                                {format(new Date(message.created_at), "HH:mm", { locale: es })}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                      <div ref={messagesEndRef} />
+                    </div>
+                  )}
+                </ScrollArea>
 
-          {/* Input area */}
-          <div className="border-t p-4">
-            <div className="flex gap-2">
-              <Input
-                placeholder="Escribe un mensaje..."
-                value={messageText}
-                onChange={(e) => setMessageText(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSendMessage();
-                  }
-                }}
-                disabled={sending}
-                className="flex-1"
-              />
-              <Button onClick={handleSendMessage} disabled={sending} size="icon">
-                <Send className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+                {/* Input area */}
+                <div className="border-t p-4">
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Escribe un mensaje..."
+                      value={messageText}
+                      onChange={(e) => setMessageText(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSendMessage();
+                        }
+                      }}
+                      disabled={sending}
+                      className="flex-1"
+                    />
+                    <Button onClick={handleSendMessage} disabled={sending} size="icon">
+                      <Send className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </>
+          ) : (
+            <CardContent className="flex-1 flex items-center justify-center">
+              <div className="text-center text-muted-foreground">
+                <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                <p>Selecciona una conversación para comenzar</p>
+              </div>
+            </CardContent>
+          )}
+        </Card>
+      </div>
     </div>
   );
 }
