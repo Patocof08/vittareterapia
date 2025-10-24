@@ -176,7 +176,7 @@ serve(async (req) => {
     console.error("[CREATE-CHECKOUT] Error:", error);
     return new Response(
       JSON.stringify({ 
-        error: error.message 
+        error: error instanceof Error ? error.message : "Error desconocido"
       }), 
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

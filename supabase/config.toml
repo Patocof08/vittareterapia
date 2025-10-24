@@ -1,1 +1,7 @@
 project_id = "ttyoqcjcglnvgmzjqsoz"
+
+[functions.create-checkout-session]
+verify_jwt = true
+
+[functions.delete-user-account]
+verify_jwt = true

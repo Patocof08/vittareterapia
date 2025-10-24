@@ -16,6 +16,9 @@ interface CheckoutData {
   payment_type: string;
   description: string;
   psychologist_name: string;
+  psychologist_id: string;
+  client_id: string;
+  appointment_id?: string;
   appointment_date?: string;
 }
 
@@ -45,11 +48,14 @@ export default function ClientCheckout() {
           amount,
           payment_type,
           description,
-          psychologist:psychologist_profiles!fk_payment_psychologist(
+          client_id,
+          psychologist_id,
+          appointment_id,
+          psychologist_profiles!inner(
             first_name,
             last_name
           ),
-          appointment:appointments!fk_payment_appointment(
+          appointments(
             start_time
           )
         `)
@@ -62,9 +68,12 @@ export default function ClientCheckout() {
         payment_id: payment.id,
         amount: payment.amount,
         payment_type: payment.payment_type,
-        description: payment.description,
-        psychologist_name: `${payment.psychologist.first_name} ${payment.psychologist.last_name}`,
-        appointment_date: payment.appointment?.start_time,
+        description: payment.description || "",
+        client_id: payment.client_id,
+        psychologist_id: payment.psychologist_id,
+        psychologist_name: `${payment.psychologist_profiles.first_name} ${payment.psychologist_profiles.last_name}`,
+        appointment_id: payment.appointment_id || undefined,
+        appointment_date: payment.appointments?.start_time,
       });
     } catch (error) {
       console.error("Error fetching payment:", error);
@@ -89,51 +98,103 @@ export default function ClientCheckout() {
 
     setProcessing(true);
     try {
-      // Simulate payment processing
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      // Verificar si el pago ya fue procesado
+      const { data: currentPayment } = await supabase
+        .from("payments")
+        .select("payment_status")
+        .eq("id", checkoutData.payment_id)
+        .single();
 
-      // Update payment status to completed
+      if (currentPayment?.payment_status === "completed") {
+        toast.success("¡Pago ya procesado!");
+        
+        setTimeout(() => {
+          if (checkoutData.payment_type === "single_session") {
+            navigate("/client/sessions");
+          } else {
+            navigate("/client/subscriptions");
+          }
+        }, 1000);
+        return;
+      }
+
+      // Simular confirmación final
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
+      // Update payment status
       const { error: paymentError } = await supabase
         .from("payments")
         .update({
           payment_status: "completed",
           completed_at: new Date().toISOString(),
-          payment_method: "Transferencia/Efectivo", // Placeholder
+          payment_method: "stripe",
         })
         .eq("id", checkoutData.payment_id);
 
       if (paymentError) throw paymentError;
 
-      // Get user and payment data for invoice
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
-      const { data: paymentData } = await supabase
-        .from("payments")
-        .select("psychologist_id")
-        .eq("id", checkoutData.payment_id)
-        .single();
+      // Update appointment status if exists
+      if (checkoutData.appointment_id) {
+        await supabase
+          .from("appointments")
+          .update({ status: "confirmed" })
+          .eq("id", checkoutData.appointment_id);
+      }
+
+      // If package, create subscription
+      if (checkoutData.payment_type === "package_4" || checkoutData.payment_type === "package_8") {
+        const sessionsTotal = checkoutData.payment_type === "package_4" ? 4 : 8;
+        const periodEnd = new Date();
+        periodEnd.setMonth(periodEnd.getMonth() + 1);
+
+        const { data: pricing } = await supabase
+          .from("psychologist_pricing")
+          .select("session_price")
+          .eq("psychologist_id", checkoutData.psychologist_id)
+          .single();
+
+        let discountPercentage = 0;
+        if (pricing) {
+          const regularPrice = Number(pricing.session_price) * sessionsTotal;
+          discountPercentage = Math.round(((regularPrice - checkoutData.amount) / regularPrice) * 100);
+        }
+
+        await supabase.from("client_subscriptions").insert({
+          client_id: checkoutData.client_id,
+          psychologist_id: checkoutData.psychologist_id,
+          package_type: checkoutData.payment_type,
+          sessions_total: sessionsTotal,
+          sessions_remaining: sessionsTotal,
+          sessions_used: 0,
+          session_price: pricing ? Number(pricing.session_price) : 0,
+          discount_percentage: discountPercentage,
+          status: "active",
+          auto_renew: false,
+          current_period_start: new Date().toISOString(),
+          current_period_end: periodEnd.toISOString(),
+          next_billing_date: null,
+        });
+      }
 
       // Create invoice
-      if (currentUser && paymentData) {
-        // @ts-ignore - Types will regenerate automatically
-        const { error: invoiceError } = await supabase.from("invoices").insert([{
-          payment_id: checkoutData.payment_id,
-          client_id: currentUser.id,
-          psychologist_id: paymentData.psychologist_id,
-          amount: checkoutData.amount,
-          invoice_number: '', // Will be auto-generated by trigger
-        }]);
+      await supabase.from("invoices").insert({
+        payment_id: checkoutData.payment_id,
+        client_id: checkoutData.client_id,
+        psychologist_id: checkoutData.psychologist_id,
+        amount: checkoutData.amount,
+        currency: "MXN",
+        issued_at: new Date().toISOString(),
+      } as any);
 
-        if (invoiceError) console.error("Error creating invoice:", invoiceError);
-      }
+      toast.success("¡Pago procesado exitosamente!");
 
-      toast.success("¡Pago procesado con éxito!");
-      
-      // Redirect based on payment type
-      if (checkoutData.payment_type === "single_session") {
-        navigate("/portal/sesiones");
-      } else {
-        navigate("/portal/suscripciones");
-      }
+      setTimeout(() => {
+        if (checkoutData.payment_type === "single_session") {
+          navigate("/client/sessions");
+        } else {
+          navigate("/client/subscriptions");
+        }
+      }, 1500);
     } catch (error) {
       console.error("Error processing payment:", error);
       toast.error("Error al procesar el pago");
