@@ -353,12 +353,19 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
       }
 
       console.log("Redirigiendo a Stripe:", checkoutData.url);
-      toast.success("Redirigiendo a Stripe Checkout...");
       
-      // Redirect to Stripe Checkout
-      setTimeout(() => {
+      // Open Stripe Checkout in a new tab
+      const stripeWindow = window.open(checkoutData.url, '_blank');
+      
+      if (stripeWindow) {
+        toast.success("Checkout abierto en nueva pestaña");
+        // Navigate back to sessions page
+        navigate("/portal/sesiones");
+      } else {
+        // Fallback if popup was blocked
+        toast.info("Por favor permite ventanas emergentes y haz clic de nuevo");
         window.location.href = checkoutData.url;
-      }, 500);
+      }
     } catch (error: any) {
       console.error("Error completo en booking:", error);
       toast.error(error.message || "Error al procesar el pago");
