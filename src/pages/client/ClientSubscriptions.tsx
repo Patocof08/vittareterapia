@@ -28,20 +28,14 @@ import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 interface Subscription {
-  id: string;
+  stripe_subscription_id: string;
   psychologist_id: string;
-  package_type: '4_sessions' | '8_sessions';
-  session_price: number;
-  discount_percentage: number;
-  sessions_total: number;
-  sessions_used: number;
-  sessions_remaining: number;
-  rollover_sessions: number;
+  package_type: 'package_4' | 'package_8';
+  sessions: number;
   status: string;
-  auto_renew: boolean;
   current_period_start: string;
   current_period_end: string;
-  next_billing_date: string;
+  cancel_at_period_end: boolean;
   psychologist_profiles: {
     first_name: string;
     last_name: string;
@@ -85,23 +79,32 @@ export default function ClientSubscriptions() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Fetch subscriptions
-      const { data: subsData, error: subsError } = await supabase
-        .from('client_subscriptions')
-        .select(`
-          *,
-          psychologist_profiles (
-            first_name,
-            last_name,
-            profile_photo_url
-          )
-        `)
-        .eq('client_id', user.id)
-        .eq('status', 'active')
-        .order('created_at', { ascending: false });
+      // Fetch subscriptions from Stripe via edge function
+      const { data: stripeData, error: stripeError } = await supabase.functions.invoke('check-subscription');
+      
+      if (stripeError) throw stripeError;
 
-      if (subsError) throw subsError;
-      setSubscriptions((subsData || []) as Subscription[]);
+      // Fetch psychologist profiles for each subscription
+      const subscriptionsWithProfiles = await Promise.all(
+        (stripeData?.subscriptions || []).map(async (sub: any) => {
+          const { data: psychProfile } = await supabase
+            .from('psychologist_profiles')
+            .select('first_name, last_name, profile_photo_url')
+            .eq('id', sub.psychologist_id)
+            .single();
+
+          return {
+            ...sub,
+            psychologist_profiles: psychProfile || {
+              first_name: 'Desconocido',
+              last_name: '',
+              profile_photo_url: ''
+            }
+          };
+        })
+      );
+
+      setSubscriptions(subscriptionsWithProfiles);
 
       // Fetch credits
       const { data: creditsData, error: creditsError } = await supabase
@@ -133,22 +136,10 @@ export default function ClientSubscriptions() {
 
   const handleCancelSubscription = async (subscriptionId: string) => {
     try {
-      const { error } = await supabase
-        .from('client_subscriptions')
-        .update({
-          auto_renew: false,
-          cancelled_at: new Date().toISOString()
-        })
-        .eq('id', subscriptionId);
-
-      if (error) throw error;
-
       toast({
-        title: "Suscripción cancelada",
-        description: "Tu suscripción se cancelará al final del período actual"
+        title: "Función no disponible",
+        description: "Por favor contacta a soporte para cancelar tu suscripción"
       });
-
-      fetchData();
     } catch (error: any) {
       toast({
         title: "Error",
@@ -161,24 +152,15 @@ export default function ClientSubscriptions() {
     }
   };
 
-  const handleReactivateSubscription = async (subscriptionId: string) => {
+  const handleManageSubscription = async () => {
     try {
-      const { error } = await supabase
-        .from('client_subscriptions')
-        .update({
-          auto_renew: true,
-          cancelled_at: null
-        })
-        .eq('id', subscriptionId);
-
+      const { data, error } = await supabase.functions.invoke('customer-portal');
+      
       if (error) throw error;
-
-      toast({
-        title: "Suscripción reactivada",
-        description: "Tu suscripción se renovará automáticamente"
-      });
-
-      fetchData();
+      
+      if (data?.url) {
+        window.open(data.url, '_blank');
+      }
     } catch (error: any) {
       toast({
         title: "Error",
@@ -186,16 +168,6 @@ export default function ClientSubscriptions() {
         variant: "destructive"
       });
     }
-  };
-
-  const calculatePrice = (subscription: Subscription) => {
-    const originalPrice = subscription.session_price * subscription.sessions_total;
-    const discountedPrice = originalPrice * (1 - subscription.discount_percentage / 100);
-    return {
-      original: originalPrice,
-      discounted: discountedPrice,
-      perSession: discountedPrice / subscription.sessions_total
-    };
   };
 
   if (loading) {
@@ -232,7 +204,7 @@ export default function ClientSubscriptions() {
             <CardContent>
               <div className="text-2xl font-bold">{subscriptions.length}</div>
               <p className="text-xs text-muted-foreground">
-                {subscriptions.reduce((sum, s) => sum + s.sessions_remaining, 0)} sesiones disponibles
+                {subscriptions.reduce((sum, s) => sum + s.sessions, 0)} sesiones totales
               </p>
             </CardContent>
           </Card>
@@ -279,12 +251,11 @@ export default function ClientSubscriptions() {
         ) : (
           <div className="grid gap-6">
             {subscriptions.map((subscription) => {
-              const prices = calculatePrice(subscription);
-              const sessionsText = subscription.package_type === '4_sessions' ? '4 sesiones' : '8 sesiones';
-              const rolloverDisplay = subscription.rollover_sessions > 0;
+              const sessionsText = subscription.package_type === 'package_4' ? '4 sesiones' : '8 sesiones';
+              const discountText = subscription.package_type === 'package_4' ? '10%' : '20%';
 
               return (
-                <Card key={subscription.id} className="overflow-hidden">
+                <Card key={subscription.stripe_subscription_id} className="overflow-hidden">
                   <CardHeader className="bg-muted/50">
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-4">
@@ -297,8 +268,8 @@ export default function ClientSubscriptions() {
                         ) : (
                           <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
                             <span className="text-2xl font-bold text-primary">
-                              {subscription.psychologist_profiles.first_name[0]}
-                              {subscription.psychologist_profiles.last_name[0]}
+                              {subscription.psychologist_profiles.first_name?.[0] || '?'}
+                              {subscription.psychologist_profiles.last_name?.[0] || ''}
                             </span>
                           </div>
                         )}
@@ -308,15 +279,15 @@ export default function ClientSubscriptions() {
                             {subscription.psychologist_profiles.last_name}
                           </CardTitle>
                           <CardDescription className="mt-1">
-                            Paquete de {sessionsText} • {subscription.discount_percentage}% descuento
+                            Paquete de {sessionsText} • {discountText} descuento
                           </CardDescription>
                         </div>
                       </div>
                       <div className="flex gap-2">
-                        {subscription.auto_renew ? (
+                        {!subscription.cancel_at_period_end ? (
                           <Badge variant="default" className="gap-1">
                             <CheckCircle2 className="w-3 h-3" />
-                            Renovación Automática
+                            Activa
                           </Badge>
                         ) : (
                           <Badge variant="secondary" className="gap-1">
@@ -330,81 +301,36 @@ export default function ClientSubscriptions() {
 
                   <CardContent className="pt-6">
                     <div className="grid gap-6 md:grid-cols-1">
-                      {/* Sesiones */}
+                      {/* Información de Suscripción */}
                       <div>
                         <h3 className="text-sm font-medium text-muted-foreground mb-3">
-                          Sesiones Disponibles
+                          Detalles de Suscripción
                         </h3>
                         <div className="space-y-3">
                           <div className="flex items-center justify-between">
-                            <span className="text-sm">Sesiones totales</span>
-                            <span className="font-bold">{subscription.sessions_total}</span>
+                            <span className="text-sm">Sesiones incluidas</span>
+                            <span className="font-bold">{subscription.sessions}</span>
                           </div>
                           <div className="flex items-center justify-between">
-                            <span className="text-sm">Sesiones usadas</span>
-                            <span className="font-medium text-muted-foreground">
-                              {subscription.sessions_used}
+                            <span className="text-sm">Inicio del período</span>
+                            <span className="font-medium">
+                              {format(new Date(subscription.current_period_start), "d MMM yyyy", { locale: es })}
                             </span>
                           </div>
                           <div className="flex items-center justify-between">
-                            <span className="text-sm">Sesiones restantes</span>
-                            <span className="font-bold text-primary">
-                              {subscription.sessions_remaining}
+                            <span className="text-sm">Fin del período</span>
+                            <span className="font-medium">
+                              {format(new Date(subscription.current_period_end), "d MMM yyyy", { locale: es })}
                             </span>
                           </div>
-                          {rolloverDisplay && (
-                            <div className="flex items-center justify-between pt-2 border-t">
-                              <span className="text-sm flex items-center gap-1">
-                                <TrendingUp className="w-4 h-4 text-primary" />
-                                Rollover del próximo mes
-                              </span>
-                              <span className="font-bold text-primary">
-                                {subscription.rollover_sessions.toFixed(1)}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                    </div>
-
-                    {/* Información de Rollover */}
-                    <div className="mt-6 p-4 bg-primary/10 rounded-lg">
-                      <div className="flex gap-2">
-                        <TrendingUp className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                        <div>
-                          <p className="text-sm font-medium text-foreground">
-                            Sistema de Rollover Automático
-                          </p>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            El 25% del total de sesiones ({(subscription.sessions_total * 0.25).toFixed(1)} sesiones)
-                            se transferirán automáticamente al siguiente mes si no las utilizas.
-                          </p>
                         </div>
                       </div>
                     </div>
 
                     {/* Acciones */}
                     <div className="flex gap-3 mt-6">
-                      {subscription.auto_renew ? (
-                        <Button
-                          variant="outline"
-                          onClick={() => {
-                            setSelectedSubscription(subscription.id);
-                            setCancelDialogOpen(true);
-                          }}
-                        >
-                          Cancelar Renovación
-                        </Button>
-                      ) : (
-                        <Button
-                          onClick={() => handleReactivateSubscription(subscription.id)}
-                        >
-                          Reactivar Suscripción
-                        </Button>
-                      )}
-                      <Button variant="ghost" onClick={() => { setDetailsSubscription(subscription); setDetailsDialogOpen(true); }}>
-                        Detalles
+                      <Button onClick={handleManageSubscription}>
+                        Gestionar Suscripción
                       </Button>
                     </div>
                   </CardContent>
@@ -589,9 +515,9 @@ export default function ClientSubscriptions() {
             <AlertDialogTitle>¿Cancelar renovación automática?</AlertDialogTitle>
             <AlertDialogDescription>
               Tu suscripción continuará activa hasta el final del período actual
-              ({selectedSubscription && subscriptions.find(s => s.id === selectedSubscription)
+              ({selectedSubscription && subscriptions.find(s => s.stripe_subscription_id === selectedSubscription)
                 ? format(
-                    new Date(subscriptions.find(s => s.id === selectedSubscription)!.current_period_end),
+                    new Date(subscriptions.find(s => s.stripe_subscription_id === selectedSubscription)!.current_period_end),
                     'dd MMMM yyyy',
                     { locale: es }
                   )
@@ -610,34 +536,71 @@ export default function ClientSubscriptions() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Detalles Dialog */}
+      {/* Dialog de detalles */}
       <Dialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Detalles del paquete</DialogTitle>
-            <DialogDescription>Información de pago y facturación</DialogDescription>
+            <DialogTitle>Detalles de Suscripción</DialogTitle>
+            <DialogDescription>
+              Para ver y gestionar todos los detalles de tu suscripción, usa el portal de gestión
+            </DialogDescription>
           </DialogHeader>
           {detailsSubscription && (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm">Precio por sesión</span>
-                <div className="text-right">
-                  <span className="font-bold">${calculatePrice(detailsSubscription).perSession.toFixed(2)}</span>
-                  <span className="text-xs text-muted-foreground line-through ml-2">
-                    ${detailsSubscription.session_price.toFixed(2)}
-                  </span>
+            <div className="space-y-6">
+              <div className="flex items-center gap-4">
+                {detailsSubscription.psychologist_profiles.profile_photo_url ? (
+                  <img
+                    src={detailsSubscription.psychologist_profiles.profile_photo_url}
+                    alt={`${detailsSubscription.psychologist_profiles.first_name} ${detailsSubscription.psychologist_profiles.last_name}`}
+                    className="w-16 h-16 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                    <span className="text-2xl font-bold text-primary">
+                      {detailsSubscription.psychologist_profiles.first_name?.[0] || '?'}
+                      {detailsSubscription.psychologist_profiles.last_name?.[0] || ''}
+                    </span>
+                  </div>
+                )}
+                <div>
+                  <h3 className="font-bold text-lg">
+                    {detailsSubscription.psychologist_profiles.first_name}{' '}
+                    {detailsSubscription.psychologist_profiles.last_name}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Paquete de {detailsSubscription.package_type === 'package_4' ? '4' : '8'} sesiones
+                  </p>
                 </div>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm">Total del paquete</span>
-                <span className="font-bold">${calculatePrice(detailsSubscription).discounted.toFixed(2)}</span>
-              </div>
-              <div className="flex items-center justify-between pt-2 border-t">
-                <span className="text-sm">Período actual</span>
-                <span className="text-sm text-muted-foreground">
-                  {format(new Date(detailsSubscription.current_period_start), 'dd MMM', { locale: es })} -{' '}
-                  {format(new Date(detailsSubscription.current_period_end), 'dd MMM', { locale: es })}
-                </span>
+
+              <Separator />
+
+              <div className="space-y-4">
+                <div>
+                  <h4 className="font-medium mb-2">Información del Período</h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Inicio del período</span>
+                      <span className="font-medium">
+                        {format(new Date(detailsSubscription.current_period_start), "d 'de' MMMM, yyyy", { locale: es })}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Fin del período</span>
+                      <span className="font-medium">
+                        {format(new Date(detailsSubscription.current_period_end), "d 'de' MMMM, yyyy", { locale: es })}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Sesiones incluidas</span>
+                      <span className="font-medium">{detailsSubscription.sessions}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <Button onClick={handleManageSubscription} className="w-full">
+                  Abrir Portal de Gestión
+                </Button>
               </div>
             </div>
           )}
