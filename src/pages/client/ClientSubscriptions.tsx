@@ -25,6 +25,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Separator } from "@/components/ui/separator";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 interface Subscription {
   id: string;
@@ -72,6 +73,8 @@ export default function ClientSubscriptions() {
   const [selectedSubscription, setSelectedSubscription] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [detailsSubscription, setDetailsSubscription] = useState<Subscription | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -326,7 +329,7 @@ export default function ClientSubscriptions() {
                   </CardHeader>
 
                   <CardContent className="pt-6">
-                    <div className="grid gap-6 md:grid-cols-2">
+                    <div className="grid gap-6 md:grid-cols-1">
                       {/* Sesiones */}
                       <div>
                         <h3 className="text-sm font-medium text-muted-foreground mb-3">
@@ -363,43 +366,6 @@ export default function ClientSubscriptions() {
                         </div>
                       </div>
 
-                      {/* Facturación */}
-                      <div>
-                        <h3 className="text-sm font-medium text-muted-foreground mb-3">
-                          Información de Pago
-                        </h3>
-                        <div className="space-y-3">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm">Precio por sesión</span>
-                            <div className="text-right">
-                              <span className="font-bold">${prices.perSession.toFixed(2)}</span>
-                              <span className="text-xs text-muted-foreground line-through ml-2">
-                                ${subscription.session_price.toFixed(2)}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm">Total del paquete</span>
-                            <span className="font-bold">${prices.discounted.toFixed(2)}</span>
-                          </div>
-                          <div className="flex items-center justify-between pt-2 border-t">
-                            <span className="text-sm flex items-center gap-1">
-                              <Calendar className="w-4 h-4" />
-                              Próxima factura
-                            </span>
-                            <span className="font-medium">
-                              {format(new Date(subscription.next_billing_date), 'dd MMM yyyy', { locale: es })}
-                            </span>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm">Período actual</span>
-                            <span className="text-sm text-muted-foreground">
-                              {format(new Date(subscription.current_period_start), 'dd MMM', { locale: es })} -{' '}
-                              {format(new Date(subscription.current_period_end), 'dd MMM', { locale: es })}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
                     </div>
 
                     {/* Información de Rollover */}
@@ -437,8 +403,8 @@ export default function ClientSubscriptions() {
                           Reactivar Suscripción
                         </Button>
                       )}
-                      <Button variant="ghost">
-                        Ver Historial
+                      <Button variant="ghost" onClick={() => { setDetailsSubscription(subscription); setDetailsDialogOpen(true); }}>
+                        Detalles
                       </Button>
                     </div>
                   </CardContent>
@@ -643,6 +609,53 @@ export default function ClientSubscriptions() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Detalles Dialog */}
+      <Dialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Detalles del paquete</DialogTitle>
+            <DialogDescription>Información de pago y facturación</DialogDescription>
+          </DialogHeader>
+          {detailsSubscription && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm">Precio por sesión</span>
+                <div className="text-right">
+                  <span className="font-bold">${calculatePrice(detailsSubscription).perSession.toFixed(2)}</span>
+                  <span className="text-xs text-muted-foreground line-through ml-2">
+                    ${detailsSubscription.session_price.toFixed(2)}
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm">Total del paquete</span>
+                <span className="font-bold">${calculatePrice(detailsSubscription).discounted.toFixed(2)}</span>
+              </div>
+              <div className="flex items-center justify-between pt-2 border-t">
+                <span className="text-sm flex items-center gap-1">
+                  <Calendar className="w-4 h-4" />
+                  Próxima factura
+                </span>
+                <span className="font-medium">
+                  {detailsSubscription.next_billing_date
+                    ? format(new Date(detailsSubscription.next_billing_date), 'dd MMM yyyy', { locale: es })
+                    : detailsSubscription.auto_renew
+                      ? format(new Date(detailsSubscription.current_period_end), 'dd MMM yyyy', { locale: es })
+                      : 'No programada'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm">Período actual</span>
+                <span className="text-sm text-muted-foreground">
+                  {format(new Date(detailsSubscription.current_period_start), 'dd MMM', { locale: es })} -{' '}
+                  {format(new Date(detailsSubscription.current_period_end), 'dd MMM', { locale: es })}
+                </span>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

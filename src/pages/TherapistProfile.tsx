@@ -245,8 +245,9 @@ const TherapistProfile = () => {
             sessions_remaining: sessionsTotal - 1,
             package_type: packageTypeValue,
             status: "active",
-            auto_renew: false,
+            auto_renew: true,
             current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+            next_billing_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
           })
           .select()
           .single();
