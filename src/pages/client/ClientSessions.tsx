@@ -194,13 +194,14 @@ export default function ClientSessions() {
 
       if (error) throw error;
 
-      // Marcar el pago como cancelado (no se cobra porque se canceló con más de 24h)
+      // Obtener el pago asociado
       const { data: payment } = await supabase
         .from("payments")
-        .select("id")
+        .select("id, amount, psychologist_id")
         .eq("appointment_id", selectedAppointment.id)
-        .single();
+        .maybeSingle();
 
+      // Marcar el pago como cancelado si existe
       if (payment) {
         await supabase
           .from("payments")
@@ -209,30 +210,45 @@ export default function ClientSessions() {
       }
 
       if (refundOption === "credit") {
-        // Create a credit record for the user
-        if (payment) {
-          const { data: paymentDetails } = await supabase
-            .from("payments")
-            .select("amount, psychologist_id")
-            .eq("id", payment.id)
-            .single();
+        // Determinar el monto y psicólogo para el crédito
+        let creditAmount = 0;
+        let psychologistId = selectedAppointment.psychologist_id;
 
-          if (paymentDetails) {
-            await supabase
-              .from("client_credits")
-              .insert({
-                client_id: user?.id,
-                psychologist_id: paymentDetails.psychologist_id,
-                amount: paymentDetails.amount,
-                currency: "MXN",
-                reason: "Cancelación de sesión individual",
-                original_appointment_id: selectedAppointment.id,
-                status: "available",
-                expires_at: null, // No expiration for cancellation credits
-              });
+        if (payment && payment.amount > 0) {
+          // Si existe pago con monto, usar ese
+          creditAmount = payment.amount;
+          psychologistId = payment.psychologist_id;
+        } else {
+          // Si no hay pago o el monto es 0, obtener precio del psicólogo
+          const { data: pricing } = await supabase
+            .from("psychologist_pricing")
+            .select("session_price")
+            .eq("psychologist_id", selectedAppointment.psychologist_id)
+            .single();
+          
+          if (pricing) {
+            creditAmount = pricing.session_price;
           }
         }
-        toast.success("Cita cancelada. El crédito se ha agregado a tu cuenta.");
+
+        // Crear el crédito solo si hay un monto válido
+        if (creditAmount > 0) {
+          await supabase
+            .from("client_credits")
+            .insert({
+              client_id: user?.id,
+              psychologist_id: psychologistId,
+              amount: creditAmount,
+              currency: "MXN",
+              reason: "Cancelación de sesión individual",
+              original_appointment_id: selectedAppointment.id,
+              status: "available",
+              expires_at: null,
+            });
+          toast.success("Cita cancelada. El crédito se ha agregado a tu cuenta.");
+        } else {
+          toast.success("Cita cancelada.");
+        }
       } else {
         toast.success("Cita cancelada. El reembolso se procesará en 3-5 días hábiles.");
       }
