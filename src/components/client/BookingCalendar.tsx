@@ -121,24 +121,38 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
       return;
     }
 
-    // Check if user has available credits for this psychologist
+    // 1) Verificar créditos disponibles para ESTE psicólogo
     const { data: credits } = await supabase
       .from("client_credits")
-      .select("*, psychologist_profiles!inner(first_name, last_name)")
+      .select("*")
       .eq("client_id", user.id)
       .eq("status", "available")
       .is("used_at", null);
 
-    const creditsForThisPsych = credits?.filter(c => c.psychologist_id === psychologistId) || [];
-    const creditsForOtherPsych = credits?.filter(c => c.psychologist_id !== psychologistId) || [];
+    const creditsForThisPsych = credits?.filter((c: any) => c.psychologist_id === psychologistId) || [];
 
     if (creditsForThisPsych.length > 0) {
-      // Has credits for this psychologist - use credit directly
+      // Tiene créditos para este psicólogo → usarlos directamente
       await handleCreditBooking(creditsForThisPsych[0]);
-    } else {
-      // No credits for this psychologist - show booking dialog
-      setShowBookingDialog(true);
+      return;
     }
+
+    // 2) Verificar suscripción activa con sesiones disponibles para ESTE psicólogo
+    const { data: subscriptions } = await supabase
+      .from("client_subscriptions")
+      .select("id, sessions_remaining, sessions_used, sessions_total")
+      .eq("client_id", user.id)
+      .eq("psychologist_id", psychologistId)
+      .eq("status", "active")
+      .gt("sessions_remaining", 0);
+
+    if (subscriptions && subscriptions.length > 0) {
+      await handleSubscriptionBooking(subscriptions[0]);
+      return;
+    }
+
+    // 3) No créditos ni suscripciones para este psicólogo → mostrar selector de plan
+    setShowBookingDialog(true);
   };
 
   const handleCreditBooking = async (credit: any) => {
@@ -194,6 +208,67 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
     } catch (error: any) {
       console.error("Error booking with credit:", error);
       toast.error(error.message || "Error al agendar con crédito");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Reserva usando una suscripción existente (consume 1 sesión)
+  const handleSubscriptionBooking = async (subscription: any) => {
+    if (!user || !selectedDate || !selectedTime) return;
+
+    setLoading(true);
+    try {
+      const [hours, minutes] = selectedTime.split(":").map(Number);
+      const startTime = new Date(selectedDate);
+      startTime.setHours(hours, minutes, 0, 0);
+      const endTime = addMinutes(startTime, pricing?.session_duration_minutes || 50);
+
+      // Crear cita
+      const { data: appointment, error: apptError } = await supabase
+        .from("appointments")
+        .insert({
+          patient_id: user.id,
+          psychologist_id: psychologistId,
+          start_time: startTime.toISOString(),
+          end_time: endTime.toISOString(),
+          status: "pending",
+          modality: "Videollamada",
+        })
+        .select()
+        .single();
+
+      if (apptError) throw apptError;
+
+      // Registrar pago ligado a la suscripción (monto 0)
+      const { error: paymentError } = await supabase.from("payments").insert({
+        client_id: user.id,
+        psychologist_id: psychologistId,
+        appointment_id: appointment.id,
+        subscription_id: subscription.id,
+        amount: 0,
+        payment_type: "subscription",
+        payment_status: "completed",
+        currency: "MXN",
+        description: `Sesión ${subscription.sessions_used + 1} de ${subscription.sessions_total} del paquete`,
+      });
+      if (paymentError) throw paymentError;
+
+      // Consumir 1 sesión de la suscripción
+      const { error: subUpdateError } = await supabase
+        .from("client_subscriptions")
+        .update({
+          sessions_used: subscription.sessions_used + 1,
+          sessions_remaining: subscription.sessions_remaining - 1,
+        })
+        .eq("id", subscription.id);
+      if (subUpdateError) throw subUpdateError;
+
+      toast.success("Cita agendada usando tu suscripción");
+      navigate("/portal/sesiones");
+    } catch (error: any) {
+      console.error("Error booking with subscription:", error);
+      toast.error(error.message || "Error al agendar con suscripción");
     } finally {
       setLoading(false);
     }
