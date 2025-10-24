@@ -68,13 +68,25 @@ serve(async (req) => {
     logStep("Active subscriptions found", { count: subscriptions.data.length });
 
     const toISO = (ts: unknown): string | null => {
-      if (ts === undefined || ts === null) return null;
-      const n = typeof ts === 'string' ? parseInt(ts, 10) : Number(ts);
-      if (!Number.isFinite(n)) return null;
-      const d = new Date(n * 1000);
-      return isNaN(d.getTime()) ? null : d.toISOString();
+      try {
+        if (ts === undefined || ts === null) return null;
+        let n: number | null = null;
+        if (typeof ts === 'number') {
+          n = ts;
+        } else if (typeof ts === 'string') {
+          const parsed = Number(ts);
+          n = Number.isFinite(parsed) ? parsed : null;
+        }
+        if (n === null) return null;
+        // Handle seconds vs milliseconds
+        const ms = n > 1e12 ? n : n * 1000;
+        const d = new Date(ms);
+        if (Number.isNaN(d.valueOf())) return null;
+        return d.toISOString();
+      } catch (_) {
+        return null;
+      }
     };
-
     const subscriptionDetails = subscriptions.data.map((sub: Stripe.Subscription) => {
       try {
         const startIso = toISO((sub as any).current_period_start);
@@ -120,10 +132,10 @@ serve(async (req) => {
     const errorMessage = error instanceof Error ? error.message : String(error);
     logStep("ERROR", { message: errorMessage });
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ error: errorMessage, subscriptions: [] }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 500,
+        status: 200,
       }
     );
   }
