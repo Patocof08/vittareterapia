@@ -67,16 +67,27 @@ serve(async (req) => {
 
     logStep("Active subscriptions found", { count: subscriptions.data.length });
 
-    const subscriptionDetails = subscriptions.data.map((sub: Stripe.Subscription) => ({
-      stripe_subscription_id: sub.id,
-      status: sub.status,
-      current_period_start: new Date(sub.current_period_start * 1000).toISOString(),
-      current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
-      psychologist_id: sub.metadata?.psychologist_id,
-      package_type: sub.metadata?.package_type,
-      sessions: parseInt(sub.metadata?.sessions || "0"),
-      cancel_at_period_end: sub.cancel_at_period_end,
-    }));
+    const subscriptionDetails = subscriptions.data.map((sub: Stripe.Subscription) => {
+      try {
+        return {
+          stripe_subscription_id: sub.id,
+          status: sub.status,
+          current_period_start: new Date(sub.current_period_start * 1000).toISOString(),
+          current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
+          psychologist_id: sub.metadata?.psychologist_id || null,
+          package_type: sub.metadata?.package_type || null,
+          sessions: parseInt(sub.metadata?.sessions || "0"),
+          cancel_at_period_end: sub.cancel_at_period_end || false,
+        };
+      } catch (error) {
+        logStep("Error processing subscription", { 
+          subscriptionId: sub.id, 
+          error: error instanceof Error ? error.message : String(error),
+          metadata: sub.metadata 
+        });
+        throw error;
+      }
+    });
 
     return new Response(
       JSON.stringify({ subscriptions: subscriptionDetails }),
