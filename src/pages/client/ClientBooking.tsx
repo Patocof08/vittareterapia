@@ -115,7 +115,12 @@ export default function ClientBooking() {
 
       {!loading && previousPsychologist && (
         <Card className="p-6">
-          <h2 className="text-xl font-semibold mb-4">Tu Psicólogo</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold">Tu Psicólogo</h2>
+            <Button variant="outline" onClick={() => navigate("/therapists")}>
+              Buscar otro psicólogo
+            </Button>
+          </div>
           <div className="flex items-start gap-4">
             <Avatar className="h-20 w-20">
               <AvatarImage src={previousPsychologist.profile_photo_url} />
