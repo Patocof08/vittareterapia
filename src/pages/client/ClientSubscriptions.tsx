@@ -633,19 +633,6 @@ export default function ClientSubscriptions() {
                 <span className="font-bold">${calculatePrice(detailsSubscription).discounted.toFixed(2)}</span>
               </div>
               <div className="flex items-center justify-between pt-2 border-t">
-                <span className="text-sm flex items-center gap-1">
-                  <Calendar className="w-4 h-4" />
-                  Próxima factura
-                </span>
-                <span className="font-medium">
-                  {detailsSubscription.next_billing_date
-                    ? format(new Date(detailsSubscription.next_billing_date), 'dd MMM yyyy', { locale: es })
-                    : detailsSubscription.auto_renew
-                      ? format(new Date(detailsSubscription.current_period_end), 'dd MMM yyyy', { locale: es })
-                      : 'No programada'}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
                 <span className="text-sm">Período actual</span>
                 <span className="text-sm text-muted-foreground">
                   {format(new Date(detailsSubscription.current_period_start), 'dd MMM', { locale: es })} -{' '}
