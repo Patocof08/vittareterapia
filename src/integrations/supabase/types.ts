@@ -924,8 +924,8 @@ export type Database = {
         Args: { _admin_notes?: string; _psychologist_id: string }
         Returns: undefined
       }
-      calculate_rollover: {
-        Args: { _sessions_used: number; _total_sessions: number }
+      calculate_rollover_sessions: {
+        Args: { _sessions_total: number; _sessions_used: number }
         Returns: number
       }
       generate_invoice_number: { Args: never; Returns: string }
