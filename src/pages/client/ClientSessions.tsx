@@ -209,6 +209,29 @@ export default function ClientSessions() {
       }
 
       if (refundOption === "credit") {
+        // Create a credit record for the user
+        if (payment) {
+          const { data: paymentDetails } = await supabase
+            .from("payments")
+            .select("amount, psychologist_id")
+            .eq("id", payment.id)
+            .single();
+
+          if (paymentDetails) {
+            await supabase
+              .from("client_credits")
+              .insert({
+                client_id: user?.id,
+                psychologist_id: paymentDetails.psychologist_id,
+                amount: paymentDetails.amount,
+                currency: "MXN",
+                reason: "Cancelación de sesión individual",
+                original_appointment_id: selectedAppointment.id,
+                status: "available",
+                expires_at: null, // No expiration for cancellation credits
+              });
+          }
+        }
         toast.success("Cita cancelada. El crédito se ha agregado a tu cuenta.");
       } else {
         toast.success("Cita cancelada. El reembolso se procesará en 3-5 días hábiles.");

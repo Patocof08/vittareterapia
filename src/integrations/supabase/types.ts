@@ -70,6 +70,76 @@ export type Database = {
           },
         ]
       }
+      client_credits: {
+        Row: {
+          amount: number
+          client_id: string
+          created_at: string
+          currency: string
+          expires_at: string | null
+          id: string
+          original_appointment_id: string | null
+          psychologist_id: string
+          reason: string
+          status: string
+          updated_at: string
+          used_at: string | null
+          used_for_appointment_id: string | null
+        }
+        Insert: {
+          amount: number
+          client_id: string
+          created_at?: string
+          currency?: string
+          expires_at?: string | null
+          id?: string
+          original_appointment_id?: string | null
+          psychologist_id: string
+          reason: string
+          status?: string
+          updated_at?: string
+          used_at?: string | null
+          used_for_appointment_id?: string | null
+        }
+        Update: {
+          amount?: number
+          client_id?: string
+          created_at?: string
+          currency?: string
+          expires_at?: string | null
+          id?: string
+          original_appointment_id?: string | null
+          psychologist_id?: string
+          reason?: string
+          status?: string
+          updated_at?: string
+          used_at?: string | null
+          used_for_appointment_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_credits_original_appointment_id_fkey"
+            columns: ["original_appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_credits_psychologist_id_fkey"
+            columns: ["psychologist_id"]
+            isOneToOne: false
+            referencedRelation: "psychologist_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_credits_used_for_appointment_id_fkey"
+            columns: ["used_for_appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_subscriptions: {
         Row: {
           auto_renew: boolean
