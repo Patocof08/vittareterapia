@@ -155,33 +155,56 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
         const discountPercentage = Math.round(((regularPrice - packagePrice) / regularPrice) * 100);
         const packageTypeValue = type === "package_4" ? "4_sessions" : "8_sessions";
 
-        const { error: subError } = await supabase.from("client_subscriptions").insert({
-          client_id: user.id,
-          psychologist_id: psychologistId,
-          session_price: pricing?.session_price || 0,
-          discount_percentage: discountPercentage,
-          sessions_total: sessionsTotal,
-          sessions_used: 1,
-          sessions_remaining: sessionsTotal - 1,
-          package_type: packageTypeValue,
-          status: "active",
-          auto_renew: true,
-          current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        });
+        const { data: subscription, error: subError } = await supabase
+          .from("client_subscriptions")
+          .insert({
+            client_id: user.id,
+            psychologist_id: psychologistId,
+            session_price: pricing?.session_price || 0,
+            discount_percentage: discountPercentage,
+            sessions_total: sessionsTotal,
+            sessions_used: 1,
+            sessions_remaining: sessionsTotal - 1,
+            package_type: packageTypeValue,
+            status: "active",
+            auto_renew: true,
+            current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          })
+          .select()
+          .single();
 
         if (subError) throw subError;
 
         // Create first appointment
-        const { error: apptError } = await supabase.from("appointments").insert({
-          patient_id: user.id,
-          psychologist_id: psychologistId,
-          start_time: startTime.toISOString(),
-          end_time: endTime.toISOString(),
-          status: "pending",
-          modality: "Videollamada",
-        });
+        const { data: appointment, error: apptError } = await supabase
+          .from("appointments")
+          .insert({
+            patient_id: user.id,
+            psychologist_id: psychologistId,
+            start_time: startTime.toISOString(),
+            end_time: endTime.toISOString(),
+            status: "pending",
+            modality: "Videollamada",
+          })
+          .select()
+          .single();
 
         if (apptError) throw apptError;
+
+        // Create payment record linking appointment to subscription
+        const { error: paymentError } = await supabase.from("payments").insert({
+          client_id: user.id,
+          psychologist_id: psychologistId,
+          appointment_id: appointment.id,
+          subscription_id: subscription.id,
+          amount: 0, // Already paid as part of subscription
+          payment_type: "subscription",
+          payment_status: "completed",
+          currency: "MXN",
+          description: `Sesión ${1} de ${sessionsTotal} del paquete`,
+        });
+
+        if (paymentError) throw paymentError;
 
         toast.success(`Paquete de ${sessionsTotal} sesiones adquirido y primera cita agendada`);
         navigate("/portal/suscripciones");
