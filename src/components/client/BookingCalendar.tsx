@@ -197,7 +197,7 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
         psychologist_id: psychologistId,
         appointment_id: appointment.id,
         amount: 0,
-        payment_type: "credit",
+        payment_type: "single_session",
         payment_status: "completed",
         currency: "MXN",
         description: "Sesión pagada con crédito de plataforma",
@@ -213,7 +213,7 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
     }
   };
 
-  // Reserva usando una suscripción existente (consume 1 sesión)
+  // Reserva usando una suscripción existiva (consume 1 sesión)
   const handleSubscriptionBooking = async (subscription: any) => {
     if (!user || !selectedDate || !selectedTime) return;
 
@@ -240,6 +240,9 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
 
       if (apptError) throw apptError;
 
+      // Determinar payment_type según el paquete
+      const paymentType = subscription.sessions_total === 4 ? "package_4" : "package_8";
+
       // Registrar pago ligado a la suscripción (monto 0)
       const { error: paymentError } = await supabase.from("payments").insert({
         client_id: user.id,
@@ -247,7 +250,7 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
         appointment_id: appointment.id,
         subscription_id: subscription.id,
         amount: 0,
-        payment_type: "subscription",
+        payment_type: paymentType,
         payment_status: "completed",
         currency: "MXN",
         description: `Sesión ${subscription.sessions_used + 1} de ${subscription.sessions_total} del paquete`,
@@ -307,7 +310,7 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
           psychologist_id: psychologistId,
           appointment_id: appointment.id,
           amount: pricing?.session_price || 0,
-          payment_type: "individual",
+          payment_type: "single_session",
           payment_status: "pending",
           currency: "MXN",
           description: "Sesión individual",
@@ -359,6 +362,9 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
 
         if (apptError) throw apptError;
 
+        // Determinar payment_type según el paquete
+        const paymentType = type === "package_4" ? "package_4" : "package_8";
+
         // Create payment record linking appointment to subscription
         const { error: paymentError } = await supabase.from("payments").insert({
           client_id: user.id,
@@ -366,7 +372,7 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
           appointment_id: appointment.id,
           subscription_id: subscription.id,
           amount: 0, // Already paid as part of subscription
-          payment_type: "subscription",
+          payment_type: paymentType,
           payment_status: "completed",
           currency: "MXN",
           description: `Sesión ${1} de ${sessionsTotal} del paquete`,
