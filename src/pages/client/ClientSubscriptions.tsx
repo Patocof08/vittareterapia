@@ -463,8 +463,8 @@ export default function ClientSubscriptions() {
         <div className="bg-muted/50 p-4 rounded-lg">
           <p className="text-sm text-muted-foreground">
             Los créditos individuales son diferentes a las suscripciones. Se generan cuando cancelas 
-            una sesión individual con más de 24 horas de anticipación. Puedes usarlos para agendar 
-            nuevas sesiones con cualquier psicólogo.
+            una sesión individual con más de 24 horas de anticipación. <strong>Nunca expiran</strong> y 
+            puedes usarlos para agendar nuevas sesiones con cualquier psicólogo.
           </p>
         </div>
 
@@ -516,11 +516,6 @@ export default function ClientSubscriptions() {
                         ${Number(credit.amount).toFixed(2)}
                       </p>
                       <Badge variant="secondary" className="mt-2">Disponible</Badge>
-                      {credit.expires_at && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Expira el {format(new Date(credit.expires_at), 'dd MMM yyyy', { locale: es })}
-                        </p>
-                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -604,8 +599,18 @@ export default function ClientSubscriptions() {
               <strong>Créditos de Suscripciones:</strong> Se rigen por el período mensual y el 
               sistema de rollover del 25%.
               <br /><br />
-              <strong>Créditos Individuales:</strong> Por defecto no expiran, pero algunos pueden 
-              tener fecha de expiración específica que se muestra en la tarjeta del crédito.
+              <strong>Créditos Individuales:</strong> Nunca expiran. Puedes usarlos en cualquier 
+              momento para agendar sesiones con cualquier psicólogo de la plataforma.
+            </AccordionContent>
+          </AccordionItem>
+
+          <AccordionItem value="item-7">
+            <AccordionTrigger>¿Puedo transferir mis créditos o suscripción a otro psicólogo?</AccordionTrigger>
+            <AccordionContent>
+              Sí, puedes transferir tus créditos y suscripciones entre psicólogos. Solo necesitas 
+              pagar la diferencia de precio entre los terapeutas (con el descuento de tu paquete ya 
+              incluido). Contacta a nuestro equipo de soporte para procesar la transferencia y 
+              continuar tu terapia con el profesional que mejor se ajuste a tus necesidades.
             </AccordionContent>
           </AccordionItem>
         </Accordion>
