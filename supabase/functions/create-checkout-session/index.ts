@@ -144,8 +144,8 @@ serve(async (req) => {
         },
       ],
       mode: "payment",
-      success_url: `${req.headers.get("origin")}/portal/checkout?payment_id=${payment.id}`,
-      cancel_url: `${req.headers.get("origin")}/portal/agendar`,
+      success_url: `${req.headers.get("origin")}/client/checkout?payment_id=${payment.id}`,
+      cancel_url: `${req.headers.get("origin")}/client/booking`,
       metadata: {
         payment_id: payment.id,
         psychologist_id: psychologist_id,
