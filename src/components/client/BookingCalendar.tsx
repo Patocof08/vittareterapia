@@ -115,12 +115,88 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
     }
   };
 
-  const handleBooking = () => {
+  const handleBooking = async () => {
     if (!selectedDate || !selectedTime || !user) {
       toast.error("Por favor selecciona fecha y hora");
       return;
     }
-    setShowBookingDialog(true);
+
+    // Check if user has available credits for this psychologist
+    const { data: credits } = await supabase
+      .from("client_credits")
+      .select("*, psychologist_profiles!inner(first_name, last_name)")
+      .eq("client_id", user.id)
+      .eq("status", "available")
+      .is("used_at", null);
+
+    const creditsForThisPsych = credits?.filter(c => c.psychologist_id === psychologistId) || [];
+    const creditsForOtherPsych = credits?.filter(c => c.psychologist_id !== psychologistId) || [];
+
+    if (creditsForThisPsych.length > 0) {
+      // Has credits for this psychologist - use credit directly
+      await handleCreditBooking(creditsForThisPsych[0]);
+    } else {
+      // No credits for this psychologist - show booking dialog
+      setShowBookingDialog(true);
+    }
+  };
+
+  const handleCreditBooking = async (credit: any) => {
+    if (!user || !selectedDate || !selectedTime) return;
+
+    setLoading(true);
+    try {
+      const [hours, minutes] = selectedTime.split(":").map(Number);
+      const startTime = new Date(selectedDate);
+      startTime.setHours(hours, minutes, 0, 0);
+      const endTime = addMinutes(startTime, pricing?.session_duration_minutes || 50);
+
+      // Create appointment
+      const { data: appointment, error: apptError } = await supabase
+        .from("appointments")
+        .insert({
+          patient_id: user.id,
+          psychologist_id: psychologistId,
+          start_time: startTime.toISOString(),
+          end_time: endTime.toISOString(),
+          status: "pending",
+          modality: "Videollamada",
+        })
+        .select()
+        .single();
+
+      if (apptError) throw apptError;
+
+      // Mark credit as used
+      await supabase
+        .from("client_credits")
+        .update({
+          status: "used",
+          used_at: new Date().toISOString(),
+          used_for_appointment_id: appointment.id,
+        })
+        .eq("id", credit.id);
+
+      // Create payment record
+      await supabase.from("payments").insert({
+        client_id: user.id,
+        psychologist_id: psychologistId,
+        appointment_id: appointment.id,
+        amount: 0,
+        payment_type: "credit",
+        payment_status: "completed",
+        currency: "MXN",
+        description: "Sesión pagada con crédito de plataforma",
+      });
+
+      toast.success("Cita agendada con tu crédito disponible");
+      navigate("/portal/sesiones");
+    } catch (error: any) {
+      console.error("Error booking with credit:", error);
+      toast.error(error.message || "Error al agendar con crédito");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleBookingTypeConfirm = async (type: "single" | "package_4" | "package_8") => {
@@ -135,16 +211,33 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
 
       if (type === "single") {
         // Create single appointment
-        const { error } = await supabase.from("appointments").insert({
-          patient_id: user.id,
+        const { data: appointment, error: apptError } = await supabase
+          .from("appointments")
+          .insert({
+            patient_id: user.id,
+            psychologist_id: psychologistId,
+            start_time: startTime.toISOString(),
+            end_time: endTime.toISOString(),
+            status: "pending",
+            modality: "Videollamada",
+          })
+          .select()
+          .single();
+
+        if (apptError) throw apptError;
+
+        // Create payment record for individual session
+        await supabase.from("payments").insert({
+          client_id: user.id,
           psychologist_id: psychologistId,
-          start_time: startTime.toISOString(),
-          end_time: endTime.toISOString(),
-          status: "pending",
-          modality: "Videollamada",
+          appointment_id: appointment.id,
+          amount: pricing?.session_price || 0,
+          payment_type: "individual",
+          payment_status: "pending",
+          currency: "MXN",
+          description: "Sesión individual",
         });
 
-        if (error) throw error;
         toast.success("Cita agendada con éxito");
         navigate("/portal/sesiones");
       } else {
