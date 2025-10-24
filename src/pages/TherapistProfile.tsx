@@ -227,21 +227,23 @@ const TherapistProfile = () => {
       } else {
         // Create subscription with package
         const sessionsTotal = type === "package_4" ? 4 : 8;
-        const discountPercentage = type === "package_4" ? 10 : 20;
         const packagePrice = type === "package_4" ? pricing?.package_4_price : pricing?.package_8_price;
+        const regularPrice = (pricing?.session_price || 0) * sessionsTotal;
+        const discountPercentage = Math.round(((regularPrice - (packagePrice || 0)) / regularPrice) * 100);
+        const packageTypeValue = type === "package_4" ? "4_sessions" : "8_sessions";
 
         // @ts-ignore - Types will regenerate automatically
         const { data: subscription, error: subError } = await supabase
           .from("client_subscriptions")
           .insert({
             client_id: user.id,
-            psychologist_id: id,
+            psychologist_id: id as string,
             session_price: pricing?.session_price || 0,
             discount_percentage: discountPercentage,
             sessions_total: sessionsTotal,
             sessions_used: 1,
             sessions_remaining: sessionsTotal - 1,
-            package_type: type,
+            package_type: packageTypeValue,
             status: "active",
             auto_renew: false,
             current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
