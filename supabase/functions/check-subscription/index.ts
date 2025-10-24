@@ -67,16 +67,26 @@ serve(async (req) => {
 
     logStep("Active subscriptions found", { count: subscriptions.data.length });
 
+    const toISO = (ts: unknown): string | null => {
+      if (ts === undefined || ts === null) return null;
+      const n = typeof ts === 'string' ? parseInt(ts, 10) : Number(ts);
+      if (!Number.isFinite(n)) return null;
+      const d = new Date(n * 1000);
+      return isNaN(d.getTime()) ? null : d.toISOString();
+    };
+
     const subscriptionDetails = subscriptions.data.map((sub: Stripe.Subscription) => {
       try {
+        const startIso = toISO((sub as any).current_period_start);
+        const endIso = toISO((sub as any).current_period_end);
         return {
           stripe_subscription_id: sub.id,
           status: sub.status,
-          current_period_start: new Date(sub.current_period_start * 1000).toISOString(),
-          current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
+          current_period_start: startIso,
+          current_period_end: endIso,
           psychologist_id: sub.metadata?.psychologist_id || null,
-          package_type: sub.metadata?.package_type || null,
-          sessions: parseInt(sub.metadata?.sessions || "0"),
+          package_type: (sub.metadata?.package_type as string) || null,
+          sessions: Number.parseInt((sub.metadata?.sessions as string) ?? "") || (sub.metadata?.package_type === 'package_8' ? 8 : sub.metadata?.package_type === 'package_4' ? 4 : 0),
           cancel_at_period_end: sub.cancel_at_period_end || false,
         };
       } catch (error) {
@@ -85,7 +95,17 @@ serve(async (req) => {
           error: error instanceof Error ? error.message : String(error),
           metadata: sub.metadata 
         });
-        throw error;
+        // Do not throw; return minimal safe object
+        return {
+          stripe_subscription_id: sub.id,
+          status: sub.status,
+          current_period_start: null,
+          current_period_end: null,
+          psychologist_id: sub.metadata?.psychologist_id || null,
+          package_type: (sub.metadata?.package_type as string) || null,
+          sessions: 0,
+          cancel_at_period_end: sub.cancel_at_period_end || false,
+        };
       }
     });
 
