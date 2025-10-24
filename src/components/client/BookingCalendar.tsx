@@ -282,6 +282,8 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
 
     setLoading(true);
     try {
+      console.log("Iniciando proceso de pago con Stripe", { type, psychologistId });
+      
       const sessionStart = new Date(selectedDate);
       const [hours, minutes] = selectedTime.split(":").map(Number);
       sessionStart.setHours(hours, minutes, 0, 0);
@@ -290,6 +292,7 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
       sessionEnd.setMinutes(sessionEnd.getMinutes() + 50);
 
       // Create appointment first
+      console.log("Creando cita...");
       const { data: appointment, error: appointmentError } = await supabase
         .from("appointments")
         .insert({
@@ -298,14 +301,17 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
           start_time: sessionStart.toISOString(),
           end_time: sessionEnd.toISOString(),
           status: "pending",
-          modality: "presencial",
+          modality: "Videollamada",
         })
         .select()
         .single();
 
-      if (appointmentError) throw appointmentError;
+      if (appointmentError) {
+        console.error("Error creando cita:", appointmentError);
+        throw appointmentError;
+      }
 
-      toast.success("Redirigiendo a Stripe Checkout...");
+      console.log("Cita creada exitosamente:", appointment.id);
       setShowBookingDialog(false);
 
       // Map type to payment_type for backend
@@ -315,32 +321,47 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
         package_8: "package_8",
       };
 
+      const paymentType = paymentTypeMap[type];
+      console.log("Llamando a edge function con:", { 
+        psychologist_id: psychologistId, 
+        payment_type: paymentType, 
+        appointment_id: appointment.id 
+      });
+
       // Call Stripe checkout edge function
       const { data: checkoutData, error: checkoutError } = await supabase.functions.invoke(
         "create-checkout-session",
         {
           body: {
             psychologist_id: psychologistId,
-            payment_type: paymentTypeMap[type],
+            payment_type: paymentType,
             appointment_id: appointment.id,
           },
         }
       );
 
       if (checkoutError) {
-        console.error("Checkout error:", checkoutError);
-        throw new Error("Error al crear sesión de pago");
+        console.error("Error de checkout:", checkoutError);
+        throw new Error(`Error al crear sesión de pago: ${checkoutError.message}`);
       }
+
+      console.log("Respuesta de edge function:", checkoutData);
 
       if (!checkoutData?.url) {
-        throw new Error("No se recibió URL de checkout");
+        console.error("No se recibió URL de checkout. Data:", checkoutData);
+        throw new Error("No se recibió URL de checkout de Stripe");
       }
 
+      console.log("Redirigiendo a Stripe:", checkoutData.url);
+      toast.success("Redirigiendo a Stripe Checkout...");
+      
       // Redirect to Stripe Checkout
-      window.location.href = checkoutData.url;
-    } catch (error) {
-      console.error("Error booking session:", error);
-      toast.error("Error al procesar el pago");
+      setTimeout(() => {
+        window.location.href = checkoutData.url;
+      }, 500);
+    } catch (error: any) {
+      console.error("Error completo en booking:", error);
+      toast.error(error.message || "Error al procesar el pago");
     } finally {
       setLoading(false);
     }
