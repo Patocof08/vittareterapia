@@ -33,8 +33,8 @@ interface Subscription {
   package_type: 'package_4' | 'package_8';
   sessions: number;
   status: string;
-  current_period_start: string;
-  current_period_end: string;
+  current_period_start: string | null;
+  current_period_end: string | null;
   cancel_at_period_end: boolean;
   psychologist_profiles: {
     first_name: string;
@@ -204,7 +204,7 @@ export default function ClientSubscriptions() {
             <CardContent>
               <div className="text-2xl font-bold">{subscriptions.length}</div>
               <p className="text-xs text-muted-foreground">
-                {subscriptions.reduce((sum, s) => sum + s.sessions, 0)} sesiones totales
+                {subscriptions.reduce((sum, s) => sum + (s.sessions || (s.package_type === 'package_8' ? 8 : s.package_type === 'package_4' ? 4 : 0)), 0)} sesiones totales
               </p>
             </CardContent>
           </Card>
@@ -253,6 +253,7 @@ export default function ClientSubscriptions() {
             {subscriptions.map((subscription) => {
               const sessionsText = subscription.package_type === 'package_4' ? '4 sesiones' : '8 sesiones';
               const discountText = subscription.package_type === 'package_4' ? '10%' : '20%';
+              const sessionsCount = subscription.sessions || (subscription.package_type === 'package_8' ? 8 : subscription.package_type === 'package_4' ? 4 : 0);
 
               return (
                 <Card key={subscription.stripe_subscription_id} className="overflow-hidden">
@@ -309,18 +310,26 @@ export default function ClientSubscriptions() {
                         <div className="space-y-3">
                           <div className="flex items-center justify-between">
                             <span className="text-sm">Sesiones incluidas</span>
-                            <span className="font-bold">{subscription.sessions}</span>
+                            <span className="font-bold">{sessionsCount}</span>
                           </div>
                           <div className="flex items-center justify-between">
                             <span className="text-sm">Inicio del período</span>
                             <span className="font-medium">
-                              {format(new Date(subscription.current_period_start), "d MMM yyyy", { locale: es })}
+                              {subscription.current_period_start ? (
+                                format(new Date(subscription.current_period_start), 'd MMM yyyy', { locale: es })
+                              ) : (
+                                '—'
+                              )}
                             </span>
                           </div>
                           <div className="flex items-center justify-between">
                             <span className="text-sm">Fin del período</span>
                             <span className="font-medium">
-                              {format(new Date(subscription.current_period_end), "d MMM yyyy", { locale: es })}
+                              {subscription.current_period_end ? (
+                                format(new Date(subscription.current_period_end), 'd MMM yyyy', { locale: es })
+                              ) : (
+                                '—'
+                              )}
                             </span>
                           </div>
                         </div>
