@@ -225,38 +225,33 @@ const TherapistProfile = () => {
         // Redirect to checkout
         navigate(`/portal/checkout?payment_id=${payment.id}`);
       } else {
-        // Call Stripe subscription checkout edge function
-        const { data, error: checkoutError } = await supabase.functions.invoke(
-          'create-subscription-checkout',
-          {
-            body: {
-              psychologist_id: id,
-              package_type: type,
-            },
-          }
-        );
+        // Create subscription directly without Stripe
+        const sessionsTotal = type === "package_4" ? 4 : 8;
+        const discountPercentage = type === "package_4" ? 10 : 20;
+        const periodEnd = new Date();
+        periodEnd.setMonth(periodEnd.getMonth() + 1);
 
-        if (checkoutError) {
-          console.error("Error creating checkout:", checkoutError);
-          throw new Error(checkoutError.message || "Error al crear checkout de Stripe");
-        }
+        // @ts-ignore - Types will regenerate automatically
+        const { error: subscriptionError } = await supabase
+          .from("client_subscriptions")
+          .insert({
+            client_id: user.id,
+            psychologist_id: id,
+            package_type: type,
+            sessions_total: sessionsTotal,
+            sessions_remaining: sessionsTotal,
+            sessions_used: 0,
+            session_price: pricing?.session_price || 0,
+            discount_percentage: discountPercentage,
+            current_period_end: periodEnd.toISOString(),
+            status: "active",
+            auto_renew: true,
+          });
 
-        if (!data?.url) {
-          throw new Error("No se recibió URL de checkout de Stripe");
-        }
+        if (subscriptionError) throw subscriptionError;
 
-        console.log("Redirigiendo a Stripe:", data.url);
-        
-        // Open Stripe Checkout in a new tab
-        const stripeWindow = window.open(data.url, '_blank');
-        
-        if (stripeWindow) {
-          toast.success("Checkout abierto en nueva pestaña");
-        } else {
-          // Fallback if popup was blocked
-          toast.info("Por favor permite ventanas emergentes");
-          window.location.href = data.url;
-        }
+        toast.success(`¡Suscripción de ${sessionsTotal} sesiones creada exitosamente!`);
+        navigate("/portal/suscripciones");
       }
     } catch (error: any) {
       console.error("Error booking:", error);
