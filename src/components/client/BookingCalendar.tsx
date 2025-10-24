@@ -153,6 +153,7 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
         const packagePrice = type === "package_4" ? pricing?.package_4_price : pricing?.package_8_price;
         const regularPrice = (pricing?.session_price || 0) * sessionsTotal;
         const discountPercentage = Math.round(((regularPrice - packagePrice) / regularPrice) * 100);
+        const packageTypeValue = type === "package_4" ? "4_sessions" : "8_sessions";
 
         const { error: subError } = await supabase.from("client_subscriptions").insert({
           client_id: user.id,
@@ -162,7 +163,7 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
           sessions_total: sessionsTotal,
           sessions_used: 1,
           sessions_remaining: sessionsTotal - 1,
-          package_type: type,
+          package_type: packageTypeValue,
           status: "active",
           auto_renew: true,
           current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
