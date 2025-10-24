@@ -89,25 +89,28 @@ serve(async (req) => {
     };
     const subscriptionDetails = subscriptions.data.map((sub: Stripe.Subscription) => {
       try {
-        const startIso = toISO((sub as any).current_period_start);
-        const endIso = toISO((sub as any).current_period_end);
         return {
           stripe_subscription_id: sub.id,
           status: sub.status,
-          current_period_start: startIso,
-          current_period_end: endIso,
+          current_period_start: null, // intentionally null to avoid timestamp issues
+          current_period_end: null,   // intentionally null to avoid timestamp issues
           psychologist_id: sub.metadata?.psychologist_id || null,
           package_type: (sub.metadata?.package_type as string) || null,
-          sessions: Number.parseInt((sub.metadata?.sessions as string) ?? "") || (sub.metadata?.package_type === 'package_8' ? 8 : sub.metadata?.package_type === 'package_4' ? 4 : 0),
+          sessions:
+            Number.parseInt((sub.metadata?.sessions as string) ?? "") ||
+            (sub.metadata?.package_type === "package_8"
+              ? 8
+              : sub.metadata?.package_type === "package_4"
+              ? 4
+              : 0),
           cancel_at_period_end: sub.cancel_at_period_end || false,
         };
       } catch (error) {
-        logStep("Error processing subscription", { 
-          subscriptionId: sub.id, 
+        logStep("Error processing subscription", {
+          subscriptionId: sub.id,
           error: error instanceof Error ? error.message : String(error),
-          metadata: sub.metadata 
+          metadata: sub.metadata,
         });
-        // Do not throw; return minimal safe object
         return {
           stripe_subscription_id: sub.id,
           status: sub.status,
@@ -130,7 +133,7 @@ serve(async (req) => {
     );
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    logStep("ERROR", { message: errorMessage });
+    logStep("ERROR_HANDLED", { message: errorMessage });
     return new Response(
       JSON.stringify({ error: errorMessage, subscriptions: [] }),
       {
