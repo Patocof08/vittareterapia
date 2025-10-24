@@ -28,14 +28,18 @@ import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 interface Subscription {
-  stripe_subscription_id: string;
+  id: string;
   psychologist_id: string;
   package_type: 'package_4' | 'package_8';
-  sessions: number;
+  sessions_total: number;
+  sessions_remaining: number;
+  sessions_used: number;
   status: string;
   current_period_start: string | null;
   current_period_end: string | null;
-  cancel_at_period_end: boolean;
+  auto_renew: boolean;
+  discount_percentage: number;
+  session_price: number;
   psychologist_profiles: {
     first_name: string;
     last_name: string;
@@ -79,32 +83,35 @@ export default function ClientSubscriptions() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Fetch subscriptions from Stripe via edge function
-      const { data: stripeData, error: stripeError } = await supabase.functions.invoke('check-subscription');
-      
-      if (stripeError) throw stripeError;
+      // Suscripciones desde la base de datos (modelo original)
+      const { data: subsData, error: subsError } = await supabase
+        .from('client_subscriptions')
+        .select(`
+          id,
+          psychologist_id,
+          package_type,
+          sessions_total,
+          sessions_remaining,
+          sessions_used,
+          status,
+          current_period_start,
+          current_period_end,
+          auto_renew,
+          discount_percentage,
+          session_price,
+          psychologist_profiles (
+            first_name,
+            last_name,
+            profile_photo_url
+          )
+        `)
+        .eq('client_id', user.id)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false });
 
-      // Fetch psychologist profiles for each subscription
-      const subscriptionsWithProfiles = await Promise.all(
-        (stripeData?.subscriptions || []).map(async (sub: any) => {
-          const { data: psychProfile } = await supabase
-            .from('psychologist_profiles')
-            .select('first_name, last_name, profile_photo_url')
-            .eq('id', sub.psychologist_id)
-            .single();
+      if (subsError) throw subsError;
 
-          return {
-            ...sub,
-            psychologist_profiles: psychProfile || {
-              first_name: 'Desconocido',
-              last_name: '',
-              profile_photo_url: ''
-            }
-          };
-        })
-      );
-
-      setSubscriptions(subscriptionsWithProfiles);
+      setSubscriptions((subsData || []) as any);
 
       // Fetch credits
       const { data: creditsData, error: creditsError } = await supabase
@@ -204,7 +211,7 @@ export default function ClientSubscriptions() {
             <CardContent>
               <div className="text-2xl font-bold">{subscriptions.length}</div>
               <p className="text-xs text-muted-foreground">
-                {subscriptions.reduce((sum, s) => sum + (s.sessions || (s.package_type === 'package_8' ? 8 : s.package_type === 'package_4' ? 4 : 0)), 0)} sesiones totales
+                {subscriptions.reduce((sum, s) => sum + (s.sessions_remaining || 0), 0)} sesiones restantes
               </p>
             </CardContent>
           </Card>
@@ -253,10 +260,10 @@ export default function ClientSubscriptions() {
             {subscriptions.map((subscription) => {
               const sessionsText = subscription.package_type === 'package_4' ? '4 sesiones' : '8 sesiones';
               const discountText = subscription.package_type === 'package_4' ? '10%' : '20%';
-              const sessionsCount = subscription.sessions || (subscription.package_type === 'package_8' ? 8 : subscription.package_type === 'package_4' ? 4 : 0);
+              const sessionsCount = subscription.sessions_remaining; 
 
               return (
-                <Card key={subscription.stripe_subscription_id} className="overflow-hidden">
+                <Card key={subscription.id} className="overflow-hidden">
                   <CardHeader className="bg-muted/50">
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-4">
@@ -285,7 +292,7 @@ export default function ClientSubscriptions() {
                         </div>
                       </div>
                       <div className="flex gap-2">
-                        {!subscription.cancel_at_period_end ? (
+                        {subscription.status === 'active' ? (
                           <Badge variant="default" className="gap-1">
                             <CheckCircle2 className="w-3 h-3" />
                             Activa
@@ -293,7 +300,7 @@ export default function ClientSubscriptions() {
                         ) : (
                           <Badge variant="secondary" className="gap-1">
                             <AlertCircle className="w-3 h-3" />
-                            Cancelada
+                            {subscription.status}
                           </Badge>
                         )}
                       </div>
@@ -524,9 +531,9 @@ export default function ClientSubscriptions() {
             <AlertDialogTitle>¿Cancelar renovación automática?</AlertDialogTitle>
             <AlertDialogDescription>
               Tu suscripción continuará activa hasta el final del período actual
-              ({selectedSubscription && subscriptions.find(s => s.stripe_subscription_id === selectedSubscription)
+              ({selectedSubscription && subscriptions.find(s => s.id === selectedSubscription)
                 ? format(
-                    new Date(subscriptions.find(s => s.stripe_subscription_id === selectedSubscription)!.current_period_end),
+                    new Date(subscriptions.find(s => s.id === selectedSubscription)!.current_period_end),
                     'dd MMMM yyyy',
                     { locale: es }
                   )
@@ -602,7 +609,7 @@ export default function ClientSubscriptions() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Sesiones incluidas</span>
-                      <span className="font-medium">{detailsSubscription.sessions}</span>
+                      <span className="font-medium">{detailsSubscription.sessions_total}</span>
                     </div>
                   </div>
                 </div>
