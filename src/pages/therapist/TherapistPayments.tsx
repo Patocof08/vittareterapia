@@ -52,6 +52,7 @@ export default function TherapistPayments() {
     deferredRevenue: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [sessionPriceFallback, setSessionPriceFallback] = useState<number>(0);
 
   // Monto a mostrar: si viene de paquete usa precio por sesión; canceladas a tiempo = 0
   const getDisplayAmount = (payment: Payment) => {
@@ -68,6 +69,11 @@ export default function TherapistPayments() {
       payment.subscription_session_price !== null
     ) {
       return Number(payment.subscription_session_price);
+    }
+    // Fallback para sesión individual cuando el monto aún no está asignado
+    if (payment.payment_type === "single_session") {
+      const amt = Number(payment.amount || 0);
+      return amt > 0 ? amt : Number(sessionPriceFallback || 0);
     }
     return Number(payment.amount || 0);
   };
@@ -88,6 +94,15 @@ export default function TherapistPayments() {
         .single();
 
       if (!psychProfile) return;
+
+      // Obtener precio de sesión del terapeuta para fallback en sesiones individuales
+      const { data: pricingData } = await supabase
+        .from("psychologist_pricing")
+        .select("session_price")
+        .eq("psychologist_id", psychProfile.id)
+        .single();
+
+      setSessionPriceFallback(Number(pricingData?.session_price || 0));
 
       // Fetch payments with client info and appointment details
       // ONLY show payments that have an appointment_id (excludes package purchase payments)
