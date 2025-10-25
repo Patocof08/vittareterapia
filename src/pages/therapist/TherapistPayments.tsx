@@ -17,6 +17,9 @@ interface Payment {
   created_at: string;
   completed_at: string;
   appointment_id?: string;
+  subscription_id?: string;
+  // For package sessions, use this to display per-session price
+  subscription_session_price?: number;
   client: {
     full_name: string;
   };
@@ -50,6 +53,24 @@ export default function TherapistPayments() {
   });
   const [loading, setLoading] = useState(true);
 
+  // Monto a mostrar: si viene de paquete usa precio por sesión; canceladas a tiempo = 0
+  const getDisplayAmount = (payment: Payment) => {
+    const appointment = payment.appointment;
+    const cancelReason = appointment?.cancellation_reason || "";
+    if (
+      payment.payment_status === "cancelled" ||
+      (appointment?.status === "cancelled" && !cancelReason.includes("menos de 24h"))
+    ) {
+      return 0;
+    }
+    if (
+      payment.subscription_session_price !== undefined &&
+      payment.subscription_session_price !== null
+    ) {
+      return Number(payment.subscription_session_price);
+    }
+    return Number(payment.amount || 0);
+  };
   useEffect(() => {
     fetchPayments();
   }, []);
@@ -89,15 +110,31 @@ export default function TherapistPayments() {
 
       if (error) throw error;
 
+      // Preparar mapa de precios por sesión de suscripciones
+      const rawPayments = paymentsData || [];
+      const subscriptionIds = rawPayments
+        .map((p: any) => p.subscription_id)
+        .filter((id: string | null): id is string => !!id);
+
+      let subsMap = new Map<string, number>();
+      if (subscriptionIds.length > 0) {
+        const { data: subsData, error: subsError } = await supabase
+          .from("client_subscriptions")
+          .select("id, session_price")
+          .in("id", subscriptionIds);
+        if (subsError) throw subsError;
+        subsMap = new Map((subsData || []).map((s: any) => [s.id, Number(s.session_price)]));
+      }
+
       // Transform data
-      const transformedPayments = (paymentsData || []).map(p => ({
+      const transformedPayments = rawPayments.map((p: any) => ({
         ...p,
         client: Array.isArray(p.client) ? p.client[0] : p.client,
-        appointment: Array.isArray(p.appointment) ? p.appointment[0] : p.appointment
+        appointment: Array.isArray(p.appointment) ? p.appointment[0] : p.appointment,
+        subscription_session_price: p.subscription_id ? subsMap.get(p.subscription_id) : undefined,
       }));
 
       setPayments(transformedPayments);
-
       // Calculate stats
       const now = new Date();
       const monthStart = startOfMonth(now);
@@ -129,10 +166,10 @@ export default function TherapistPayments() {
         .single();
 
       setStats({
-        monthlyIncome: monthlyCompleted.reduce((sum, p) => sum + Number(p.amount), 0),
+        monthlyIncome: monthlyCompleted.reduce((sum, p) => sum + getDisplayAmount(p), 0),
         monthlySessions: monthlyCompleted.length,
-        pendingPayments: pending.reduce((sum, p) => sum + Number(p.amount), 0),
-        totalEarnings: completed.reduce((sum, p) => sum + Number(p.amount), 0),
+        pendingPayments: pending.reduce((sum, p) => sum + getDisplayAmount(p), 0),
+        totalEarnings: completed.reduce((sum, p) => sum + getDisplayAmount(p), 0),
         walletBalance: Number(walletData?.balance || 0),
         deferredRevenue: Number(walletData?.deferred_revenue || 0),
       });
@@ -369,7 +406,7 @@ export default function TherapistPayments() {
                         {statusInfo.label}
                       </Badge>
                       <p className="font-bold min-w-[80px] text-right">
-                        ${Number(payment.amount).toFixed(2)}
+                        ${getDisplayAmount(payment).toFixed(2)}
                       </p>
                     </div>
                   </div>
