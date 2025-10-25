@@ -225,33 +225,68 @@ const TherapistProfile = () => {
         // Redirect to checkout
         navigate(`/portal/checkout?payment_id=${payment.id}`);
       } else {
-        // Create subscription directly without Stripe
+        // Create subscription with package
         const sessionsTotal = type === "package_4" ? 4 : 8;
-        const discountPercentage = type === "package_4" ? 10 : 20;
-        const periodEnd = new Date();
-        periodEnd.setMonth(periodEnd.getMonth() + 1);
+        const packagePrice = type === "package_4" ? pricing?.package_4_price : pricing?.package_8_price;
+        const regularPrice = (pricing?.session_price || 0) * sessionsTotal;
+        const discountPercentage = Math.round(((regularPrice - (packagePrice || 0)) / regularPrice) * 100);
+        const packageTypeValue = type === "package_4" ? "4_sessions" : "8_sessions";
 
         // @ts-ignore - Types will regenerate automatically
-        const { error: subscriptionError } = await supabase
+        const { data: subscription, error: subError } = await supabase
           .from("client_subscriptions")
           .insert({
             client_id: user.id,
-            psychologist_id: id,
-            package_type: type === "package_4" ? "4_sessions" : "8_sessions",
-            sessions_total: sessionsTotal,
-            sessions_remaining: sessionsTotal,
-            sessions_used: 0,
+            psychologist_id: id as string,
             session_price: pricing?.session_price || 0,
             discount_percentage: discountPercentage,
-            current_period_end: periodEnd.toISOString(),
+            sessions_total: sessionsTotal,
+            sessions_used: 1,
+            sessions_remaining: sessionsTotal - 1,
+            package_type: packageTypeValue,
             status: "active",
             auto_renew: true,
-          });
+            current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+            next_billing_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          })
+          .select()
+          .single();
 
-        if (subscriptionError) throw subscriptionError;
+        if (subError) throw subError;
 
-        toast.success(`¡Suscripción de ${sessionsTotal} sesiones creada exitosamente!`);
-        navigate("/portal/suscripciones");
+        // Create first appointment
+        // @ts-ignore - Types will regenerate automatically
+        const { error: apptError } = await supabase.from("appointments").insert({
+          patient_id: user.id,
+          psychologist_id: id,
+          start_time: startTime.toISOString(),
+          end_time: endTime.toISOString(),
+          status: "pending",
+          modality: "Videollamada",
+        });
+
+        if (apptError) throw apptError;
+
+        // Create payment record for package
+        // @ts-ignore - Types will regenerate automatically
+        const { data: payment, error: paymentError } = await supabase
+          .from("payments")
+          .insert({
+            client_id: user.id,
+            psychologist_id: id,
+            subscription_id: subscription.id,
+            amount: packagePrice || 0,
+            payment_type: type,
+            payment_status: "pending",
+            description: `Paquete de ${sessionsTotal} sesiones con ${discountPercentage}% de descuento`,
+          })
+          .select()
+          .single();
+
+        if (paymentError) throw paymentError;
+
+        // Redirect to checkout
+        navigate(`/portal/checkout?payment_id=${payment.id}`);
       }
     } catch (error: any) {
       console.error("Error booking:", error);

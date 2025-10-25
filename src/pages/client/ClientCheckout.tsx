@@ -30,52 +30,14 @@ export default function ClientCheckout() {
   const [processing, setProcessing] = useState(false);
 
   useEffect(() => {
-    const success = searchParams.get("success");
     const paymentId = searchParams.get("payment_id");
-    const sessionId = searchParams.get("session_id");
-
-    if (success === "true" && paymentId && sessionId) {
-      // Coming from Stripe checkout success
-      processStripeSuccess(paymentId, sessionId);
-    } else if (paymentId) {
-      // Old flow or manual payment
-      fetchPaymentData(paymentId);
-    } else {
+    if (!paymentId) {
       toast.error("No se encontró información de pago");
       navigate("/portal");
+      return;
     }
+    fetchPaymentData(paymentId);
   }, [searchParams]);
-
-  const processStripeSuccess = async (paymentId: string, sessionId: string) => {
-    setLoading(true);
-    try {
-      // Call edge function to process Stripe payment
-      const { data, error } = await supabase.functions.invoke("process-stripe-payment", {
-        body: { 
-          payment_id: paymentId,
-          session_id: sessionId 
-        },
-      });
-
-      if (error) throw error;
-
-      toast.success("¡Pago procesado exitosamente!");
-      
-      setTimeout(() => {
-        if (data.payment_type === "single_session") {
-          navigate("/portal/sesiones");
-        } else {
-          navigate("/portal/suscripciones");
-        }
-      }, 1500);
-    } catch (error: any) {
-      console.error("Error processing Stripe payment:", error);
-      toast.error(error.message || "Error al procesar el pago");
-      navigate("/portal");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const fetchPaymentData = async (paymentId: string) => {
     try {
@@ -191,12 +153,16 @@ export default function ClientCheckout() {
           .eq("psychologist_id", checkoutData.psychologist_id)
           .single();
 
-        let discountPercentage = checkoutData.payment_type === "package_4" ? 10 : 20;
+        let discountPercentage = 0;
+        if (pricing) {
+          const regularPrice = Number(pricing.session_price) * sessionsTotal;
+          discountPercentage = Math.round(((regularPrice - checkoutData.amount) / regularPrice) * 100);
+        }
 
         await supabase.from("client_subscriptions").insert({
           client_id: checkoutData.client_id,
           psychologist_id: checkoutData.psychologist_id,
-          package_type: checkoutData.payment_type === "package_4" ? "4_sessions" : "8_sessions",
+          package_type: checkoutData.payment_type,
           sessions_total: sessionsTotal,
           sessions_remaining: sessionsTotal,
           sessions_used: 0,
