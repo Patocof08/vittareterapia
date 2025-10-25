@@ -148,6 +148,20 @@ export default function ClientCheckout() {
 
         if (subError) throw subError;
 
+        // ===== CONTABILIDAD: Procesar transacciones del paquete =====
+        const { error: accountingError } = await supabase.rpc('process_package_purchase', {
+          _subscription_id: subscription.id,
+          _payment_id: checkoutData.payment_id,
+          _psychologist_id: tempData.psychologist_id,
+          _total_amount: checkoutData.amount,
+          _sessions_total: sessionsTotal,
+        });
+
+        if (accountingError) {
+          console.error("Error en contabilidad:", accountingError);
+          // No lanzamos error para no bloquear el flujo, pero lo registramos
+        }
+
         // Create first appointment
         const { data: appointment, error: apptError } = await supabase
           .from("appointments")
