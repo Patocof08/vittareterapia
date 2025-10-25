@@ -106,6 +106,7 @@ serve(async (req) => {
     if (payment_type === "package_4" || payment_type === "package_8") {
       const sessionsTotal = payment_type === "package_4" ? 4 : 8;
       const discountPercentage = payment_type === "package_4" ? 10 : 20;
+      const packageType = payment_type === "package_4" ? "4_sessions" : "8_sessions";
       const periodEnd = new Date();
       periodEnd.setMonth(periodEnd.getMonth() + 1);
 
@@ -120,7 +121,7 @@ serve(async (req) => {
         .insert({
           client_id: user.id,
           psychologist_id,
-          package_type: payment_type,
+          package_type: packageType,
           sessions_total: sessionsTotal,
           sessions_remaining: sessionsTotal - 1, // -1 because first appointment already booked
           sessions_used: 1, // First session already used
