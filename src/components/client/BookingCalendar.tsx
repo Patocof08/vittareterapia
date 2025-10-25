@@ -68,6 +68,9 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
 
       // Generate time slots
       const slots: string[] = [];
+      const now = new Date();
+      const isToday = isSameDay(date, now);
+
       if (availability) {
         availability.forEach((block) => {
           const [startHour, startMin] = block.start_time.split(":").map(Number);
@@ -82,6 +85,12 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
           while (current < end) {
             const slotStart = new Date(current);
             const slotEnd = addMinutes(slotStart, 50); // 50 min sessions
+
+            // Skip if slot is in the past (for today only)
+            if (isToday && slotStart <= now) {
+              current = addMinutes(current, 60);
+              continue;
+            }
 
             // Check if slot is already booked
             // @ts-ignore - Types will regenerate automatically

@@ -146,11 +146,20 @@ const TherapistProfile = () => {
 
     // Generate time slots from availability
     const times: string[] = [];
+    const now = new Date();
+    const isToday = date.toDateString() === now.toDateString();
+    const currentHour = now.getHours();
+    
     dayAvailability.forEach(slot => {
       const [startHour] = slot.start_time.split(':').map(Number);
       const [endHour] = slot.end_time.split(':').map(Number);
       
       for (let hour = startHour; hour < endHour; hour++) {
+        // Skip if this hour has already passed today
+        if (isToday && hour <= currentHour) {
+          continue;
+        }
+
         const timeSlot = `${hour.toString().padStart(2, '0')}:00`;
         // Only add if not already booked
         if (!bookedSlots.includes(timeSlot)) {
