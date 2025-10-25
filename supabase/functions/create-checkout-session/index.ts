@@ -144,13 +144,14 @@ serve(async (req) => {
         },
       ],
       mode: "payment",
-      success_url: `${req.headers.get("origin")}/portal/checkout?payment_id=${payment.id}`,
-      cancel_url: `${req.headers.get("origin")}/portal/agendar`,
+      success_url: `${req.headers.get("origin")}/portal/checkout?payment_id=${payment.id}&success=true&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${req.headers.get("origin")}/portal/agendar?canceled=true`,
       metadata: {
         payment_id: payment.id,
         psychologist_id: psychologist_id,
         appointment_id: appointment_id || "",
         payment_type: payment_type,
+        amount: amount.toString(),
       },
     });
 
