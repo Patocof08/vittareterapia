@@ -99,12 +99,13 @@ export default function AdminDashboard() {
           id,
           amount,
           psychologist_id,
-          subscription_id,
-          client_subscriptions!fk_payment_subscription(sessions_total)
+          subscription_id
         `)
         .in("payment_type", ["package_4", "package_8"])
         .eq("payment_status", "completed")
         .not("subscription_id", "is", null);
+
+      const found = packagePayments?.length || 0;
 
       if (!packagePayments || packagePayments.length === 0) {
         toast.info("No hay pagos históricos por procesar");
@@ -122,11 +123,14 @@ export default function AdminDashboard() {
 
         if (existingDeferred) continue; // Already processed
 
-        const subscription = Array.isArray(payment.client_subscriptions) 
-          ? payment.client_subscriptions[0] 
-          : payment.client_subscriptions;
+        // Fetch subscription to get sessions_total
+        const { data: sub } = await supabase
+          .from("client_subscriptions")
+          .select("sessions_total")
+          .eq("id", payment.subscription_id)
+          .maybeSingle();
 
-        if (!subscription) continue;
+        if (!sub) continue;
 
         // Process this payment
         const { error: rpcError } = await supabase.rpc('process_package_purchase', {
@@ -134,7 +138,7 @@ export default function AdminDashboard() {
           _payment_id: payment.id,
           _psychologist_id: payment.psychologist_id,
           _total_amount: payment.amount,
-          _sessions_total: subscription.sessions_total,
+          _sessions_total: sub.sessions_total,
         });
 
         if (!rpcError) {
@@ -145,11 +149,11 @@ export default function AdminDashboard() {
       }
 
       if (processed > 0) {
-        toast.success(`${processed} pago(s) histórico(s) procesado(s)`);
+        toast.success(`${processed}/${found} pago(s) procesado(s)`);
         fetchFinancialStats();
         fetchStats();
       } else {
-        toast.info("No hay pagos nuevos por procesar");
+        toast.info(`0/${found} pagos procesados (posiblemente ya estaban procesados)`);
       }
     } catch (error) {
       console.error("Error processing historical payments:", error);
