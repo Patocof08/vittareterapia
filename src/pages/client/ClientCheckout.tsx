@@ -155,6 +155,7 @@ export default function ClientCheckout() {
           _psychologist_id: tempData.psychologist_id,
           _total_amount: checkoutData.amount,
           _sessions_total: sessionsTotal,
+          _discount_percentage: discountPercentage,
         });
 
         if (rpcError) throw rpcError;
