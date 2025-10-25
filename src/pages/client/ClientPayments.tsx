@@ -18,6 +18,7 @@ interface Payment {
   description: string;
   created_at: string;
   completed_at: string;
+  appointment_id?: string;
   psychologist: {
     first_name: string;
     last_name: string;
@@ -26,6 +27,10 @@ interface Payment {
     id: string;
     invoice_number: string;
   };
+  appointment?: {
+    status: string;
+  };
+  hasCredit?: boolean;
 }
 
 interface PaymentStats {
@@ -52,7 +57,7 @@ export default function ClientPayments() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Fetch only completed payments with psychologist info
+      // Fetch all payments with psychologist, appointment, and invoice info
       const { data: paymentsData, error } = await supabase
         .from("payments")
         .select(`
@@ -61,18 +66,30 @@ export default function ClientPayments() {
             first_name,
             last_name
           ),
-          invoice:invoices(id, invoice_number)
+          invoice:invoices(id, invoice_number),
+          appointment:appointments!fk_payment_appointment(status)
         `)
         .eq("client_id", user.id)
-        .eq("payment_status", "completed")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
 
+      // Check for credits (refund vs credit choice)
+      const { data: creditsData } = await supabase
+        .from("client_credits")
+        .select("original_appointment_id")
+        .eq("client_id", user.id);
+
+      const appointmentIdsWithCredits = new Set(
+        (creditsData || []).map(c => c.original_appointment_id).filter(Boolean)
+      );
+
       // Transform data to match interface
       const transformedPayments = (paymentsData || []).map(p => ({
         ...p,
-        invoice: Array.isArray(p.invoice) && p.invoice.length > 0 ? p.invoice[0] : undefined
+        invoice: Array.isArray(p.invoice) && p.invoice.length > 0 ? p.invoice[0] : undefined,
+        appointment: Array.isArray(p.appointment) && p.appointment.length > 0 ? p.appointment[0] : undefined,
+        hasCredit: p.appointment_id ? appointmentIdsWithCredits.has(p.appointment_id) : false
       }));
       
       setPayments(transformedPayments);
@@ -102,7 +119,22 @@ export default function ClientPayments() {
     return labels[type] || type;
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (payment: Payment) => {
+    // Check if appointment was cancelled for single sessions
+    if (payment.appointment?.status === 'cancelled' && payment.payment_type === 'single_session') {
+      if (payment.hasCredit) {
+        return {
+          label: "Cancelado (Crédito aplicado)",
+          className: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-400 dark:border-blue-800"
+        };
+      } else {
+        return {
+          label: "Cancelado (Reembolso en proceso)",
+          className: "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950 dark:text-orange-400 dark:border-orange-800"
+        };
+      }
+    }
+
     const config: Record<string, { label: string; className: string }> = {
       completed: { 
         label: "Pagado", 
@@ -120,8 +152,12 @@ export default function ClientPayments() {
         label: "Reembolsado", 
         className: "bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-950 dark:text-gray-400 dark:border-gray-800" 
       },
+      cancelled: {
+        label: "Cancelado",
+        className: "bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-950 dark:text-gray-400 dark:border-gray-800"
+      },
     };
-    return config[status] || { label: status, className: "" };
+    return config[payment.payment_status] || { label: payment.payment_status, className: "" };
   };
 
   const handleDownloadInvoice = (payment: Payment) => {
@@ -212,7 +248,7 @@ export default function ClientPayments() {
           ) : (
             <div className="space-y-4">
               {payments.map((payment) => {
-                const statusInfo = getStatusBadge(payment.payment_status);
+                const statusInfo = getStatusBadge(payment);
                 return (
                   <div
                     key={payment.id}
@@ -238,9 +274,9 @@ export default function ClientPayments() {
                         {statusInfo.label}
                       </Badge>
                       <p className="font-bold min-w-[80px] text-right">
-                        ${Number(payment.amount).toFixed(2)}
+                        ${Number(payment.amount || 0).toFixed(2)}
                       </p>
-                      {payment.payment_status === "completed" && (
+                      {payment.payment_status === "completed" && !payment.appointment?.status?.includes('cancelled') && (
                         <Button
                           size="icon"
                           variant="ghost"
