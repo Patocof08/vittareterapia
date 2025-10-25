@@ -73,7 +73,11 @@ export default function TherapistPayments() {
     // Fallback para sesión individual cuando el monto aún no está asignado
     if (payment.payment_type === "single_session") {
       const amt = Number(payment.amount || 0);
-      return amt > 0 ? amt : Number(sessionPriceFallback || 0);
+      if (amt > 0) {
+        // Mostrar la ganancia neta del psicólogo (85%)
+        return amt * 0.85;
+      }
+      return Number(sessionPriceFallback || 0);
     }
     return Number(payment.amount || 0);
   };
@@ -136,12 +140,12 @@ export default function TherapistPayments() {
 
       let subsMap = new Map<string, number>();
       if (subscriptionIds.length > 0) {
-        const { data: subsData, error: subsError } = await supabase
-          .from("client_subscriptions")
-          .select("id, session_price")
-          .in("id", subscriptionIds);
-        if (subsError) throw subsError;
-        subsMap = new Map((subsData || []).map((s: any) => [s.id, Number(s.session_price)]));
+        const { data: drData, error: drError } = await supabase
+          .from("deferred_revenue")
+          .select("subscription_id, price_per_session")
+          .in("subscription_id", subscriptionIds);
+        if (drError) throw drError;
+        subsMap = new Map((drData || []).map((d: any) => [d.subscription_id, Number(d.price_per_session)]));
       }
 
       // Transform data
