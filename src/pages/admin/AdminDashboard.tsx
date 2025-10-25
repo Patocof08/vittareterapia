@@ -91,8 +91,10 @@ export default function AdminDashboard() {
   const processHistoricalPayments = async () => {
     try {
       toast.info("Procesando pagos históricos...");
-      
-      // Find package payments that need processing (completed but no deferred_revenue)
+      let processedPackages = 0;
+      let processedSingles = 0;
+
+      // 1) Paquetes completados sin ingreso diferido
       const { data: packagePayments } = await supabase
         .from("payments")
         .select(`
@@ -105,56 +107,104 @@ export default function AdminDashboard() {
         .eq("payment_status", "completed")
         .not("subscription_id", "is", null);
 
-      const found = packagePayments?.length || 0;
+      const foundPackages = packagePayments?.length || 0;
 
-      if (!packagePayments || packagePayments.length === 0) {
-        toast.info("No hay pagos históricos por procesar");
-        return;
-      }
+      if (packagePayments && packagePayments.length > 0) {
+        for (const payment of packagePayments) {
+          // Check if already processed (by subscription)
+          const { data: existingDeferred } = await supabase
+            .from("deferred_revenue")
+            .select("id")
+            .eq("subscription_id", payment.subscription_id)
+            .maybeSingle();
 
-      let processed = 0;
-      for (const payment of packagePayments) {
-        // Check if already processed
-        const { data: existingDeferred } = await supabase
-          .from("deferred_revenue")
-          .select("id")
-          .eq("subscription_id", payment.subscription_id)
-          .maybeSingle();
+          if (existingDeferred) continue; // Already processed
 
-        if (existingDeferred) continue; // Already processed
+          // Fetch subscription to get sessions_total and discount_percentage
+          const { data: sub } = await supabase
+            .from("client_subscriptions")
+            .select("sessions_total, discount_percentage")
+            .eq("id", payment.subscription_id)
+            .maybeSingle();
 
-        // Fetch subscription to get sessions_total and discount_percentage
-        const { data: sub } = await supabase
-          .from("client_subscriptions")
-          .select("sessions_total, discount_percentage")
-          .eq("id", payment.subscription_id)
-          .maybeSingle();
+          if (!sub) continue;
 
-        if (!sub) continue;
+          // Process this package payment
+          const { error: rpcError } = await supabase.rpc('process_package_purchase', {
+            _subscription_id: payment.subscription_id,
+            _payment_id: payment.id,
+            _psychologist_id: payment.psychologist_id,
+            _total_amount: payment.amount,
+            _sessions_total: sub.sessions_total,
+            _discount_percentage: sub.discount_percentage,
+          });
 
-        // Process this payment
-        const { error: rpcError } = await supabase.rpc('process_package_purchase', {
-          _subscription_id: payment.subscription_id,
-          _payment_id: payment.id,
-          _psychologist_id: payment.psychologist_id,
-          _total_amount: payment.amount,
-          _sessions_total: sub.sessions_total,
-          _discount_percentage: sub.discount_percentage,
-        });
-
-        if (!rpcError) {
-          processed++;
-        } else {
-          console.error("Error processing payment:", payment.id, rpcError);
+          if (!rpcError) {
+            processedPackages++;
+          } else {
+            console.error("Error processing package:", payment.id, rpcError);
+          }
         }
       }
 
-      if (processed > 0) {
-        toast.success(`${processed}/${found} pago(s) procesado(s)`);
+      // 2) Sesiones individuales completadas sin ingreso diferido
+      // @ts-ignore - simplify types for historical processing
+      const { data: singlePayments } = await (supabase.from as any)("payments")
+        .select(`
+          id,
+          amount,
+          psychologist_id,
+          appointment_id,
+          appointment:appointments!fk_payment_appointment(status)
+        `)
+        .eq("payment_type", "single_session")
+        .eq("payment_status", "completed");
+
+      const foundSingles = singlePayments?.length || 0;
+
+      if (singlePayments && singlePayments.length > 0) {
+        for (const payment of singlePayments as any[]) {
+          // Check if already processed (by payment_id)
+          // @ts-ignore - simplify types
+          const { data: existingSingle } = await (supabase.from as any)("deferred_revenue")
+            .select("id")
+            .eq("payment_id", payment.id)
+            .maybeSingle();
+
+          if (existingSingle) continue; // Already processed
+
+          // Register commission + deferred for single session
+          const { error: singleRpcError } = await (supabase.rpc as any)('process_single_session_payment', {
+            _payment_id: payment.id,
+            _psychologist_id: payment.psychologist_id,
+            _total_amount: payment.amount,
+            _appointment_id: payment.appointment_id,
+          });
+
+          if (!singleRpcError) {
+            processedSingles++;
+            // If the appointment was already completed historically, recognize revenue now
+            if (payment.appointment?.status === 'completed' && payment.appointment_id) {
+              await (supabase.rpc as any)('recognize_single_session_revenue', {
+                _appointment_id: payment.appointment_id,
+                _psychologist_id: payment.psychologist_id,
+              });
+            }
+          } else {
+            console.error("Error processing single session:", payment.id, singleRpcError);
+          }
+        }
+      }
+
+      const totalFound = foundPackages + foundSingles;
+      const totalProcessed = processedPackages + processedSingles;
+
+      if (totalProcessed > 0) {
+        toast.success(`${totalProcessed}/${totalFound} pago(s) procesado(s)`);
         fetchFinancialStats();
         fetchStats();
       } else {
-        toast.info(`0/${found} pagos procesados (posiblemente ya estaban procesados)`);
+        toast.info(`0/${totalFound} pagos procesados (posiblemente ya estaban procesados)`);
       }
     } catch (error) {
       console.error("Error processing historical payments:", error);
