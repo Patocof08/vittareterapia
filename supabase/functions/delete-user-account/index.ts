@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
+import Stripe from 'https://esm.sh/stripe@18.5.0'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -57,6 +58,49 @@ Deno.serve(async (req) => {
         }
       }
     )
+
+    // Cancel all active Stripe subscriptions before deleting the account
+    try {
+      const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
+        apiVersion: "2025-08-27.basil",
+      });
+
+      // Get user email from auth
+      const { data: { user }, error: userError } = await supabaseAdmin.auth.admin.getUserById(userId);
+      
+      if (!userError && user?.email) {
+        console.log(`Looking for Stripe customer with email: ${user.email}`);
+        
+        // Find Stripe customer by email
+        const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+        
+        if (customers.data.length > 0) {
+          const customerId = customers.data[0].id;
+          console.log(`Found Stripe customer: ${customerId}`);
+          
+          // Get all active subscriptions
+          const subscriptions = await stripe.subscriptions.list({
+            customer: customerId,
+            status: 'active',
+          });
+          
+          console.log(`Found ${subscriptions.data.length} active subscriptions`);
+          
+          // Cancel each active subscription
+          for (const subscription of subscriptions.data) {
+            console.log(`Canceling subscription: ${subscription.id}`);
+            await stripe.subscriptions.cancel(subscription.id);
+            console.log(`Subscription ${subscription.id} canceled successfully`);
+          }
+        } else {
+          console.log('No Stripe customer found for this email');
+        }
+      }
+    } catch (stripeError) {
+      console.error('Error canceling Stripe subscriptions:', stripeError);
+      // Continue with account deletion even if Stripe cancellation fails
+      // to avoid leaving orphaned accounts
+    }
 
     // Clean up dependent application data to avoid FK issues
     try {
