@@ -69,6 +69,7 @@ export default function TherapistPayments() {
       if (!psychProfile) return;
 
       // Fetch payments with client info and appointment details
+      // ONLY show payments that have an appointment_id (excludes package purchase payments)
       const { data: paymentsData, error } = await supabase
         .from("payments")
         .select(`
@@ -83,6 +84,7 @@ export default function TherapistPayments() {
           )
         `)
         .eq("psychologist_id", psychProfile.id)
+        .not("appointment_id", "is", null)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -184,8 +186,8 @@ export default function TherapistPayments() {
   const getPaymentTypeLabel = (type: string) => {
     const labels: Record<string, string> = {
       single_session: "Sesión Individual",
-      package_4: "Paquete 4 Sesiones",
-      package_8: "Paquete 8 Sesiones",
+      package_4: "Sesión Individual",
+      package_8: "Sesión Individual",
     };
     return labels[type] || type;
   };
