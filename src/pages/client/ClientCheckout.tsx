@@ -191,16 +191,12 @@ export default function ClientCheckout() {
           .eq("psychologist_id", checkoutData.psychologist_id)
           .single();
 
-        let discountPercentage = 0;
-        if (pricing) {
-          const regularPrice = Number(pricing.session_price) * sessionsTotal;
-          discountPercentage = Math.round(((regularPrice - checkoutData.amount) / regularPrice) * 100);
-        }
+        let discountPercentage = checkoutData.payment_type === "package_4" ? 10 : 20;
 
         await supabase.from("client_subscriptions").insert({
           client_id: checkoutData.client_id,
           psychologist_id: checkoutData.psychologist_id,
-          package_type: checkoutData.payment_type,
+          package_type: checkoutData.payment_type === "package_4" ? "4_sessions" : "8_sessions",
           sessions_total: sessionsTotal,
           sessions_remaining: sessionsTotal,
           sessions_used: 0,
