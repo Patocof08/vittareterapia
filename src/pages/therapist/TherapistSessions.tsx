@@ -130,7 +130,17 @@ export default function TherapistSessions() {
           toast.success("Sesión completada y pago procesado");
         }
       } else {
-        toast.success("Sesión marcada como completada");
+        const { error: singleRpcError } = await supabase.rpc('recognize_single_session_revenue', {
+          _appointment_id: sessionId,
+          _psychologist_id: appointment.psychologist_id,
+        });
+
+        if (singleRpcError) {
+          console.error("Error recognizing single session revenue:", singleRpcError);
+          toast.error("Sesión completada, pero hubo un error en el procesamiento de pago");
+        } else {
+          toast.success("Sesión completada y pago procesado");
+        }
       }
 
       loadSessions();

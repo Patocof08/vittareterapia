@@ -219,12 +219,26 @@ export default function ClientCheckout() {
 
         if (paymentError) throw paymentError;
 
-        // Get payment data for invoice
+        // Get payment data (for RPC + invoice)
         const { data: paymentData } = await supabase
           .from("payments")
-          .select("psychologist_id")
+          .select("psychologist_id, appointment_id")
           .eq("id", checkoutData.payment_id)
           .single();
+
+        // Register deferred revenue for single session (85% to therapist, 15% admin)
+        if (paymentData) {
+          const { error: rpcError } = await supabase.rpc('process_single_session_payment', {
+            _payment_id: checkoutData.payment_id,
+            _psychologist_id: paymentData.psychologist_id,
+            _total_amount: checkoutData.amount,
+            _appointment_id: paymentData.appointment_id,
+          });
+          if (rpcError) {
+            console.error("Error processing single session payment:", rpcError);
+            toast.error("Pago registrado, pero hubo un error contable");
+          }
+        }
 
         // Create invoice
         if (paymentData) {
