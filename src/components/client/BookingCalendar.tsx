@@ -243,19 +243,44 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
       // Determinar payment_type según el paquete
       const paymentType = subscription.sessions_total === 4 ? "package_4" : "package_8";
 
-      // Registrar pago ligado a la suscripción (monto 0)
+      // Obtener precio individual del psicólogo para mostrar como pendiente
+      const { data: pricingData } = await supabase
+        .from("psychologist_pricing")
+        .select("session_price")
+        .eq("psychologist_id", psychologistId)
+        .single();
+
+      const sessionPrice = pricingData?.session_price || 0;
+
+      // Registrar pago ligado a la suscripción (con el precio individual como "pendiente")
       const { error: paymentError } = await supabase.from("payments").insert({
         client_id: user.id,
         psychologist_id: psychologistId,
         appointment_id: appointment.id,
         subscription_id: subscription.id,
-        amount: 0,
+        amount: sessionPrice,
         payment_type: paymentType,
-        payment_status: "completed",
+        payment_status: "pending",
         currency: "MXN",
         description: `Sesión ${subscription.sessions_used + 1} de ${subscription.sessions_total} del paquete`,
       });
       if (paymentError) throw paymentError;
+
+      // Actualizar pending_balance del psicólogo
+      const { data: psychWallet } = await supabase
+        .from("psychologist_wallets")
+        .select("pending_balance")
+        .eq("psychologist_id", psychologistId)
+        .single();
+
+      if (psychWallet) {
+        await supabase
+          .from("psychologist_wallets")
+          .update({
+            pending_balance: (psychWallet.pending_balance || 0) + sessionPrice
+          })
+          .eq("psychologist_id", psychologistId);
+      }
 
       // Consumir 1 sesión de la suscripción
       const { error: subUpdateError } = await supabase

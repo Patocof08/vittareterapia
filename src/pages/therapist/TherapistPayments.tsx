@@ -32,6 +32,8 @@ interface EarningsStats {
   monthlySessions: number;
   pendingPayments: number;
   totalEarnings: number;
+  walletBalance: number;
+  deferredRevenue: number;
 }
 
 export default function TherapistPayments() {
@@ -43,6 +45,8 @@ export default function TherapistPayments() {
     monthlySessions: 0,
     pendingPayments: 0,
     totalEarnings: 0,
+    walletBalance: 0,
+    deferredRevenue: 0,
   });
   const [loading, setLoading] = useState(true);
 
@@ -115,11 +119,20 @@ export default function TherapistPayments() {
         p.appointment.status !== "completed"
       );
 
+      // Get wallet balance
+      const { data: walletData } = await supabase
+        .rpc('get_psychologist_wallet_balance', {
+          _psychologist_id: psychProfile.id
+        })
+        .single();
+
       setStats({
         monthlyIncome: monthlyCompleted.reduce((sum, p) => sum + Number(p.amount), 0),
         monthlySessions: monthlyCompleted.length,
         pendingPayments: pending.reduce((sum, p) => sum + Number(p.amount), 0),
         totalEarnings: completed.reduce((sum, p) => sum + Number(p.amount), 0),
+        walletBalance: Number(walletData?.balance || 0),
+        deferredRevenue: Number(walletData?.deferred_revenue || 0),
       });
 
       // Apply default filter
@@ -238,7 +251,7 @@ export default function TherapistPayments() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Ingresos del Mes</CardTitle>
@@ -261,6 +274,19 @@ export default function TherapistPayments() {
             <div className="text-2xl font-bold">${stats.pendingPayments.toFixed(2)}</div>
             <p className="text-xs text-muted-foreground">
               {payments.filter(p => p.payment_status === 'pending').length} pagos pendientes
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Balance Disponible</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${stats.walletBalance.toFixed(2)}</div>
+            <p className="text-xs text-muted-foreground">
+              + ${stats.deferredRevenue.toFixed(2)} proyectado
             </p>
           </CardContent>
         </Card>

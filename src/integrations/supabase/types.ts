@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_wallet: {
+        Row: {
+          balance: number
+          created_at: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          balance?: number
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          balance?: number
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       appointments: {
         Row: {
           cancellation_reason: string | null
@@ -234,6 +255,53 @@ export type Database = {
           psychologist_id?: string
         }
         Relationships: []
+      }
+      deferred_revenue: {
+        Row: {
+          created_at: string
+          deferred_amount: number
+          id: string
+          price_per_session: number
+          recognized_amount: number
+          sessions_recognized: number
+          sessions_total: number
+          subscription_id: string
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deferred_amount: number
+          id?: string
+          price_per_session: number
+          recognized_amount?: number
+          sessions_recognized?: number
+          sessions_total: number
+          subscription_id: string
+          total_amount: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deferred_amount?: number
+          id?: string
+          price_per_session?: number
+          recognized_amount?: number
+          sessions_recognized?: number
+          sessions_total?: number
+          subscription_id?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deferred_revenue_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: true
+            referencedRelation: "client_subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       invoices: {
         Row: {
@@ -797,6 +865,41 @@ export type Database = {
           },
         ]
       }
+      psychologist_wallets: {
+        Row: {
+          balance: number
+          created_at: string
+          id: string
+          pending_balance: number
+          psychologist_id: string
+          updated_at: string
+        }
+        Insert: {
+          balance?: number
+          created_at?: string
+          id?: string
+          pending_balance?: number
+          psychologist_id: string
+          updated_at?: string
+        }
+        Update: {
+          balance?: number
+          created_at?: string
+          id?: string
+          pending_balance?: number
+          psychologist_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "psychologist_wallets_psychologist_id_fkey"
+            columns: ["psychologist_id"]
+            isOneToOne: true
+            referencedRelation: "psychologist_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       session_clinical_notes: {
         Row: {
           appointment_id: string
@@ -915,6 +1018,80 @@ export type Database = {
         }
         Relationships: []
       }
+      wallet_transactions: {
+        Row: {
+          amount: number
+          appointment_id: string | null
+          balance_after: number
+          balance_before: number
+          created_at: string
+          description: string | null
+          id: string
+          payment_id: string | null
+          psychologist_id: string | null
+          subscription_id: string | null
+          transaction_type: string
+          wallet_type: string
+        }
+        Insert: {
+          amount: number
+          appointment_id?: string | null
+          balance_after: number
+          balance_before: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          payment_id?: string | null
+          psychologist_id?: string | null
+          subscription_id?: string | null
+          transaction_type: string
+          wallet_type: string
+        }
+        Update: {
+          amount?: number
+          appointment_id?: string | null
+          balance_after?: number
+          balance_before?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          payment_id?: string | null
+          psychologist_id?: string | null
+          subscription_id?: string | null
+          transaction_type?: string
+          wallet_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallet_transactions_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wallet_transactions_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wallet_transactions_psychologist_id_fkey"
+            columns: ["psychologist_id"]
+            isOneToOne: false
+            referencedRelation: "psychologist_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wallet_transactions_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "client_subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -929,6 +1106,14 @@ export type Database = {
         Returns: number
       }
       generate_invoice_number: { Args: never; Returns: string }
+      get_psychologist_wallet_balance: {
+        Args: { _psychologist_id: string }
+        Returns: {
+          balance: number
+          deferred_revenue: number
+          pending_balance: number
+        }[]
+      }
       get_therapist_patients: {
         Args: never
         Returns: {
@@ -950,6 +1135,24 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      process_package_purchase: {
+        Args: {
+          _payment_id: string
+          _psychologist_id: string
+          _sessions_total: number
+          _subscription_id: string
+          _total_amount: number
+        }
+        Returns: undefined
+      }
+      recognize_session_revenue: {
+        Args: {
+          _appointment_id: string
+          _psychologist_id: string
+          _subscription_id: string
+        }
+        Returns: undefined
       }
       reject_psychologist: {
         Args: { _psychologist_id: string; _rejection_reason: string }

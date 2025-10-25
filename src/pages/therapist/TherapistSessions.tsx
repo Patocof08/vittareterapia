@@ -91,15 +91,48 @@ export default function TherapistSessions() {
 
   const handleCompleteSession = async (sessionId: string) => {
     try {
-      // @ts-ignore - Types will regenerate automatically
+      // Get appointment details first
+      const { data: appointment } = await supabase
+        .from("appointments")
+        .select("psychologist_id, patient_id")
+        .eq("id", sessionId)
+        .single();
+
+      if (!appointment) throw new Error("Cita no encontrada");
+
+      // Get payment to check if it's linked to a subscription
+      const { data: payment } = await supabase
+        .from("payments")
+        .select("subscription_id")
+        .eq("appointment_id", sessionId)
+        .maybeSingle();
+
+      // Update appointment status
       const { error } = await supabase
-        // @ts-ignore - Types will regenerate automatically
         .from("appointments")
         .update({ status: "completed" })
         .eq("id", sessionId);
 
       if (error) throw error;
-      toast.success("Sesión marcada como completada");
+
+      // If this appointment is part of a package subscription, recognize revenue
+      if (payment?.subscription_id) {
+        const { error: rpcError } = await supabase.rpc('recognize_session_revenue', {
+          _appointment_id: sessionId,
+          _subscription_id: payment.subscription_id,
+          _psychologist_id: appointment.psychologist_id,
+        });
+
+        if (rpcError) {
+          console.error("Error recognizing revenue:", rpcError);
+          toast.error("Sesión completada, pero hubo un error en el procesamiento de pago");
+        } else {
+          toast.success("Sesión completada y pago procesado");
+        }
+      } else {
+        toast.success("Sesión marcada como completada");
+      }
+
       loadSessions();
     } catch (error) {
       console.error("Error updating session:", error);
