@@ -237,7 +237,7 @@ const TherapistProfile = () => {
           .insert({
             client_id: user.id,
             psychologist_id: id,
-            package_type: type,
+            package_type: type === "package_4" ? "4_sessions" : "8_sessions",
             sessions_total: sessionsTotal,
             sessions_remaining: sessionsTotal,
             sessions_used: 0,
