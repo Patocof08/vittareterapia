@@ -278,99 +278,117 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
   };
 
   const handleBookingTypeConfirm = async (type: "single" | "package_4" | "package_8") => {
-    if (!selectedDate || !selectedTime || !user) return;
+    if (!user || !selectedDate || !selectedTime) return;
 
     setLoading(true);
     try {
-      console.log("Iniciando proceso de pago con Stripe", { type, psychologistId });
-      
-      const sessionStart = new Date(selectedDate);
       const [hours, minutes] = selectedTime.split(":").map(Number);
-      sessionStart.setHours(hours, minutes, 0, 0);
+      const startTime = new Date(selectedDate);
+      startTime.setHours(hours, minutes, 0, 0);
+      const endTime = addMinutes(startTime, pricing?.session_duration_minutes || 50);
 
-      const sessionEnd = new Date(sessionStart);
-      sessionEnd.setMinutes(sessionEnd.getMinutes() + 50);
-
-      // Create appointment first
-      console.log("Creando cita...");
-      const { data: appointment, error: appointmentError } = await supabase
-        .from("appointments")
-        .insert({
-          patient_id: user.id,
-          psychologist_id: psychologistId,
-          start_time: sessionStart.toISOString(),
-          end_time: sessionEnd.toISOString(),
-          status: "pending",
-          modality: "Videollamada",
-        })
-        .select()
-        .single();
-
-      if (appointmentError) {
-        console.error("Error creando cita:", appointmentError);
-        throw appointmentError;
-      }
-
-      console.log("Cita creada exitosamente:", appointment.id);
-      setShowBookingDialog(false);
-
-      // Map type to payment_type for backend
-      const paymentTypeMap = {
-        single: "single_session",
-        package_4: "package_4",
-        package_8: "package_8",
-      };
-
-      const paymentType = paymentTypeMap[type];
-      console.log("Llamando a edge function con:", { 
-        psychologist_id: psychologistId, 
-        payment_type: paymentType, 
-        appointment_id: appointment.id 
-      });
-
-      // Call Stripe checkout edge function
-      const { data: checkoutData, error: checkoutError } = await supabase.functions.invoke(
-        "create-checkout-session",
-        {
-          body: {
+      if (type === "single") {
+        // Create single appointment
+        const { data: appointment, error: apptError } = await supabase
+          .from("appointments")
+          .insert({
+            patient_id: user.id,
             psychologist_id: psychologistId,
-            payment_type: paymentType,
-            appointment_id: appointment.id,
-          },
-        }
-      );
+            start_time: startTime.toISOString(),
+            end_time: endTime.toISOString(),
+            status: "pending",
+            modality: "Videollamada",
+          })
+          .select()
+          .single();
 
-      if (checkoutError) {
-        console.error("Error de checkout:", checkoutError);
-        throw new Error(`Error al crear sesión de pago: ${checkoutError.message}`);
-      }
+        if (apptError) throw apptError;
 
-      console.log("Respuesta de edge function:", checkoutData);
+        // Create payment record for individual session
+        await supabase.from("payments").insert({
+          client_id: user.id,
+          psychologist_id: psychologistId,
+          appointment_id: appointment.id,
+          amount: pricing?.session_price || 0,
+          payment_type: "single_session",
+          payment_status: "pending",
+          currency: "MXN",
+          description: "Sesión individual",
+        });
 
-      if (!checkoutData?.url) {
-        console.error("No se recibió URL de checkout. Data:", checkoutData);
-        throw new Error("No se recibió URL de checkout de Stripe");
-      }
-
-      console.log("Redirigiendo a Stripe:", checkoutData.url);
-      
-      // Open Stripe Checkout in a new tab
-      const stripeWindow = window.open(checkoutData.url, '_blank');
-      
-      if (stripeWindow) {
-        toast.success("Checkout abierto en nueva pestaña");
-        // Navigate back to sessions page
+        toast.success("Cita agendada con éxito");
         navigate("/portal/sesiones");
       } else {
-        // Fallback if popup was blocked
-        toast.info("Por favor permite ventanas emergentes y haz clic de nuevo");
-        window.location.href = checkoutData.url;
+        // Create subscription with package
+        const sessionsTotal = type === "package_4" ? 4 : 8;
+        const packagePrice = type === "package_4" ? pricing?.package_4_price : pricing?.package_8_price;
+        const regularPrice = (pricing?.session_price || 0) * sessionsTotal;
+        const discountPercentage = Math.round(((regularPrice - packagePrice) / regularPrice) * 100);
+        const packageTypeValue = type === "package_4" ? "4_sessions" : "8_sessions";
+
+        const { data: subscription, error: subError } = await supabase
+          .from("client_subscriptions")
+          .insert({
+            client_id: user.id,
+            psychologist_id: psychologistId,
+            session_price: pricing?.session_price || 0,
+            discount_percentage: discountPercentage,
+            sessions_total: sessionsTotal,
+            sessions_used: 1,
+            sessions_remaining: sessionsTotal - 1,
+            package_type: packageTypeValue,
+            status: "active",
+            auto_renew: true,
+            current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          })
+          .select()
+          .single();
+
+        if (subError) throw subError;
+
+        // Create first appointment
+        const { data: appointment, error: apptError } = await supabase
+          .from("appointments")
+          .insert({
+            patient_id: user.id,
+            psychologist_id: psychologistId,
+            start_time: startTime.toISOString(),
+            end_time: endTime.toISOString(),
+            status: "pending",
+            modality: "Videollamada",
+          })
+          .select()
+          .single();
+
+        if (apptError) throw apptError;
+
+        // Determinar payment_type según el paquete
+        const paymentType = type === "package_4" ? "package_4" : "package_8";
+
+        // Create payment record linking appointment to subscription
+        const { error: paymentError } = await supabase.from("payments").insert({
+          client_id: user.id,
+          psychologist_id: psychologistId,
+          appointment_id: appointment.id,
+          subscription_id: subscription.id,
+          amount: 0, // Already paid as part of subscription
+          payment_type: paymentType,
+          payment_status: "completed",
+          currency: "MXN",
+          description: `Sesión ${1} de ${sessionsTotal} del paquete`,
+        });
+
+        if (paymentError) throw paymentError;
+
+        toast.success(`Paquete de ${sessionsTotal} sesiones adquirido y primera cita agendada`);
+        navigate("/portal/suscripciones");
       }
     } catch (error: any) {
-      console.error("Error completo en booking:", error);
-      toast.error(error.message || "Error al procesar el pago");
+      console.error("Error booking:", error);
+      toast.error(error.message || "Error al procesar la reserva");
     } finally {
       setLoading(false);
+      setShowBookingDialog(false);
     }
   };
 
