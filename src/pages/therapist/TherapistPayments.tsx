@@ -34,12 +34,6 @@ interface EarningsStats {
   totalEarnings: number;
 }
 
-interface WalletBalance {
-  balance: number;
-  pending_balance: number;
-  deferred_revenue: number;
-}
-
 export default function TherapistPayments() {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [filteredPayments, setFilteredPayments] = useState<Payment[]>([]);
@@ -49,11 +43,6 @@ export default function TherapistPayments() {
     monthlySessions: 0,
     pendingPayments: 0,
     totalEarnings: 0,
-  });
-  const [wallet, setWallet] = useState<WalletBalance>({
-    balance: 0,
-    pending_balance: 0,
-    deferred_revenue: 0,
   });
   const [loading, setLoading] = useState(true);
 
@@ -74,20 +63,6 @@ export default function TherapistPayments() {
         .single();
 
       if (!psychProfile) return;
-
-      // Fetch wallet balance using RPC function
-      const { data: walletData } = await supabase
-        .rpc('get_psychologist_wallet_balance', {
-          _psychologist_id: psychProfile.id
-        });
-
-      const walletBalance = Array.isArray(walletData) && walletData.length > 0 ? walletData[0] : null;
-
-      setWallet({
-        balance: Number(walletBalance?.balance || 0),
-        pending_balance: Number(walletBalance?.pending_balance || 0),
-        deferred_revenue: Number(walletBalance?.deferred_revenue || 0),
-      });
 
       // Fetch payments with client info and appointment details
       const { data: paymentsData, error } = await supabase
@@ -261,43 +236,6 @@ export default function TherapistPayments() {
           Revisa tus ingresos y pagos pendientes
         </p>
       </div>
-
-      {/* Wallet Balance Card */}
-      <Card className="border-primary/20 bg-primary/5">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <DollarSign className="w-5 h-5" />
-            Balance de Monedero
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-3">
-            <div>
-              <p className="text-sm text-muted-foreground">Balance Disponible</p>
-              <p className="text-2xl font-bold text-foreground">${wallet.balance.toFixed(2)}</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Dinero disponible para retirar
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Ingresos Pendientes</p>
-              <p className="text-2xl font-bold text-yellow-600">${wallet.deferred_revenue.toFixed(2)}</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Se liberará al completar sesiones
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Total Proyectado</p>
-              <p className="text-2xl font-bold text-green-600">
-                ${(wallet.balance + wallet.deferred_revenue).toFixed(2)}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Disponible + Pendiente
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-3">

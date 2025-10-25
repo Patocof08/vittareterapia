@@ -91,45 +91,14 @@ export default function TherapistSessions() {
 
   const handleCompleteSession = async (sessionId: string) => {
     try {
-      const session = sessions.find(s => s.id === sessionId);
-      if (!session) throw new Error("Sesión no encontrada");
-
-      // Obtener información de la suscripción si existe
-      const { data: payment } = await supabase
-        .from("payments")
-        .select("subscription_id")
-        .eq("appointment_id", sessionId)
-        .maybeSingle();
-
-      // Marcar sesión como completada
+      // @ts-ignore - Types will regenerate automatically
       const { error } = await supabase
+        // @ts-ignore - Types will regenerate automatically
         .from("appointments")
         .update({ status: "completed" })
         .eq("id", sessionId);
 
       if (error) throw error;
-
-      // Si la sesión es parte de una suscripción, reconocer el ingreso
-      if (payment?.subscription_id) {
-        const { data: profile } = await supabase
-          .from("psychologist_profiles")
-          .select("id")
-          .eq("user_id", user?.id)
-          .single();
-
-        if (profile) {
-          const { error: revenueError } = await supabase.rpc('recognize_session_revenue', {
-            _appointment_id: sessionId,
-            _subscription_id: payment.subscription_id,
-            _psychologist_id: profile.id,
-          });
-
-          if (revenueError) {
-            console.error("Error al reconocer ingreso:", revenueError);
-          }
-        }
-      }
-
       toast.success("Sesión marcada como completada");
       loadSessions();
     } catch (error) {

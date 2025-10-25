@@ -929,14 +929,6 @@ export type Database = {
         Returns: number
       }
       generate_invoice_number: { Args: never; Returns: string }
-      get_psychologist_wallet_balance: {
-        Args: { _psychologist_id: string }
-        Returns: {
-          balance: number
-          deferred_revenue: number
-          pending_balance: number
-        }[]
-      }
       get_therapist_patients: {
         Args: never
         Returns: {
@@ -958,24 +950,6 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
-      }
-      process_package_purchase: {
-        Args: {
-          _payment_id: string
-          _psychologist_id: string
-          _sessions_total: number
-          _subscription_id: string
-          _total_amount: number
-        }
-        Returns: undefined
-      }
-      recognize_session_revenue: {
-        Args: {
-          _appointment_id: string
-          _psychologist_id: string
-          _subscription_id: string
-        }
-        Returns: undefined
       }
       reject_psychologist: {
         Args: { _psychologist_id: string; _rejection_reason: string }
