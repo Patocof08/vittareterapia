@@ -96,13 +96,16 @@ export default function TherapistPayments() {
       if (!psychProfile) return;
 
       // Obtener precio de sesión del terapeuta para fallback en sesiones individuales
+      // El psicólogo recibe 85% del precio de sesión
       const { data: pricingData } = await supabase
         .from("psychologist_pricing")
         .select("session_price")
         .eq("psychologist_id", psychProfile.id)
         .single();
 
-      setSessionPriceFallback(Number(pricingData?.session_price || 0));
+      const fullPrice = Number(pricingData?.session_price || 0);
+      const psychologistEarning = fullPrice * 0.85;
+      setSessionPriceFallback(psychologistEarning);
 
       // Fetch payments with client info and appointment details
       // ONLY show payments that have an appointment_id (excludes package purchase payments)
@@ -305,7 +308,7 @@ export default function TherapistPayments() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Ingresos del Mes</CardTitle>
@@ -328,19 +331,6 @@ export default function TherapistPayments() {
             <div className="text-2xl font-bold">${stats.pendingPayments.toFixed(2)}</div>
             <p className="text-xs text-muted-foreground">
               {payments.filter(p => p.payment_status === 'pending').length} pagos pendientes
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Balance Disponible</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">${stats.walletBalance.toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground">
-              + ${stats.deferredRevenue.toFixed(2)} proyectado
             </p>
           </CardContent>
         </Card>

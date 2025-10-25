@@ -200,7 +200,7 @@ export default function TherapistDashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Precio por sesión
+              Ganancia por sesión
             </CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -208,23 +208,24 @@ export default function TherapistDashboard() {
             <div className="text-2xl font-bold">
               ${(() => {
                 if (!profile?.pricing) return 0;
+                let sessionPrice = 0;
                 if (Array.isArray(profile.pricing) && profile.pricing.length > 0) {
-                  return profile.pricing[0].session_price;
+                  sessionPrice = profile.pricing[0].session_price;
+                } else if (typeof profile.pricing === 'object' && 'session_price' in profile.pricing) {
+                  sessionPrice = (profile.pricing as any).session_price;
                 }
-                if (typeof profile.pricing === 'object' && 'session_price' in profile.pricing) {
-                  return (profile.pricing as any).session_price;
-                }
-                return 0;
+                // El psicólogo recibe 85% del precio de sesión
+                return (sessionPrice * 0.85).toFixed(2);
               })()}
             </div>
             <p className="text-xs text-muted-foreground">
               {(() => {
                 if (!profile?.pricing) return 'Por configurar';
                 if (Array.isArray(profile.pricing) && profile.pricing.length > 0) {
-                  return 'Configurado';
+                  return 'Tu ganancia neta';
                 }
                 if (typeof profile.pricing === 'object' && 'session_price' in profile.pricing) {
-                  return 'Configurado';
+                  return 'Tu ganancia neta';
                 }
                 return 'Por configurar';
               })()}
