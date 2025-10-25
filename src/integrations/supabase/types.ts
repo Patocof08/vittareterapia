@@ -1136,16 +1136,28 @@ export type Database = {
         }
         Returns: boolean
       }
-      process_package_purchase: {
-        Args: {
-          _payment_id: string
-          _psychologist_id: string
-          _sessions_total: number
-          _subscription_id: string
-          _total_amount: number
-        }
-        Returns: undefined
-      }
+      process_package_purchase:
+        | {
+            Args: {
+              _discount_percentage?: number
+              _payment_id: string
+              _psychologist_id: string
+              _sessions_total: number
+              _subscription_id: string
+              _total_amount: number
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              _payment_id: string
+              _psychologist_id: string
+              _sessions_total: number
+              _subscription_id: string
+              _total_amount: number
+            }
+            Returns: undefined
+          }
       recognize_session_revenue: {
         Args: {
           _appointment_id: string

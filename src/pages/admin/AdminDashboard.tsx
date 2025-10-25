@@ -123,10 +123,10 @@ export default function AdminDashboard() {
 
         if (existingDeferred) continue; // Already processed
 
-        // Fetch subscription to get sessions_total
+        // Fetch subscription to get sessions_total and discount_percentage
         const { data: sub } = await supabase
           .from("client_subscriptions")
-          .select("sessions_total")
+          .select("sessions_total, discount_percentage")
           .eq("id", payment.subscription_id)
           .maybeSingle();
 
@@ -139,6 +139,7 @@ export default function AdminDashboard() {
           _psychologist_id: payment.psychologist_id,
           _total_amount: payment.amount,
           _sessions_total: sub.sessions_total,
+          _discount_percentage: sub.discount_percentage,
         });
 
         if (!rpcError) {
