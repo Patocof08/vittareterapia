@@ -1158,6 +1158,17 @@ export type Database = {
             }
             Returns: undefined
           }
+      recalculate_package_financials: {
+        Args: {
+          _discount_percentage?: number
+          _payment_id: string
+          _psychologist_id: string
+          _sessions_total: number
+          _subscription_id: string
+          _total_amount: number
+        }
+        Returns: undefined
+      }
       recognize_session_revenue: {
         Args: {
           _appointment_id: string
