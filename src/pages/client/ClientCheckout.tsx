@@ -58,13 +58,23 @@ export default function ClientCheckout() {
 
       if (error) throw error;
 
+      // For packages, get appointment date from localStorage if not yet created
+      let appointmentDate = payment.appointment?.start_time;
+      if (!appointmentDate && (payment.payment_type === "package_4" || payment.payment_type === "package_8")) {
+        const tempDataStr = localStorage.getItem("pending_package_appointment");
+        if (tempDataStr) {
+          const tempData = JSON.parse(tempDataStr);
+          appointmentDate = tempData.start_time;
+        }
+      }
+
       setCheckoutData({
         payment_id: payment.id,
         amount: payment.amount,
         payment_type: payment.payment_type,
         description: payment.description,
         psychologist_name: `${payment.psychologist.first_name} ${payment.psychologist.last_name}`,
-        appointment_date: payment.appointment?.start_time,
+        appointment_date: appointmentDate,
       });
     } catch (error) {
       console.error("Error fetching payment:", error);
@@ -92,47 +102,133 @@ export default function ClientCheckout() {
       // Simulate payment processing
       await new Promise((resolve) => setTimeout(resolve, 2000));
 
-      // Update payment status to completed
-      const { error: paymentError } = await supabase
-        .from("payments")
-        .update({
-          payment_status: "completed",
-          completed_at: new Date().toISOString(),
-          payment_method: "Transferencia/Efectivo", // Placeholder
-        })
-        .eq("id", checkoutData.payment_id);
-
-      if (paymentError) throw paymentError;
-
-      // Get user and payment data for invoice
       const { data: { user: currentUser } } = await supabase.auth.getUser();
-      const { data: paymentData } = await supabase
-        .from("payments")
-        .select("psychologist_id")
-        .eq("id", checkoutData.payment_id)
-        .single();
+      if (!currentUser) throw new Error("Usuario no autenticado");
 
-      // Create invoice
-      if (currentUser && paymentData) {
-        // @ts-ignore - Types will regenerate automatically
-        const { error: invoiceError } = await supabase.from("invoices").insert([{
+      // Check if this is a package payment
+      const isPackage = checkoutData.payment_type === "package_4" || checkoutData.payment_type === "package_8";
+
+      if (isPackage) {
+        // Handle package purchase
+        const tempDataStr = localStorage.getItem("pending_package_appointment");
+        if (!tempDataStr) throw new Error("Datos de paquete no encontrados");
+        
+        const tempData = JSON.parse(tempDataStr);
+        const sessionsTotal = tempData.sessions_total;
+        const packageTypeValue = tempData.package_type === "package_4" ? "4_sessions" : "8_sessions";
+
+        // Get pricing info
+        const { data: pricingData } = await supabase
+          .from("psychologist_pricing")
+          .select("session_price")
+          .eq("psychologist_id", tempData.psychologist_id)
+          .single();
+
+        const regularPrice = (pricingData?.session_price || 0) * sessionsTotal;
+        const discountPercentage = Math.round(((regularPrice - checkoutData.amount) / regularPrice) * 100);
+
+        // Create subscription
+        const { data: subscription, error: subError } = await supabase
+          .from("client_subscriptions")
+          .insert({
+            client_id: currentUser.id,
+            psychologist_id: tempData.psychologist_id,
+            session_price: pricingData?.session_price || 0,
+            discount_percentage: discountPercentage,
+            sessions_total: sessionsTotal,
+            sessions_used: 1,
+            sessions_remaining: sessionsTotal - 1,
+            package_type: packageTypeValue,
+            status: "active",
+            auto_renew: true,
+            current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          })
+          .select()
+          .single();
+
+        if (subError) throw subError;
+
+        // Create first appointment
+        const { data: appointment, error: apptError } = await supabase
+          .from("appointments")
+          .insert({
+            patient_id: currentUser.id,
+            psychologist_id: tempData.psychologist_id,
+            start_time: tempData.start_time,
+            end_time: tempData.end_time,
+            status: "pending",
+            modality: "Videollamada",
+          })
+          .select()
+          .single();
+
+        if (apptError) throw apptError;
+
+        // Update payment with subscription and appointment info
+        const { error: paymentUpdateError } = await supabase
+          .from("payments")
+          .update({
+            subscription_id: subscription.id,
+            appointment_id: appointment.id,
+            payment_status: "completed",
+            completed_at: new Date().toISOString(),
+            payment_method: "Transferencia/Efectivo",
+          })
+          .eq("id", checkoutData.payment_id);
+
+        if (paymentUpdateError) throw paymentUpdateError;
+
+        // Create invoice
+        const { error: invoiceError } = await supabase.from("invoices").insert({
           payment_id: checkoutData.payment_id,
           client_id: currentUser.id,
-          psychologist_id: paymentData.psychologist_id,
+          psychologist_id: tempData.psychologist_id,
           amount: checkoutData.amount,
-          invoice_number: '', // Will be auto-generated by trigger
-        }]);
+          invoice_number: '',
+        });
 
         if (invoiceError) console.error("Error creating invoice:", invoiceError);
-      }
 
-      toast.success("¡Pago procesado con éxito!");
-      
-      // Redirect based on payment type
-      if (checkoutData.payment_type === "single_session") {
-        navigate("/portal/sesiones");
-      } else {
+        // Clean up temp data
+        localStorage.removeItem("pending_package_appointment");
+
+        toast.success(`¡Paquete de ${sessionsTotal} sesiones adquirido con éxito!`);
         navigate("/portal/suscripciones");
+      } else {
+        // Handle single session payment
+        const { error: paymentError } = await supabase
+          .from("payments")
+          .update({
+            payment_status: "completed",
+            completed_at: new Date().toISOString(),
+            payment_method: "Transferencia/Efectivo",
+          })
+          .eq("id", checkoutData.payment_id);
+
+        if (paymentError) throw paymentError;
+
+        // Get payment data for invoice
+        const { data: paymentData } = await supabase
+          .from("payments")
+          .select("psychologist_id")
+          .eq("id", checkoutData.payment_id)
+          .single();
+
+        // Create invoice
+        if (paymentData) {
+          const { error: invoiceError } = await supabase.from("invoices").insert({
+            payment_id: checkoutData.payment_id,
+            client_id: currentUser.id,
+            psychologist_id: paymentData.psychologist_id,
+            amount: checkoutData.amount,
+            invoice_number: '',
+          });
+
+          if (invoiceError) console.error("Error creating invoice:", invoiceError);
+        }
+
+        toast.success("¡Pago procesado con éxito!");
+        navigate("/portal/sesiones");
       }
     } catch (error) {
       console.error("Error processing payment:", error);
@@ -198,7 +294,11 @@ export default function ClientCheckout() {
 
               {checkoutData.appointment_date && (
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Fecha de sesión:</span>
+                  <span className="text-muted-foreground">
+                    {checkoutData.payment_type === "single_session" 
+                      ? "Fecha de sesión:" 
+                      : "Primera sesión:"}
+                  </span>
                   <span className="font-medium">
                     {format(
                       new Date(checkoutData.appointment_date),
@@ -206,6 +306,18 @@ export default function ClientCheckout() {
                       { locale: es }
                     )}
                   </span>
+                </div>
+              )}
+
+              {(checkoutData.payment_type === "package_4" || checkoutData.payment_type === "package_8") && (
+                <div className="bg-primary/10 p-3 rounded-lg space-y-2">
+                  <p className="text-sm font-medium">Incluye:</p>
+                  <ul className="text-sm space-y-1 ml-4 list-disc">
+                    <li>{checkoutData.payment_type === "package_4" ? "4" : "8"} sesiones mensuales</li>
+                    <li>Renovación automática</li>
+                    <li>Rollover del 25% de sesiones no utilizadas</li>
+                    <li>Cancela cuando quieras</li>
+                  </ul>
                 </div>
               )}
 

@@ -319,69 +319,36 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
         toast.success("Cita agendada con éxito");
         navigate("/portal/sesiones");
       } else {
-        // Create subscription with package
+        // Create package checkout - first create pending payment for package
         const sessionsTotal = type === "package_4" ? 4 : 8;
         const packagePrice = type === "package_4" ? pricing?.package_4_price : pricing?.package_8_price;
-        const regularPrice = (pricing?.session_price || 0) * sessionsTotal;
-        const discountPercentage = Math.round(((regularPrice - packagePrice) / regularPrice) * 100);
-        const packageTypeValue = type === "package_4" ? "4_sessions" : "8_sessions";
-
-        const { data: subscription, error: subError } = await supabase
-          .from("client_subscriptions")
-          .insert({
-            client_id: user.id,
-            psychologist_id: psychologistId,
-            session_price: pricing?.session_price || 0,
-            discount_percentage: discountPercentage,
-            sessions_total: sessionsTotal,
-            sessions_used: 1,
-            sessions_remaining: sessionsTotal - 1,
-            package_type: packageTypeValue,
-            status: "active",
-            auto_renew: true,
-            current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-          })
-          .select()
-          .single();
-
-        if (subError) throw subError;
-
-        // Create first appointment
-        const { data: appointment, error: apptError } = await supabase
-          .from("appointments")
-          .insert({
-            patient_id: user.id,
-            psychologist_id: psychologistId,
-            start_time: startTime.toISOString(),
-            end_time: endTime.toISOString(),
-            status: "pending",
-            modality: "Videollamada",
-          })
-          .select()
-          .single();
-
-        if (apptError) throw apptError;
-
-        // Determinar payment_type según el paquete
         const paymentType = type === "package_4" ? "package_4" : "package_8";
 
-        // Create payment record linking appointment to subscription
-        const { error: paymentError } = await supabase.from("payments").insert({
+        // Store appointment data temporarily in localStorage for checkout
+        const tempAppointmentData = {
+          psychologist_id: psychologistId,
+          start_time: startTime.toISOString(),
+          end_time: endTime.toISOString(),
+          package_type: type,
+          sessions_total: sessionsTotal,
+        };
+        localStorage.setItem("pending_package_appointment", JSON.stringify(tempAppointmentData));
+
+        // Create payment record for package
+        const { data: payment, error: paymentError } = await supabase.from("payments").insert({
           client_id: user.id,
           psychologist_id: psychologistId,
-          appointment_id: appointment.id,
-          subscription_id: subscription.id,
-          amount: 0, // Already paid as part of subscription
+          amount: packagePrice || 0,
           payment_type: paymentType,
-          payment_status: "completed",
+          payment_status: "pending",
           currency: "MXN",
-          description: `Sesión ${1} de ${sessionsTotal} del paquete`,
-        });
+          description: `Paquete de ${sessionsTotal} sesiones`,
+        }).select().single();
 
         if (paymentError) throw paymentError;
 
-        toast.success(`Paquete de ${sessionsTotal} sesiones adquirido y primera cita agendada`);
-        navigate("/portal/suscripciones");
+        // Redirect to checkout
+        navigate(`/portal/checkout?payment_id=${payment.id}`);
       }
     } catch (error: any) {
       console.error("Error booking:", error);
