@@ -69,7 +69,7 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
       // Generate time slots
       const slots: string[] = [];
       const now = new Date();
-      const isToday = isSameDay(date, now);
+      const minimumBookingTime = addMinutes(now, 6 * 60); // 6 hours from now
 
       if (availability) {
         availability.forEach((block) => {
@@ -86,8 +86,8 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
             const slotStart = new Date(current);
             const slotEnd = addMinutes(slotStart, 50); // 50 min sessions
 
-            // Skip if slot is in the past (for today only)
-            if (isToday && slotStart <= now) {
+            // Skip if slot is less than 6 hours from now
+            if (slotStart < minimumBookingTime) {
               current = addMinutes(current, 60);
               continue;
             }
@@ -405,7 +405,13 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
               mode="single"
               selected={selectedDate}
               onSelect={setSelectedDate}
-              disabled={(date) => date < new Date()}
+              disabled={(date) => {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const checkDate = new Date(date);
+                checkDate.setHours(0, 0, 0, 0);
+                return checkDate < today;
+              }}
               locale={es}
               className="rounded-md border pointer-events-auto"
             />

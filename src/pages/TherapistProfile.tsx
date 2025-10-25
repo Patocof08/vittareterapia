@@ -147,16 +147,18 @@ const TherapistProfile = () => {
     // Generate time slots from availability
     const times: string[] = [];
     const now = new Date();
-    const isToday = date.toDateString() === now.toDateString();
-    const currentHour = now.getHours();
+    const minimumBookingTime = new Date(now.getTime() + 6 * 60 * 60 * 1000); // 6 hours from now
     
     dayAvailability.forEach(slot => {
       const [startHour] = slot.start_time.split(':').map(Number);
       const [endHour] = slot.end_time.split(':').map(Number);
       
       for (let hour = startHour; hour < endHour; hour++) {
-        // Skip if this hour has already passed today
-        if (isToday && hour <= currentHour) {
+        const slotDateTime = new Date(date);
+        slotDateTime.setHours(hour, 0, 0, 0);
+        
+        // Skip if slot is less than 6 hours from now
+        if (slotDateTime < minimumBookingTime) {
           continue;
         }
 
@@ -443,8 +445,14 @@ const TherapistProfile = () => {
                       mode="single"
                       selected={selectedDate}
                       onSelect={setSelectedDate}
-                      className="rounded-lg border border-border"
-                      disabled={(date) => date < new Date()}
+                      className="rounded-lg border border-border pointer-events-auto"
+                      disabled={(date) => {
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        const checkDate = new Date(date);
+                        checkDate.setHours(0, 0, 0, 0);
+                        return checkDate < today;
+                      }}
                     />
                   </div>
 
