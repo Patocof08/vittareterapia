@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, CheckCircle, Clock, XCircle, DollarSign, TrendingDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Users, CheckCircle, Clock, XCircle, DollarSign, TrendingDown, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -84,6 +85,75 @@ export default function AdminDashboard() {
       });
     } catch (error) {
       console.error("Error fetching financial stats:", error);
+    }
+  };
+
+  const processHistoricalPayments = async () => {
+    try {
+      toast.info("Procesando pagos históricos...");
+      
+      // Find package payments that need processing (completed but no deferred_revenue)
+      const { data: packagePayments } = await supabase
+        .from("payments")
+        .select(`
+          id,
+          amount,
+          psychologist_id,
+          subscription_id,
+          client_subscriptions!fk_payment_subscription(sessions_total)
+        `)
+        .in("payment_type", ["package_4", "package_8"])
+        .eq("payment_status", "completed")
+        .not("subscription_id", "is", null);
+
+      if (!packagePayments || packagePayments.length === 0) {
+        toast.info("No hay pagos históricos por procesar");
+        return;
+      }
+
+      let processed = 0;
+      for (const payment of packagePayments) {
+        // Check if already processed
+        const { data: existingDeferred } = await supabase
+          .from("deferred_revenue")
+          .select("id")
+          .eq("subscription_id", payment.subscription_id)
+          .maybeSingle();
+
+        if (existingDeferred) continue; // Already processed
+
+        const subscription = Array.isArray(payment.client_subscriptions) 
+          ? payment.client_subscriptions[0] 
+          : payment.client_subscriptions;
+
+        if (!subscription) continue;
+
+        // Process this payment
+        const { error: rpcError } = await supabase.rpc('process_package_purchase', {
+          _subscription_id: payment.subscription_id,
+          _payment_id: payment.id,
+          _psychologist_id: payment.psychologist_id,
+          _total_amount: payment.amount,
+          _sessions_total: subscription.sessions_total,
+        });
+
+        if (!rpcError) {
+          processed++;
+        } else {
+          console.error("Error processing payment:", payment.id, rpcError);
+        }
+      }
+
+      if (processed > 0) {
+        toast.success(`${processed} pago(s) histórico(s) procesado(s)`);
+        fetchFinancialStats();
+        fetchStats();
+      } else {
+        toast.info("No hay pagos nuevos por procesar");
+      }
+    } catch (error) {
+      console.error("Error processing historical payments:", error);
+      toast.error("Error al procesar pagos históricos");
     }
   };
 
@@ -213,6 +283,21 @@ export default function AdminDashboard() {
               </p>
             </CardContent>
           </Card>
+        </div>
+        
+        {/* Process Historical Payments Button */}
+        <div className="mt-4">
+          <Button 
+            variant="outline" 
+            onClick={processHistoricalPayments}
+            className="w-full md:w-auto"
+          >
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Procesar Pagos Históricos
+          </Button>
+          <p className="text-xs text-muted-foreground mt-2">
+            Ejecuta esta acción si hay pagos de paquetes que no se reflejan en el balance
+          </p>
         </div>
       </div>
 
