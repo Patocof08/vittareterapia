@@ -130,7 +130,7 @@ export default function TherapistSessions() {
           toast.success("Sesión completada y pago procesado");
         }
       } else {
-        const { error: singleRpcError } = await supabase.rpc('recognize_single_session_revenue', {
+        const { error: singleRpcError } = await (supabase.rpc as any)('recognize_single_session_revenue', {
           _appointment_id: sessionId,
           _psychologist_id: appointment.psychologist_id,
         });

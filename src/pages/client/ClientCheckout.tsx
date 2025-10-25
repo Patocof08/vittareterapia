@@ -228,7 +228,7 @@ export default function ClientCheckout() {
 
         // Register deferred revenue for single session (85% to therapist, 15% admin)
         if (paymentData) {
-          const { error: rpcError } = await supabase.rpc('process_single_session_payment', {
+          const { error: rpcError } = await (supabase.rpc as any)('process_single_session_payment', {
             _payment_id: checkoutData.payment_id,
             _psychologist_id: paymentData.psychologist_id,
             _total_amount: checkoutData.amount,
