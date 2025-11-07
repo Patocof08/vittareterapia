@@ -14,8 +14,10 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Upload, User, Shield, FileText, CreditCard, Bell, AlertTriangle, CheckCircle2, XCircle, Clock, Eye, X as XIcon } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { logger } from "@/lib/logger";
 import { Database } from "@/integrations/supabase/types";
+import { useNavigate } from "react-router-dom";
 
 type DocumentType = Database["public"]["Enums"]["document_type"];
 type DocumentInsert = Database["public"]["Tables"]["psychologist_documents"]["Insert"];
@@ -129,7 +131,8 @@ const documentTypes: Array<{
 ];
 
 export default function TherapistSettings() {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("profile");
   const [loading, setLoading] = useState(true);
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
@@ -137,6 +140,8 @@ export default function TherapistSettings() {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [uploading, setUploading] = useState(false);
   const [psychologistId, setPsychologistId] = useState<string | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   
   // Password change state
   const [passwordData, setPasswordData] = useState({
@@ -391,6 +396,44 @@ export default function TherapistSettings() {
       toast.error("Error al subir el documento");
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!user) return;
+    
+    setIsDeleting(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast.error("No se pudo verificar tu sesión");
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('delete-user-account', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (error) {
+        logger.error("Error deleting account:", error);
+        toast.error("Error al eliminar la cuenta. Por favor intenta de nuevo.");
+        return;
+      }
+
+      toast.success("Tu cuenta ha sido eliminada exitosamente");
+      
+      // Sign out and redirect
+      await signOut();
+      navigate("/");
+    } catch (error) {
+      logger.error("Error in delete account:", error);
+      toast.error("Error al eliminar la cuenta. Por favor intenta de nuevo.");
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteDialog(false);
     }
   };
 
@@ -1040,11 +1083,39 @@ export default function TherapistSettings() {
                 <li>Los clientes ya no podrán encontrarte en el directorio</li>
                 <li>Esta acción no se puede deshacer</li>
               </ul>
-              <Button variant="destructive">Eliminar mi cuenta</Button>
+              <Button 
+                variant="destructive" 
+                onClick={() => setShowDeleteDialog(true)}
+                disabled={isDeleting}
+              >
+                {isDeleting ? "Eliminando..." : "Eliminar mi cuenta"}
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Estás completamente seguro?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. Esto eliminará permanentemente tu cuenta
+              y todos tus datos de nuestros servidores.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteAccount}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? "Eliminando..." : "Sí, eliminar mi cuenta"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
