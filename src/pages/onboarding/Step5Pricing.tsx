@@ -46,8 +46,8 @@ export const Step5Pricing = () => {
 
     try {
       // Calculate package prices with discounts
-      const package4Price = sessionPrice * 4 * 0.95; // 5% discount
-      const package8Price = sessionPrice * 8 * 0.90; // 10% discount
+      const package4Price = sessionPrice * 4 * 0.90; // 10% discount
+      const package8Price = sessionPrice * 8 * 0.85; // 15% discount
 
       // Save pricing data
       await savePricing({
