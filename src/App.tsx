@@ -3,6 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { AuthProvider } from "@/hooks/useAuth";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ScrollToTop } from "./components/ScrollToTop";
 import Index from "./pages/Index";
 import Therapists from "./pages/Therapists";
 import TherapistProfile from "./pages/TherapistProfile";
@@ -54,6 +55,7 @@ const App = () => {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <ScrollToTop />
         <Toaster />
         <Sonner />
         <Routes>
