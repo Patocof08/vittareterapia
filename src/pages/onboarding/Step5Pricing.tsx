@@ -45,13 +45,17 @@ export const Step5Pricing = () => {
     setIsPublishing(true);
 
     try {
+      // Calculate package prices with discounts
+      const package4Price = sessionPrice * 4 * 0.95; // 5% discount
+      const package8Price = sessionPrice * 8 * 0.90; // 10% discount
+
       // Save pricing data
       await savePricing({
         session_price: sessionPrice,
         currency: "MXN",
         cancellation_policy: "Cancelación gratuita con 24 horas de anticipación",
-        package_4_price: null,
-        package_8_price: null,
+        package_4_price: package4Price,
+        package_8_price: package8Price,
         first_session_price: null,
         refund_policy: null,
         late_tolerance_minutes: 10,
