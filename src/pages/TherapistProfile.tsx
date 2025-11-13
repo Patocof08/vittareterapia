@@ -233,8 +233,20 @@ const TherapistProfile = () => {
 
         if (paymentError) throw paymentError;
 
-        // Redirect to checkout
-        navigate(`/portal/checkout?payment_id=${payment.id}`);
+        // Process single session payment immediately (deferred revenue)
+        const { error: rpcError } = await supabase.rpc('process_single_session_payment', {
+          _payment_id: payment.id,
+          _appointment_id: appointment.id,
+          _psychologist_id: id,
+          _total_amount: pricing?.session_price || 0,
+        });
+        if (rpcError) {
+          console.error('Error processing single session payment:', rpcError);
+          toast.error('Cita creada, pero hubo un error contable');
+        }
+
+        toast.success('Cita agendada con éxito');
+        navigate('/portal/sesiones');
       } else {
         // Create package checkout - first create pending payment for package
         const sessionsTotal = type === "package_4" ? 4 : 8;

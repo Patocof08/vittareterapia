@@ -34,6 +34,21 @@ export default function AdminDashboard() {
   useEffect(() => {
     fetchStats();
     fetchFinancialStats();
+
+    // Realtime updates for financial stats
+    const channel = supabase
+      .channel('admin-financials')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'deferred_revenue' }, () => {
+        fetchFinancialStats();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'wallet_transactions' }, () => {
+        fetchFinancialStats();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const fetchStats = async () => {
