@@ -148,19 +148,6 @@ export default function ClientCheckout() {
 
         if (subError) throw subError;
 
-        // Process package purchase via RPC
-        const { error: rpcError } = await supabase.rpc(
-          "process_package_purchase",
-          {
-            _subscription_id: subscription.id,
-            _payment_id: checkoutData.payment_id,
-            _psychologist_id: tempData.psychologist_id,
-            _total_amount: checkoutData.amount,
-            _sessions_total: sessionsTotal,
-          }
-        );
-
-        if (rpcError) throw rpcError;
 
         // Create first appointment
         const { data: appointment, error: apptError } = await supabase

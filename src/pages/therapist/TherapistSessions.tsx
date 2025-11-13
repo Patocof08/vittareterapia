@@ -115,23 +115,7 @@ export default function TherapistSessions() {
 
       if (error) throw error;
 
-      // Reconocer ingreso (tanto para suscripción como sesión individual)
-      if (payment?.subscription_id) {
-        const { error: rpcError } = await supabase.rpc('recognize_session_revenue', {
-          _appointment_id: sessionId,
-          _subscription_id: payment.subscription_id,
-          _psychologist_id: appointment.psychologist_id,
-        });
-
-        if (rpcError) {
-          console.error("Error recognizing revenue:", rpcError);
-          toast.error("Sesión completada, pero hubo un error en el procesamiento de pago");
-        } else {
-          toast.success("Sesión completada y pago procesado");
-        }
-      } else {
-        toast.error("No se encontró información de suscripción para esta sesión");
-      }
+      toast.success("Sesión completada correctamente");
 
       loadSessions();
     } catch (error) {
