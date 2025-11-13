@@ -148,15 +148,19 @@ export default function ClientCheckout() {
 
         if (subError) throw subError;
 
-        // Register package payment in admin deferred revenue
-        await supabase.from("admin_deferred_revenue").insert({
-          payment_id: checkoutData.payment_id,
-          subscription_id: subscription.id,
-          amount: checkoutData.amount,
-          payment_type: checkoutData.payment_type,
-          status: "pending",
-          description: `Paquete de ${sessionsTotal} sesiones`,
-        });
+        // Process package purchase via RPC
+        const { error: rpcError } = await supabase.rpc(
+          "process_package_purchase",
+          {
+            _subscription_id: subscription.id,
+            _payment_id: checkoutData.payment_id,
+            _psychologist_id: tempData.psychologist_id,
+            _total_amount: checkoutData.amount,
+            _sessions_total: sessionsTotal,
+          }
+        );
+
+        if (rpcError) throw rpcError;
 
         // Create first appointment
         const { data: appointment, error: apptError } = await supabase

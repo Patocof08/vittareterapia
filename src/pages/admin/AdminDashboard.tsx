@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, CheckCircle, Clock, XCircle, DollarSign, TrendingDown } from "lucide-react";
+import { Users, CheckCircle, Clock, XCircle, Wallet, TrendingDown, TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface Stats {
   total: number;
@@ -11,10 +12,12 @@ interface Stats {
   rejected: number;
 }
 
-interface FinancialStats {
-  adminBalance: number;
+interface PsychologistFinancials {
+  psychologistId: string;
+  psychologistName: string;
   deferredRevenue: number;
-  recognizedRevenue: number;
+  adminBalance: number;
+  psychologistBalance: number;
 }
 
 export default function AdminDashboard() {
@@ -24,22 +27,24 @@ export default function AdminDashboard() {
     approved: 0,
     rejected: 0,
   });
-  const [financialStats, setFinancialStats] = useState<FinancialStats>({
-    adminBalance: 0,
-    deferredRevenue: 0,
-    recognizedRevenue: 0,
-  });
+  const [psychologistFinancials, setPsychologistFinancials] = useState<PsychologistFinancials[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchStats();
-    fetchFinancialStats();
+    fetchPsychologistFinancials();
 
     // Realtime updates for financial stats
     const channel = supabase
       .channel('admin-financials')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'admin_deferred_revenue' }, () => {
-        fetchFinancialStats();
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'deferred_revenue' }, () => {
+        fetchPsychologistFinancials();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'psychologist_wallets' }, () => {
+        fetchPsychologistFinancials();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'wallet_transactions' }, () => {
+        fetchPsychologistFinancials();
       })
       .subscribe();
 
@@ -73,23 +78,68 @@ export default function AdminDashboard() {
     }
   };
 
-  const fetchFinancialStats = async () => {
+  const fetchPsychologistFinancials = async () => {
     try {
-      // Get total pending deferred revenue
-      const { data: deferredData } = await supabase
-        .from("admin_deferred_revenue")
-        .select("amount, status");
+      // Get all psychologists
+      const { data: psychologists } = await supabase
+        .from("psychologist_profiles")
+        .select("id, first_name, last_name");
 
-      const totalPending = deferredData?.filter(d => d.status === 'pending').reduce((sum, d) => sum + Number(d.amount), 0) || 0;
-      const totalRecognized = deferredData?.filter(d => d.status === 'recognized').reduce((sum, d) => sum + Number(d.amount), 0) || 0;
+      if (!psychologists) return;
 
-      setFinancialStats({
-        adminBalance: 0, // Not used anymore
-        deferredRevenue: totalPending,
-        recognizedRevenue: totalRecognized,
-      });
+      const financials = await Promise.all(
+        psychologists.map(async (psych) => {
+          // Get deferred revenue
+          const { data: deferredData } = await supabase
+            .from("deferred_revenue")
+            .select("deferred_amount, subscription_id")
+            .in("subscription_id", 
+              (await supabase
+                .from("client_subscriptions")
+                .select("id")
+                .eq("psychologist_id", psych.id))
+              .data?.map(s => s.id) || []
+            );
+
+          const totalDeferred = deferredData?.reduce((sum, d) => sum + Number(d.deferred_amount), 0) || 0;
+
+          // Get psychologist wallet balance
+          const { data: walletData } = await supabase
+            .from("psychologist_wallets")
+            .select("balance")
+            .eq("psychologist_id", psych.id)
+            .single();
+
+          const psychBalance = Number(walletData?.balance || 0);
+
+          // Get admin balance from transactions for this psychologist
+          const { data: adminTx } = await supabase
+            .from("wallet_transactions")
+            .select("amount")
+            .eq("wallet_type", "admin")
+            .in("subscription_id",
+              (await supabase
+                .from("client_subscriptions")
+                .select("id")
+                .eq("psychologist_id", psych.id))
+              .data?.map(s => s.id) || []
+            );
+
+          const adminBalance = adminTx?.reduce((sum, tx) => sum + Number(tx.amount), 0) || 0;
+
+          return {
+            psychologistId: psych.id,
+            psychologistName: `${psych.first_name} ${psych.last_name}`,
+            deferredRevenue: totalDeferred,
+            adminBalance: adminBalance,
+            psychologistBalance: psychBalance,
+          };
+        })
+      );
+
+      setPsychologistFinancials(financials);
     } catch (error) {
-      console.error("Error fetching financial stats:", error);
+      console.error("Error fetching psychologist financials:", error);
     }
   };
 
@@ -159,47 +209,74 @@ export default function AdminDashboard() {
         ))}
       </div>
 
-      {/* Financial Stats */}
+      {/* Financial Stats by Psychologist */}
       <div>
-        <h2 className="text-2xl font-bold text-foreground mb-4">Estado Financiero</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Ingreso Diferido (Pasivo)
-              </CardTitle>
-              <div className="p-2 rounded-lg bg-yellow-100 dark:bg-yellow-900/20">
-                <TrendingDown className="w-4 h-4 text-yellow-600" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-foreground">
-                ${financialStats.deferredRevenue.toFixed(2)}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Pendiente de reconocer por sesiones completadas
-              </p>
-            </CardContent>
-          </Card>
+        <h2 className="text-2xl font-bold text-foreground mb-4">Estado Financiero por Psicólogo</h2>
+        <div className="space-y-4">
+          {psychologistFinancials.map((psych) => (
+            <Card key={psych.psychologistId}>
+              <CardHeader>
+                <CardTitle className="text-lg">{psych.psychologistName}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Tabs defaultValue="passive" className="w-full">
+                  <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="passive">Ingreso Pasivo</TabsTrigger>
+                    <TabsTrigger value="admin">Balance Admin</TabsTrigger>
+                    <TabsTrigger value="psychologist">Balance Psicólogo</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="passive" className="mt-4">
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 rounded-lg bg-yellow-100 dark:bg-yellow-900/20">
+                        <TrendingDown className="w-6 h-6 text-yellow-600" />
+                      </div>
+                      <div>
+                        <div className="text-3xl font-bold text-foreground">
+                          ${psych.deferredRevenue.toFixed(2)}
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Pendiente de reconocer (sesiones no completadas)
+                        </p>
+                      </div>
+                    </div>
+                  </TabsContent>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Ingreso Reconocido
-              </CardTitle>
-              <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/20">
-                <CheckCircle className="w-4 h-4 text-green-600" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-foreground">
-                ${financialStats.recognizedRevenue.toFixed(2)}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Ya reconocido como ingreso tras sesiones completadas
-              </p>
-            </CardContent>
-          </Card>
+                  <TabsContent value="admin" className="mt-4">
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 rounded-lg bg-primary/10">
+                        <Wallet className="w-6 h-6 text-primary" />
+                      </div>
+                      <div>
+                        <div className="text-3xl font-bold text-foreground">
+                          ${psych.adminBalance.toFixed(2)}
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Comisiones generadas de este psicólogo
+                        </p>
+                      </div>
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="psychologist" className="mt-4">
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 rounded-lg bg-green-100 dark:bg-green-900/20">
+                        <TrendingUp className="w-6 h-6 text-green-600" />
+                      </div>
+                      <div>
+                        <div className="text-3xl font-bold text-foreground">
+                          ${psych.psychologistBalance.toFixed(2)}
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Balance acumulado del psicólogo
+                        </p>
+                      </div>
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </div>
 

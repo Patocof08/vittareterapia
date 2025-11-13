@@ -281,16 +281,8 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
 
       if (paymentError) throw paymentError;
 
-      // Registrar en ingreso diferido del admin
-      await supabase.from("admin_deferred_revenue").insert({
-        payment_id: payment.id,
-        appointment_id: appointment.id,
-        subscription_id: subscription.id,
-        amount: sessionPrice,
-        payment_type: paymentType,
-        status: "pending",
-        description: `Sesión ${subscription.sessions_used + 1} de ${subscription.sessions_total}`,
-      });
+      // Deferred revenue already created when subscription was purchased
+      // No additional entry needed for subscription sessions
 
       // Consumir 1 sesión de la suscripción
       const { error: subUpdateError } = await supabase
@@ -357,15 +349,18 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
 
           if (paymentError) throw paymentError;
 
-          // Register in admin deferred revenue
-          await supabase.from("admin_deferred_revenue").insert({
-            payment_id: payment.id,
-            appointment_id: appointment.id,
-            amount: pricing?.session_price || 0,
-            payment_type: "single_session",
-            status: "pending",
-            description: "Sesión individual",
-          });
+          // Process single session payment via RPC
+          const { error: rpcError } = await supabase.rpc(
+            "process_single_session_payment",
+            {
+              _payment_id: payment.id,
+              _appointment_id: appointment.id,
+              _psychologist_id: psychologistId,
+              _total_amount: pricing?.session_price || 0,
+            }
+          );
+
+          if (rpcError) throw rpcError;
 
           toast.success("Cita agendada con éxito");
           navigate("/portal/sesiones");

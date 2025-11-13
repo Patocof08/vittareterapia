@@ -233,15 +233,18 @@ const TherapistProfile = () => {
 
         if (paymentError) throw paymentError;
 
-        // Register in admin deferred revenue
-        await supabase.from("admin_deferred_revenue").insert({
-          payment_id: payment.id,
-          appointment_id: appointment.id,
-          amount: pricing?.session_price || 0,
-          payment_type: "single_session",
-          status: "pending",
-          description: "Sesión individual",
-        });
+        // Process single session payment via RPC
+        const { error: rpcError } = await supabase.rpc(
+          "process_single_session_payment",
+          {
+            _payment_id: payment.id,
+            _appointment_id: appointment.id,
+            _psychologist_id: id!,
+            _total_amount: pricing?.session_price || 0,
+          }
+        );
+
+        if (rpcError) throw rpcError;
 
         toast.success('Cita agendada con éxito');
         navigate('/portal/sesiones');
