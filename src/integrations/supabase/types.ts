@@ -1105,6 +1105,7 @@ export type Database = {
         Args: { _sessions_total: number; _sessions_used: number }
         Returns: number
       }
+      expire_client_credit: { Args: { _credit_id: string }; Returns: undefined }
       generate_invoice_number: { Args: never; Returns: string }
       get_psychologist_wallet_balance: {
         Args: { _psychologist_id: string }
@@ -1136,6 +1137,22 @@ export type Database = {
         }
         Returns: boolean
       }
+      process_cancellation_with_refund: {
+        Args: {
+          _appointment_id: string
+          _payment_id: string
+          _subscription_id: string
+        }
+        Returns: undefined
+      }
+      process_late_cancellation: {
+        Args: {
+          _appointment_id: string
+          _psychologist_id: string
+          _subscription_id: string
+        }
+        Returns: undefined
+      }
       process_package_purchase:
         | {
             Args: {
@@ -1158,6 +1175,15 @@ export type Database = {
             }
             Returns: undefined
           }
+      process_single_session_payment: {
+        Args: {
+          _appointment_id: string
+          _payment_id: string
+          _psychologist_id: string
+          _total_amount: number
+        }
+        Returns: undefined
+      }
       recalculate_package_financials: {
         Args: {
           _discount_percentage?: number

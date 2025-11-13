@@ -113,48 +113,45 @@ export default function ClientSessions() {
       const hoursUntilSession = (sessionTime.getTime() - now.getTime()) / (1000 * 60 * 60);
       const isCancelledLate = hoursUntilSession < 24;
 
-      // @ts-ignore - Types will regenerate automatically
-      const { error } = await supabase
-        // @ts-ignore - Types will regenerate automatically
-        .from("appointments")
-        .update({
-          status: "cancelled",
-          cancelled_by: user?.id,
-          cancellation_reason: isCancelledLate 
-            ? "Cancelado menos de 24h antes - Se cobra sesión" 
-            : "Cancelado por el paciente",
-        })
-        .eq("id", selectedAppointment.id);
-
-      if (error) throw error;
-
-      // Si es suscripción, devolver crédito
+      // Obtener info de pago/suscripción
       const { data: payment } = await supabase
         .from("payments")
         .select("id, subscription_id")
         .eq("appointment_id", selectedAppointment.id)
-        .single();
+        .maybeSingle();
 
-      if (payment) {
-        // Si se cancela con más de 24 horas, marcar pago como cancelado (no se cobra)
-        if (!isCancelledLate) {
-          await supabase
-            .from("payments")
-            .update({ payment_status: "cancelled" })
-            .eq("id", payment.id);
-        }
-        // Si se cancela con menos de 24 horas, el pago se mantiene como "pending" (se cobra)
+      if (isCancelledLate && payment?.subscription_id) {
+        // Cancelación tardía de suscripción: cobrar la sesión (reconocer ingreso)
+        const { error: rpcError } = await supabase.rpc('process_late_cancellation', {
+          _appointment_id: selectedAppointment.id,
+          _subscription_id: payment.subscription_id,
+          _psychologist_id: selectedAppointment.psychologist_id,
+        });
 
-        if (payment.subscription_id) {
-          // Obtener suscripción actual
+        if (rpcError) throw rpcError;
+        toast.success("Cita cancelada. La sesión se ha cobrado según la política de cancelación.");
+      } else {
+        // Cancelación con anticipación: devolver crédito
+        const { error } = await supabase
+          .from("appointments")
+          .update({
+            status: "cancelled",
+            cancelled_by: user?.id,
+            cancellation_reason: "Cancelado por el paciente",
+          })
+          .eq("id", selectedAppointment.id);
+
+        if (error) throw error;
+
+        if (payment?.subscription_id) {
+          // Devolver crédito en suscripción
           const { data: subscription } = await supabase
             .from("client_subscriptions")
             .select("sessions_used, sessions_remaining")
             .eq("id", payment.subscription_id)
             .single();
 
-          if (subscription && !isCancelledLate) {
-            // Solo devolver crédito si se canceló con más de 24 horas
+          if (subscription) {
             await supabase
               .from("client_subscriptions")
               .update({
@@ -164,9 +161,10 @@ export default function ClientSessions() {
               .eq("id", payment.subscription_id);
           }
         }
+
+        toast.success("Cita cancelada exitosamente. El crédito ha sido devuelto.");
       }
 
-      toast.success("Cita cancelada exitosamente");
       loadSessions();
     } catch (error) {
       console.error("Error cancelling:", error);
@@ -181,45 +179,33 @@ export default function ClientSessions() {
   const handleRefundSelection = async () => {
     if (!selectedAppointment || !refundOption) return;
     try {
-      // @ts-ignore - Types will regenerate automatically
-      const { error } = await supabase
-        // @ts-ignore - Types will regenerate automatically
-        .from("appointments")
-        .update({
-          status: "cancelled",
-          cancelled_by: user?.id,
-          cancellation_reason: `Cancelado - ${refundOption === "credit" ? "Crédito" : "Reembolso"} solicitado`,
-        })
-        .eq("id", selectedAppointment.id);
-
-      if (error) throw error;
-
-      // Obtener el pago asociado
+      // Obtener el pago y subscription asociados
       const { data: payment } = await supabase
         .from("payments")
-        .select("id, amount, psychologist_id")
+        .select("id, amount, psychologist_id, subscription_id")
         .eq("appointment_id", selectedAppointment.id)
         .maybeSingle();
 
-      // Marcar el pago como cancelado si existe
-      if (payment) {
-        await supabase
-          .from("payments")
-          .update({ payment_status: "cancelled" })
-          .eq("id", payment.id);
-      }
-
       if (refundOption === "credit") {
-        // Determinar el monto y psicólogo para el crédito
+        // Opción crédito: el dinero se queda en diferido
+        const { error } = await supabase
+          .from("appointments")
+          .update({
+            status: "cancelled",
+            cancelled_by: user?.id,
+            cancellation_reason: "Cancelado - Crédito solicitado",
+          })
+          .eq("id", selectedAppointment.id);
+
+        if (error) throw error;
+
         let creditAmount = 0;
         let psychologistId = selectedAppointment.psychologist_id;
 
         if (payment && payment.amount > 0) {
-          // Si existe pago con monto, usar ese
           creditAmount = payment.amount;
           psychologistId = payment.psychologist_id;
         } else {
-          // Si no hay pago o el monto es 0, obtener precio del psicólogo
           const { data: pricing } = await supabase
             .from("psychologist_pricing")
             .select("session_price")
@@ -231,8 +217,11 @@ export default function ClientSessions() {
           }
         }
 
-        // Crear el crédito solo si hay un monto válido
         if (creditAmount > 0) {
+          // Crear crédito con expiración en 6 meses
+          const expiresAt = new Date();
+          expiresAt.setMonth(expiresAt.getMonth() + 6);
+
           await supabase
             .from("client_credits")
             .insert({
@@ -243,13 +232,36 @@ export default function ClientSessions() {
               reason: "Cancelación de sesión individual",
               original_appointment_id: selectedAppointment.id,
               status: "available",
-              expires_at: null,
+              expires_at: expiresAt.toISOString(),
             });
-          toast.success("Cita cancelada. El crédito se ha agregado a tu cuenta.");
+          
+          toast.success("Cita cancelada. El crédito estará disponible por 6 meses.");
         } else {
           toast.success("Cita cancelada.");
         }
       } else {
+        // Opción reembolso: procesar reembolso desde diferido
+        if (payment?.subscription_id) {
+          const { error: rpcError } = await supabase.rpc('process_cancellation_with_refund', {
+            _appointment_id: selectedAppointment.id,
+            _subscription_id: payment.subscription_id,
+            _payment_id: payment.id
+          });
+
+          if (rpcError) throw rpcError;
+        }
+
+        const { error } = await supabase
+          .from("appointments")
+          .update({
+            status: "cancelled",
+            cancelled_by: user?.id,
+            cancellation_reason: "Cancelado - Reembolso solicitado",
+          })
+          .eq("id", selectedAppointment.id);
+
+        if (error) throw error;
+
         toast.success("Cita cancelada. El reembolso se procesará en 3-5 días hábiles.");
       }
 

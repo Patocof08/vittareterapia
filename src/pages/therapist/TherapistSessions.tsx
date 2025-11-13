@@ -100,7 +100,7 @@ export default function TherapistSessions() {
 
       if (!appointment) throw new Error("Cita no encontrada");
 
-      // Get payment to check if it's linked to a subscription
+      // Get payment to find subscription
       const { data: payment } = await supabase
         .from("payments")
         .select("subscription_id")
@@ -115,7 +115,7 @@ export default function TherapistSessions() {
 
       if (error) throw error;
 
-      // If this appointment is part of a package subscription, recognize revenue
+      // Reconocer ingreso (tanto para suscripción como sesión individual)
       if (payment?.subscription_id) {
         const { error: rpcError } = await supabase.rpc('recognize_session_revenue', {
           _appointment_id: sessionId,
@@ -130,17 +130,7 @@ export default function TherapistSessions() {
           toast.success("Sesión completada y pago procesado");
         }
       } else {
-        const { error: singleRpcError } = await (supabase.rpc as any)('recognize_single_session_revenue', {
-          _appointment_id: sessionId,
-          _psychologist_id: appointment.psychologist_id,
-        });
-
-        if (singleRpcError) {
-          console.error("Error recognizing single session revenue:", singleRpcError);
-          toast.error("Sesión completada, pero hubo un error en el procesamiento de pago");
-        } else {
-          toast.success("Sesión completada y pago procesado");
-        }
+        toast.error("No se encontró información de suscripción para esta sesión");
       }
 
       loadSessions();
