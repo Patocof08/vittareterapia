@@ -233,6 +233,15 @@ const TherapistProfile = () => {
 
         if (paymentError) throw paymentError;
 
+        // Create deferred revenue entry
+        await supabase.rpc("create_deferred_revenue", {
+          _psychologist_id: id as string,
+          _appointment_id: appointment.id,
+          _subscription_id: null,
+          _payment_id: payment.id,
+          _amount: Number(pricing?.session_price || 0),
+        });
+
 
         toast.success('Cita agendada con éxito');
         navigate('/portal/sesiones');

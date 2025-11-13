@@ -148,6 +148,15 @@ export default function ClientCheckout() {
 
         if (subError) throw subError;
 
+        // Create deferred revenue for the entire package
+        await supabase.rpc("create_deferred_revenue", {
+          _psychologist_id: tempData.psychologist_id,
+          _appointment_id: null,
+          _subscription_id: subscription.id,
+          _payment_id: checkoutData.payment_id,
+          _amount: checkoutData.amount,
+        });
+
 
         // Create first appointment
         const { data: appointment, error: apptError } = await supabase

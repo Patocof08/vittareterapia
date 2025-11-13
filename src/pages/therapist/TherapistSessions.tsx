@@ -91,22 +91,6 @@ export default function TherapistSessions() {
 
   const handleCompleteSession = async (sessionId: string) => {
     try {
-      // Get appointment details first
-      const { data: appointment } = await supabase
-        .from("appointments")
-        .select("psychologist_id, patient_id")
-        .eq("id", sessionId)
-        .single();
-
-      if (!appointment) throw new Error("Cita no encontrada");
-
-      // Get payment to find subscription
-      const { data: payment } = await supabase
-        .from("payments")
-        .select("subscription_id")
-        .eq("appointment_id", sessionId)
-        .maybeSingle();
-
       // Update appointment status
       const { error } = await supabase
         .from("appointments")
@@ -115,7 +99,17 @@ export default function TherapistSessions() {
 
       if (error) throw error;
 
-      toast.success("Sesión completada correctamente");
+      // Recognize revenue (split between admin and psychologist)
+      const { error: revenueError } = await supabase.rpc("recognize_session_revenue", {
+        _appointment_id: sessionId,
+      });
+
+      if (revenueError) {
+        console.error("Error recognizing revenue:", revenueError);
+        toast.error("Sesión completada pero error al procesar ingresos");
+      } else {
+        toast.success("Sesión completada correctamente");
+      }
 
       loadSessions();
     } catch (error) {
