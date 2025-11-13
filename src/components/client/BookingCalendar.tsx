@@ -321,38 +321,44 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
       startTime.setHours(hours, minutes, 0, 0);
       const endTime = addMinutes(startTime, pricing?.session_duration_minutes || 50);
 
-      if (type === "single") {
-        // Create single appointment
-        const { data: appointment, error: apptError } = await supabase
-          .from("appointments")
-          .insert({
-            patient_id: user.id,
-            psychologist_id: psychologistId,
-            start_time: startTime.toISOString(),
-            end_time: endTime.toISOString(),
-            status: "pending",
-            modality: "Videollamada",
-          })
-          .select()
-          .single();
+        if (type === "single") {
+          // Create single appointment
+          const { data: appointment, error: apptError } = await supabase
+            .from("appointments")
+            .insert({
+              patient_id: user.id,
+              psychologist_id: psychologistId,
+              start_time: startTime.toISOString(),
+              end_time: endTime.toISOString(),
+              status: "pending",
+              modality: "Videollamada",
+            })
+            .select()
+            .single();
 
-        if (apptError) throw apptError;
+          if (apptError) throw apptError;
 
-        // Create payment record for individual session
-        await supabase.from("payments").insert({
-          client_id: user.id,
-          psychologist_id: psychologistId,
-          appointment_id: appointment.id,
-          amount: pricing?.session_price || 0,
-          payment_type: "single_session",
-          payment_status: "pending",
-          currency: "MXN",
-          description: "Sesión individual",
-        });
+          // Create payment record for individual session and redirect to checkout
+          const { data: payment, error: paymentError } = await supabase
+            .from("payments")
+            .insert({
+              client_id: user.id,
+              psychologist_id: psychologistId,
+              appointment_id: appointment.id,
+              amount: pricing?.session_price || 0,
+              payment_type: "single_session",
+              payment_status: "pending",
+              currency: "MXN",
+              description: "Sesión individual",
+            })
+            .select()
+            .single();
 
-        toast.success("Cita agendada con éxito");
-        navigate("/portal/sesiones");
-      } else {
+          if (paymentError) throw paymentError;
+
+          toast.success("Cita agendada, continúa al checkout para confirmar el pago");
+          navigate(`/portal/checkout?payment_id=${payment.id}`);
+        } else {
         // Create package checkout - first create pending payment for package
         const sessionsTotal = type === "package_4" ? 4 : 8;
         const packagePrice = type === "package_4" ? pricing?.package_4_price : pricing?.package_8_price;
