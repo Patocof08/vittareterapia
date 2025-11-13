@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.renew-subscriptions-cron]
 verify_jwt = false
+
+[functions.delete-user-account]
+verify_jwt = true
