@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Users, CheckCircle, Clock, XCircle, DollarSign, TrendingDown, RefreshCw, Calendar } from "lucide-react";
+import { Users, CheckCircle, Clock, XCircle, DollarSign, TrendingDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -31,7 +30,6 @@ export default function AdminDashboard() {
     recognizedRevenue: 0,
   });
   const [loading, setLoading] = useState(true);
-  const [testing, setTesting] = useState(false);
 
   useEffect(() => {
     fetchStats();
@@ -86,46 +84,6 @@ export default function AdminDashboard() {
       });
     } catch (error) {
       console.error("Error fetching financial stats:", error);
-    }
-  };
-
-  const testRenewSubscriptions = async () => {
-    setTesting(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('renew-subscriptions-cron');
-      
-      if (error) throw error;
-      
-      toast.success(`✅ Renovaciones procesadas: ${data.renewed_count}/${data.total_found}`);
-      console.log('Resultados:', data.results);
-      
-      // Refrescar stats
-      await fetchFinancialStats();
-    } catch (error) {
-      console.error('Error:', error);
-      toast.error('Error al probar renovaciones');
-    } finally {
-      setTesting(false);
-    }
-  };
-
-  const testExpireCredits = async () => {
-    setTesting(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('expire-credits-cron');
-      
-      if (error) throw error;
-      
-      toast.success(`✅ Créditos expirados: ${data.expired_count}/${data.total_found}`);
-      console.log('Resultados:', data.results);
-      
-      // Refrescar stats
-      await fetchFinancialStats();
-    } catch (error) {
-      console.error('Error:', error);
-      toast.error('Error al probar expiración de créditos');
-    } finally {
-      setTesting(false);
     }
   };
 
@@ -194,37 +152,6 @@ export default function AdminDashboard() {
           </Card>
         ))}
       </div>
-
-      {/* Test Buttons */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Probar Procesos Automáticos</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Button 
-              onClick={testRenewSubscriptions}
-              disabled={testing}
-              className="flex-1"
-            >
-              <RefreshCw className={`w-4 h-4 mr-2 ${testing ? 'animate-spin' : ''}`} />
-              Probar Renovación de Suscripciones
-            </Button>
-            <Button 
-              onClick={testExpireCredits}
-              disabled={testing}
-              variant="secondary"
-              className="flex-1"
-            >
-              <Calendar className={`w-4 h-4 mr-2 ${testing ? 'animate-spin' : ''}`} />
-              Probar Expiración de Créditos
-            </Button>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            💡 Tip: Para probar renovaciones, primero modifica el <code>next_billing_date</code> de una suscripción a hoy en la base de datos.
-          </p>
-        </CardContent>
-      </Card>
 
       {/* Financial Stats */}
       <div>
