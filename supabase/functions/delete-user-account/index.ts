@@ -73,73 +73,33 @@ Deno.serve(async (req) => {
         const now = new Date()
         const hoursUntilSession = (sessionTime.getTime() - now.getTime()) / (1000 * 60 * 60)
 
-        if (hoursUntilSession < 24) {
-          // Sesión <24h: 15% Admin + 85% Psicólogo (usar process_late_cancellation)
-          console.log(`Procesando sesión <24h: ${appt.id}`)
-          await supabaseAdmin.rpc('process_late_cancellation', {
-            _appointment_id: appt.id,
-            _subscription_id: appt.subscription_id,
-            _psychologist_id: appt.psychologist_id
-          })
-        } else {
-          // Sesión >24h: 100% Admin
-          console.log(`Procesando sesión >24h: ${appt.id}`)
-          
-          // Obtener el monto diferido de esta sesión
-          const { data: deferredData } = await supabaseAdmin
-            .from('deferred_revenue')
-            .select('deferred_amount')
-            .eq('appointment_id', appt.id)
-            .maybeSingle()
+        if (appt.subscription_id) {
+          // Es parte de una suscripción
+          const { data: sub } = await supabaseAdmin
+            .from('client_subscriptions')
+            .select('package_type')
+            .eq('id', appt.subscription_id)
+            .single()
 
-          if (deferredData && deferredData.deferred_amount > 0) {
-            // Mover todo el diferido a admin (100%)
-            const { data: adminWallet } = await supabaseAdmin
-              .from('admin_wallet')
-              .select('id, balance')
-              .single()
-
-            if (adminWallet) {
-              const newBalance = Number(adminWallet.balance) + Number(deferredData.deferred_amount)
-              
-              await supabaseAdmin
-                .from('admin_wallet')
-                .update({ balance: newBalance })
-                .eq('id', adminWallet.id)
-
-              await supabaseAdmin
-                .from('wallet_transactions')
-                .insert({
-                  transaction_type: 'account_deletion',
-                  wallet_type: 'admin',
-                  psychologist_id: appt.psychologist_id,
-                  appointment_id: appt.id,
-                  amount: deferredData.deferred_amount,
-                  balance_before: adminWallet.balance,
-                  balance_after: newBalance,
-                  description: 'Eliminación de cuenta - sesión >24h (100% Admin)'
-                })
-
-              // Actualizar deferred_revenue
-              await supabaseAdmin
-                .from('deferred_revenue')
-                .update({ 
-                  deferred_amount: 0,
-                  recognized_amount: deferredData.deferred_amount 
-                })
-                .eq('appointment_id', appt.id)
-            }
-          }
-
-          // Cancelar la cita
-          await supabaseAdmin
-            .from('appointments')
-            .update({ 
-              status: 'cancelled',
-              cancellation_reason: 'Eliminación de cuenta (>24h)'
+          if (hoursUntilSession < 24) {
+            // Sesión < 24h: reconocer ingreso (split 95/5 o 100/0 según paquete)
+            await supabaseAdmin.rpc('recognize_session_revenue', {
+              _appointment_id: appt.id,
+              _subscription_id: appt.subscription_id,
+              _psychologist_id: appt.psychologist_id
             })
-            .eq('id', appt.id)
+          }
+          // Si > 24h, el dinero de esa sesión queda en diferido y luego va a admin
         }
+
+        // Cancelar la cita
+        await supabaseAdmin
+          .from('appointments')
+          .update({ 
+            status: 'cancelled',
+            cancellation_reason: 'Cuenta eliminada'
+          })
+          .eq('id', appt.id)
       }
 
       // 2. Procesar suscripciones activas del usuario como cliente
@@ -150,7 +110,7 @@ Deno.serve(async (req) => {
         .eq('status', 'active')
 
       for (const sub of clientSubs ?? []) {
-        // Obtener ingreso diferido de esta suscripción (sin sesiones)
+        // Obtener ingreso diferido de esta suscripción
         const { data: deferred } = await supabaseAdmin
           .from('deferred_revenue')
           .select('deferred_amount')
@@ -158,8 +118,7 @@ Deno.serve(async (req) => {
           .single()
 
         if (deferred && deferred.deferred_amount > 0) {
-          // Sin sesiones: 100% Admin
-          console.log(`Procesando suscripción sin sesiones: ${sub.id}`)
+          // Todo el dinero diferido restante va al admin
           const { data: adminWallet } = await supabaseAdmin
             .from('admin_wallet')
             .select('id, balance')
@@ -167,7 +126,7 @@ Deno.serve(async (req) => {
             .single()
 
           if (adminWallet) {
-            const newBalance = Number(adminWallet.balance) + Number(deferred.deferred_amount)
+            const newBalance = adminWallet.balance + deferred.deferred_amount
             
             await supabaseAdmin
               .from('admin_wallet')
@@ -177,22 +136,19 @@ Deno.serve(async (req) => {
             await supabaseAdmin
               .from('wallet_transactions')
               .insert({
-                transaction_type: 'account_deletion',
+                transaction_type: 'account_deleted',
                 wallet_type: 'admin',
                 subscription_id: sub.id,
                 amount: deferred.deferred_amount,
                 balance_before: adminWallet.balance,
                 balance_after: newBalance,
-                description: 'Eliminación de cuenta - sin sesiones (100% Admin)'
+                description: 'Ingreso diferido por eliminación de cuenta'
               })
 
             // Actualizar deferred_revenue
             await supabaseAdmin
               .from('deferred_revenue')
-              .update({ 
-                deferred_amount: 0,
-                recognized_amount: deferred.deferred_amount 
-              })
+              .update({ deferred_amount: 0 })
               .eq('subscription_id', sub.id)
           }
         }
