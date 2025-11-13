@@ -148,17 +148,15 @@ export default function ClientCheckout() {
 
         if (subError) throw subError;
 
-        // Process package purchase (wallet accounting)
-        const { error: rpcError } = await supabase.rpc('process_package_purchase', {
-          _subscription_id: subscription.id,
-          _payment_id: checkoutData.payment_id,
-          _psychologist_id: tempData.psychologist_id,
-          _total_amount: checkoutData.amount,
-          _sessions_total: sessionsTotal,
-          _discount_percentage: discountPercentage,
+        // Register package payment in admin deferred revenue
+        await supabase.from("admin_deferred_revenue").insert({
+          payment_id: checkoutData.payment_id,
+          subscription_id: subscription.id,
+          amount: checkoutData.amount,
+          payment_type: checkoutData.payment_type,
+          status: "pending",
+          description: `Paquete de ${sessionsTotal} sesiones`,
         });
-
-        if (rpcError) throw rpcError;
 
         // Create first appointment
         const { data: appointment, error: apptError } = await supabase
@@ -219,26 +217,12 @@ export default function ClientCheckout() {
 
         if (paymentError) throw paymentError;
 
-        // Get payment data (for RPC + invoice)
+        // Deferred revenue already created when booking, just verify
         const { data: paymentData } = await supabase
           .from("payments")
           .select("psychologist_id, appointment_id")
           .eq("id", checkoutData.payment_id)
           .single();
-
-        // Register deferred revenue for single session (85% to therapist, 15% admin)
-        if (paymentData) {
-          const { error: rpcError } = await (supabase.rpc as any)('process_single_session_payment', {
-            _payment_id: checkoutData.payment_id,
-            _psychologist_id: paymentData.psychologist_id,
-            _total_amount: checkoutData.amount,
-            _appointment_id: paymentData.appointment_id,
-          });
-          if (rpcError) {
-            console.error("Error processing single session payment:", rpcError);
-            toast.error("Pago registrado, pero hubo un error contable");
-          }
-        }
 
         // Create invoice
         if (paymentData) {

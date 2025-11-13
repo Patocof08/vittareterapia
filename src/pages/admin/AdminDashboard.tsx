@@ -38,10 +38,7 @@ export default function AdminDashboard() {
     // Realtime updates for financial stats
     const channel = supabase
       .channel('admin-financials')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'deferred_revenue' }, () => {
-        fetchFinancialStats();
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'wallet_transactions' }, () => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'admin_deferred_revenue' }, () => {
         fetchFinancialStats();
       })
       .subscribe();
@@ -78,23 +75,17 @@ export default function AdminDashboard() {
 
   const fetchFinancialStats = async () => {
     try {
-      // Get admin wallet balance
-      const { data: adminWallet } = await supabase
-        .from("admin_wallet")
-        .select("balance")
-        .single();
-
-      // Get total deferred revenue
+      // Get total pending deferred revenue
       const { data: deferredData } = await supabase
-        .from("deferred_revenue")
-        .select("deferred_amount, recognized_amount");
+        .from("admin_deferred_revenue")
+        .select("amount, status");
 
-      const totalDeferred = deferredData?.reduce((sum, d) => sum + Number(d.deferred_amount), 0) || 0;
-      const totalRecognized = deferredData?.reduce((sum, d) => sum + Number(d.recognized_amount), 0) || 0;
+      const totalPending = deferredData?.filter(d => d.status === 'pending').reduce((sum, d) => sum + Number(d.amount), 0) || 0;
+      const totalRecognized = deferredData?.filter(d => d.status === 'recognized').reduce((sum, d) => sum + Number(d.amount), 0) || 0;
 
       setFinancialStats({
-        adminBalance: Number(adminWallet?.balance || 0),
-        deferredRevenue: totalDeferred,
+        adminBalance: 0, // Not used anymore
+        deferredRevenue: totalPending,
         recognizedRevenue: totalRecognized,
       });
     } catch (error) {
@@ -171,26 +162,7 @@ export default function AdminDashboard() {
       {/* Financial Stats */}
       <div>
         <h2 className="text-2xl font-bold text-foreground mb-4">Estado Financiero</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Balance Admin
-              </CardTitle>
-              <div className="p-2 rounded-lg bg-primary/10">
-                <DollarSign className="w-4 h-4 text-primary" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-foreground">
-                ${financialStats.adminBalance.toFixed(2)}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Disponible en plataforma
-              </p>
-            </CardContent>
-          </Card>
-
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -205,7 +177,7 @@ export default function AdminDashboard() {
                 ${financialStats.deferredRevenue.toFixed(2)}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                Pendiente de reconocer
+                Pendiente de reconocer por sesiones completadas
               </p>
             </CardContent>
           </Card>
@@ -224,7 +196,7 @@ export default function AdminDashboard() {
                 ${financialStats.recognizedRevenue.toFixed(2)}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                Ya reconocido como ingreso
+                Ya reconocido como ingreso tras sesiones completadas
               </p>
             </CardContent>
           </Card>

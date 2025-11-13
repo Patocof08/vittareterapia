@@ -138,14 +138,15 @@ export default function TherapistPayments() {
         .map((p: any) => p.subscription_id)
         .filter((id: string | null): id is string => !!id);
 
+      // For subscriptions, use the payment amount as session price
       let subsMap = new Map<string, number>();
       if (subscriptionIds.length > 0) {
-        const { data: drData, error: drError } = await supabase
-          .from("deferred_revenue")
-          .select("subscription_id, price_per_session")
-          .in("subscription_id", subscriptionIds);
-        if (drError) throw drError;
-        subsMap = new Map((drData || []).map((d: any) => [d.subscription_id, Number(d.price_per_session)]));
+        // Use payment amounts directly
+        rawPayments.forEach((p: any) => {
+          if (p.subscription_id) {
+            subsMap.set(p.subscription_id, Number(p.amount));
+          }
+        });
       }
 
       // Transform data

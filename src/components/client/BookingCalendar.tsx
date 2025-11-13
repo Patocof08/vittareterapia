@@ -243,6 +243,7 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
           end_time: endTime.toISOString(),
           status: "pending",
           modality: "Videollamada",
+          subscription_id: subscription.id,
         })
         .select()
         .single();
@@ -252,7 +253,7 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
       // Determinar payment_type según el paquete
       const paymentType = subscription.sessions_total === 4 ? "package_4" : "package_8";
 
-      // Obtener precio individual del psicólogo para mostrar como pendiente
+      // Obtener precio individual del psicólogo
       const { data: pricingData } = await supabase
         .from("psychologist_pricing")
         .select("session_price")
@@ -261,35 +262,35 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
 
       const sessionPrice = pricingData?.session_price || 0;
 
-      // Registrar pago ligado a la suscripción (con el precio individual como "pendiente")
-      const { error: paymentError } = await supabase.from("payments").insert({
-        client_id: user.id,
-        psychologist_id: psychologistId,
+      // Registrar pago ligado a la suscripción
+      const { data: payment, error: paymentError } = await supabase
+        .from("payments")
+        .insert({
+          client_id: user.id,
+          psychologist_id: psychologistId,
+          appointment_id: appointment.id,
+          subscription_id: subscription.id,
+          amount: sessionPrice,
+          payment_type: paymentType,
+          payment_status: "pending",
+          currency: "MXN",
+          description: `Sesión ${subscription.sessions_used + 1} de ${subscription.sessions_total} del paquete`,
+        })
+        .select()
+        .single();
+
+      if (paymentError) throw paymentError;
+
+      // Registrar en ingreso diferido del admin
+      await supabase.from("admin_deferred_revenue").insert({
+        payment_id: payment.id,
         appointment_id: appointment.id,
         subscription_id: subscription.id,
         amount: sessionPrice,
         payment_type: paymentType,
-        payment_status: "pending",
-        currency: "MXN",
-        description: `Sesión ${subscription.sessions_used + 1} de ${subscription.sessions_total} del paquete`,
+        status: "pending",
+        description: `Sesión ${subscription.sessions_used + 1} de ${subscription.sessions_total}`,
       });
-      if (paymentError) throw paymentError;
-
-      // Actualizar pending_balance del psicólogo
-      const { data: psychWallet } = await supabase
-        .from("psychologist_wallets")
-        .select("pending_balance")
-        .eq("psychologist_id", psychologistId)
-        .single();
-
-      if (psychWallet) {
-        await supabase
-          .from("psychologist_wallets")
-          .update({
-            pending_balance: (psychWallet.pending_balance || 0) + sessionPrice
-          })
-          .eq("psychologist_id", psychologistId);
-      }
 
       // Consumir 1 sesión de la suscripción
       const { error: subUpdateError } = await supabase
@@ -356,18 +357,15 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
 
           if (paymentError) throw paymentError;
 
-          // Process single session payment immediately (create deferred revenue)
-          const { error: rpcError } = await supabase.rpc('process_single_session_payment', {
-            _payment_id: payment.id,
-            _appointment_id: appointment.id,
-            _psychologist_id: psychologistId,
-            _total_amount: pricing?.session_price || 0,
+          // Register in admin deferred revenue
+          await supabase.from("admin_deferred_revenue").insert({
+            payment_id: payment.id,
+            appointment_id: appointment.id,
+            amount: pricing?.session_price || 0,
+            payment_type: "single_session",
+            status: "pending",
+            description: "Sesión individual",
           });
-
-          if (rpcError) {
-            console.error("Error processing single session payment:", rpcError);
-            toast.error("Cita agendada pero hubo un error en el registro contable");
-          }
 
           toast.success("Cita agendada con éxito");
           navigate("/portal/sesiones");
