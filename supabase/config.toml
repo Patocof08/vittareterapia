@@ -1,1 +1,4 @@
 project_id = "ttyoqcjcglnvgmzjqsoz"
+
+[functions.expire-credits-cron]
+verify_jwt = false
