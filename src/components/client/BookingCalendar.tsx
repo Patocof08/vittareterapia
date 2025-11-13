@@ -338,7 +338,7 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
 
           if (apptError) throw apptError;
 
-          // Create payment record for individual session and redirect to checkout
+          // Create payment record for individual session
           const { data: payment, error: paymentError } = await supabase
             .from("payments")
             .insert({
@@ -356,8 +356,21 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
 
           if (paymentError) throw paymentError;
 
-          toast.success("Cita agendada, continúa al checkout para confirmar el pago");
-          navigate(`/portal/checkout?payment_id=${payment.id}`);
+          // Process single session payment immediately (create deferred revenue)
+          const { error: rpcError } = await supabase.rpc('process_single_session_payment', {
+            _payment_id: payment.id,
+            _appointment_id: appointment.id,
+            _psychologist_id: psychologistId,
+            _total_amount: pricing?.session_price || 0,
+          });
+
+          if (rpcError) {
+            console.error("Error processing single session payment:", rpcError);
+            toast.error("Cita agendada pero hubo un error en el registro contable");
+          }
+
+          toast.success("Cita agendada con éxito");
+          navigate("/portal/sesiones");
         } else {
         // Create package checkout - first create pending payment for package
         const sessionsTotal = type === "package_4" ? 4 : 8;
