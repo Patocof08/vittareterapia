@@ -48,6 +48,7 @@ export type Database = {
           session_notes: string | null
           start_time: string
           status: string
+          subscription_id: string | null
           updated_at: string | null
           video_link: string | null
         }
@@ -63,6 +64,7 @@ export type Database = {
           session_notes?: string | null
           start_time: string
           status?: string
+          subscription_id?: string | null
           updated_at?: string | null
           video_link?: string | null
         }
@@ -78,6 +80,7 @@ export type Database = {
           session_notes?: string | null
           start_time?: string
           status?: string
+          subscription_id?: string | null
           updated_at?: string | null
           video_link?: string | null
         }
@@ -87,6 +90,13 @@ export type Database = {
             columns: ["psychologist_id"]
             isOneToOne: false
             referencedRelation: "psychologist_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "client_subscriptions"
             referencedColumns: ["id"]
           },
         ]
