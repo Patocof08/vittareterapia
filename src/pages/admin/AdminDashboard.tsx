@@ -24,6 +24,7 @@ interface PsychologistFinancials {
   psychologist_name: string;
   deferred: number;
   balance: number;
+  adminBalance: number;
 }
 
 export default function AdminDashboard() {
@@ -161,11 +162,21 @@ export default function AdminDashboard() {
             .eq("psychologist_id", profile.id)
             .single();
 
+          // Get admin balance from transactions for this psychologist
+          const { data: adminTransactions } = await supabase
+            .from("wallet_transactions")
+            .select("amount")
+            .eq("wallet_type", "admin")
+            .eq("psychologist_id", profile.id);
+
+          const adminBalance = adminTransactions?.reduce((sum, item) => sum + Number(item.amount), 0) || 0;
+
           return {
             psychologist_id: profile.id,
             psychologist_name: `${profile.first_name} ${profile.last_name}`,
             deferred,
             balance: Number(walletData?.balance || 0),
+            adminBalance,
           };
         })
       );
@@ -347,9 +358,9 @@ export default function AdminDashboard() {
                       </TabsContent>
                       <TabsContent value="admin" className="mt-4">
                         <div className="text-2xl font-bold text-foreground">
-                          ${(psych.deferred * 0.15).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                          ${psych.adminBalance.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                         </div>
-                        <p className="text-sm text-muted-foreground mt-1">15% de comisión cuando se completen</p>
+                        <p className="text-sm text-muted-foreground mt-1">15% de comisión de sesiones completadas</p>
                       </TabsContent>
                       <TabsContent value="psychologist" className="mt-4">
                         <div className="text-2xl font-bold text-foreground">
