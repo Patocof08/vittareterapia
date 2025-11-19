@@ -163,11 +163,18 @@ export default function AdminDashboard() {
             .single();
 
           // Get admin balance from transactions for this psychologist
-          const { data: adminTransactions } = await supabase
+          const { data: adminTransactions, error: adminTxError } = await supabase
             .from("wallet_transactions")
             .select("amount")
             .eq("wallet_type", "admin")
-            .eq("psychologist_id", profile.id);
+            .eq("psychologist_id", profile.id)
+            .eq("transaction_type", "revenue_recognition");
+
+          if (adminTxError) {
+            console.error("Error fetching admin transactions for", profile.id, adminTxError);
+          }
+
+          console.log(`Admin transactions for ${profile.first_name} ${profile.last_name}:`, adminTransactions);
 
           const adminBalance = adminTransactions?.reduce((sum, item) => sum + Number(item.amount), 0) || 0;
 

@@ -1181,8 +1181,8 @@ export type Database = {
       process_cancellation_with_refund: {
         Args: {
           _appointment_id: string
-          _payment_id: string
-          _subscription_id: string
+          _payment_id?: string
+          _subscription_id?: string
         }
         Returns: undefined
       }
