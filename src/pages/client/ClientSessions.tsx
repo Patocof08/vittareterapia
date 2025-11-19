@@ -241,13 +241,15 @@ export default function ClientSessions() {
         }
       } else {
         // Opción reembolso: procesar reembolso desde diferido
-        const { error: rpcError } = await supabase.rpc('process_cancellation_with_refund', {
-          _appointment_id: selectedAppointment.id,
-          _subscription_id: payment?.subscription_id || null,
-          _payment_id: payment?.id || null
-        });
+        if (payment?.subscription_id) {
+          const { error: rpcError } = await supabase.rpc('process_cancellation_with_refund', {
+            _appointment_id: selectedAppointment.id,
+            _subscription_id: payment.subscription_id,
+            _payment_id: payment.id
+          });
 
-        if (rpcError) throw rpcError;
+          if (rpcError) throw rpcError;
+        }
 
         const { error } = await supabase
           .from("appointments")
