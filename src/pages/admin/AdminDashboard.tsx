@@ -264,13 +264,14 @@ export default function AdminDashboard() {
 
 
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <CardTitle>Sistema Financiero</CardTitle>
-          <div className="flex gap-2">
+          <div className="flex gap-2 w-full sm:w-auto">
             <Button
               variant={viewMode === 'universal' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setViewMode('universal')}
+              className="flex-1 sm:flex-none"
             >
               Universal
             </Button>
@@ -278,6 +279,7 @@ export default function AdminDashboard() {
               variant={viewMode === 'by-psychologist' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setViewMode('by-psychologist')}
+              className="flex-1 sm:flex-none"
             >
               Por Psicólogo
             </Button>
@@ -352,10 +354,10 @@ export default function AdminDashboard() {
                   </CardHeader>
                   <CardContent>
                     <Tabs defaultValue="deferred" className="w-full">
-                      <TabsList className="grid w-full grid-cols-3">
-                        <TabsTrigger value="deferred">Ingreso Pasivo</TabsTrigger>
-                        <TabsTrigger value="admin">Balance Admin</TabsTrigger>
-                        <TabsTrigger value="psychologist">Balance Psicólogo</TabsTrigger>
+                      <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 h-auto">
+                        <TabsTrigger value="deferred" className="text-xs sm:text-sm">Ingreso Pasivo</TabsTrigger>
+                        <TabsTrigger value="admin" className="text-xs sm:text-sm">Balance Admin</TabsTrigger>
+                        <TabsTrigger value="psychologist" className="text-xs sm:text-sm">Balance Psicólogo</TabsTrigger>
                       </TabsList>
                       <TabsContent value="deferred" className="mt-4">
                         <div className="text-2xl font-bold text-foreground">
