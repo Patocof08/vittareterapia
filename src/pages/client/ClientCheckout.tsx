@@ -17,6 +17,8 @@ interface CheckoutData {
   description: string;
   psychologist_name: string;
   appointment_date?: string;
+  appointment_id?: string;
+  psychologist_id?: string;
 }
 
 export default function ClientCheckout() {
@@ -45,6 +47,8 @@ export default function ClientCheckout() {
           amount,
           payment_type,
           description,
+          appointment_id,
+          psychologist_id,
           psychologist:psychologist_profiles!fk_payment_psychologist(
             first_name,
             last_name
@@ -75,6 +79,8 @@ export default function ClientCheckout() {
         description: payment.description,
         psychologist_name: `${payment.psychologist.first_name} ${payment.psychologist.last_name}`,
         appointment_date: appointmentDate,
+        appointment_id: payment.appointment_id ?? undefined,
+        psychologist_id: payment.psychologist_id ?? undefined,
       });
     } catch (error) {
       console.error("Error fetching payment:", error);
@@ -148,16 +154,6 @@ export default function ClientCheckout() {
 
         if (subError) throw subError;
 
-        // Create deferred revenue for the entire package
-        await supabase.rpc("create_deferred_revenue", {
-          _psychologist_id: tempData.psychologist_id,
-          _appointment_id: null,
-          _subscription_id: subscription.id,
-          _payment_id: checkoutData.payment_id,
-          _amount: checkoutData.amount,
-        });
-
-
         // Create first appointment
         const { data: appointment, error: apptError } = await supabase
           .from("appointments")
@@ -188,6 +184,15 @@ export default function ClientCheckout() {
 
         if (paymentUpdateError) throw paymentUpdateError;
 
+        // Crear ingreso diferido para el paquete
+        const { error: deferredError } = await supabase.rpc("create_package_deferred", {
+          _subscription_id: subscription.id,
+          _payment_id: checkoutData.payment_id,
+          _psychologist_id: tempData.psychologist_id,
+          _total_amount: checkoutData.amount,
+        });
+        if (deferredError) console.error("Error creating package deferred:", deferredError);
+
         // Create invoice
         const { error: invoiceError } = await supabase.from("invoices").insert({
           payment_id: checkoutData.payment_id,
@@ -217,24 +222,15 @@ export default function ClientCheckout() {
 
         if (paymentError) throw paymentError;
 
-        // Deferred revenue already created when booking, just verify
-        const { data: paymentData } = await supabase
-          .from("payments")
-          .select("psychologist_id, appointment_id")
-          .eq("id", checkoutData.payment_id)
-          .single();
-
-        // Create invoice
-        if (paymentData) {
-          const { error: invoiceError } = await supabase.from("invoices").insert({
-            payment_id: checkoutData.payment_id,
-            client_id: currentUser.id,
-            psychologist_id: paymentData.psychologist_id,
-            amount: checkoutData.amount,
-            invoice_number: '',
+        // Crear ingreso diferido para la sesión individual
+        if (checkoutData.appointment_id && checkoutData.psychologist_id) {
+          const { error: deferredError } = await supabase.rpc("create_single_session_deferred", {
+            _appointment_id: checkoutData.appointment_id,
+            _payment_id: checkoutData.payment_id,
+            _psychologist_id: checkoutData.psychologist_id,
+            _amount: checkoutData.amount,
           });
-
-          if (invoiceError) console.error("Error creating invoice:", invoiceError);
+          if (deferredError) console.error("Error creating single session deferred:", deferredError);
         }
 
         toast.success("¡Pago procesado con éxito!");

@@ -105,72 +105,39 @@ export default function ClientSessions() {
     }
   };
 
-  const handleCancelAppointment = async () => {
+  // Cancelación de cita de paquete (>24h): devuelve crédito al paquete, dinero sigue diferido
+  const handlePackageCancellation = async () => {
     if (!selectedAppointment) return;
     try {
-      const sessionTime = new Date(selectedAppointment.start_time);
-      const now = new Date();
-      const hoursUntilSession = (sessionTime.getTime() - now.getTime()) / (1000 * 60 * 60);
-      const isCancelledLate = hoursUntilSession < 24;
-
-      // Obtener info de pago/suscripción
-      const { data: payment } = await supabase
-        .from("payments")
-        .select("id, subscription_id")
-        .eq("appointment_id", selectedAppointment.id)
-        .maybeSingle();
-
-      if (isCancelledLate && payment?.subscription_id) {
-        // Cancelación tardía de suscripción: cobrar la sesión (reconocer ingreso)
-        const { error: rpcError } = await supabase.rpc('process_late_cancellation', {
-          _appointment_id: selectedAppointment.id,
-          _subscription_id: payment.subscription_id,
-          _psychologist_id: selectedAppointment.psychologist_id,
-        });
-
-        if (rpcError) throw rpcError;
-        toast.success("Cita cancelada. La sesión se ha cobrado según la política de cancelación.");
-      } else {
-        // Cancelación con anticipación: devolver crédito
-        const { error } = await supabase
-          .from("appointments")
-          .update({
-            status: "cancelled",
-            cancelled_by: user?.id,
-            cancellation_reason: "Cancelado por el paciente",
-          })
-          .eq("id", selectedAppointment.id);
-
-        if (error) throw error;
-
-        if (payment?.subscription_id) {
-          // Devolver crédito en suscripción
-          const { data: subscription } = await supabase
-            .from("client_subscriptions")
-            .select("sessions_used, sessions_remaining")
-            .eq("id", payment.subscription_id)
-            .single();
-
-          if (subscription) {
-            await supabase
-              .from("client_subscriptions")
-              .update({
-                sessions_used: Math.max(0, subscription.sessions_used - 1),
-                sessions_remaining: subscription.sessions_remaining + 1,
-              })
-              .eq("id", payment.subscription_id);
-          }
-        }
-
-        toast.success("Cita cancelada exitosamente. El crédito ha sido devuelto.");
-      }
-
+      const { error } = await supabase.rpc("cancel_package_session_early", {
+        _appointment_id: selectedAppointment.id,
+      });
+      if (error) throw error;
+      toast.success("Cita cancelada. El crédito se devolvió a tu paquete.");
       loadSessions();
     } catch (error) {
       console.error("Error cancelling:", error);
       toast.error("Error al cancelar la cita");
     } finally {
       setCancelDialogOpen(false);
+      setSelectedAppointment(null);
+    }
+  };
+
+  // Cancelación tardía (<24h): cobra la sesión completa sin reembolso
+  const handleLateCancellation = async () => {
+    if (!selectedAppointment) return;
+    try {
+      const { error } = await supabase.rpc("cancel_session_late", {
+        _appointment_id: selectedAppointment.id,
+      });
+      if (error) throw error;
+      toast.success("Cita cancelada. La sesión fue cobrada por política de cancelación tardía.");
+      loadSessions();
+    } catch (error) {
+      console.error("Error cancelling:", error);
+      toast.error("Error al cancelar la cita");
+    } finally {
       setLateDialogOpen(false);
       setSelectedAppointment(null);
     }
@@ -240,28 +207,12 @@ export default function ClientSessions() {
           toast.success("Cita cancelada.");
         }
       } else {
-        // Opción reembolso: procesar reembolso desde diferido
-        if (payment?.subscription_id) {
-          const { error: rpcError } = await supabase.rpc('process_cancellation_with_refund', {
-            _appointment_id: selectedAppointment.id,
-            _subscription_id: payment.subscription_id,
-            _payment_id: payment.id
-          });
-
-          if (rpcError) throw rpcError;
-        }
-
-        const { error } = await supabase
-          .from("appointments")
-          .update({
-            status: "cancelled",
-            cancelled_by: user?.id,
-            cancellation_reason: "Cancelado - Reembolso solicitado",
-          })
-          .eq("id", selectedAppointment.id);
-
+        // Opción reembolso: RPC maneja el diferido, el pago y la cita en una sola operación
+        const { error } = await supabase.rpc("cancel_session_with_refund", {
+          _appointment_id: selectedAppointment.id,
+          _payment_id: payment?.id ?? null,
+        });
         if (error) throw error;
-
         toast.success("Cita cancelada. El reembolso se procesará en 3-5 días hábiles.");
       }
 
@@ -410,7 +361,7 @@ export default function ClientSessions() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>No, mantener</AlertDialogCancel>
-            <AlertDialogAction onClick={handleCancelAppointment}>
+            <AlertDialogAction onClick={handlePackageCancellation}>
               Sí, cancelar y recuperar crédito
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -483,7 +434,7 @@ export default function ClientSessions() {
             <AlertDialogCancel onClick={() => setSelectedAppointment(null)}>
               No, mantener cita
             </AlertDialogCancel>
-            <AlertDialogAction onClick={handleCancelAppointment}>
+            <AlertDialogAction onClick={handleLateCancellation}>
               Sí, cancelar de todos modos
             </AlertDialogAction>
           </AlertDialogFooter>

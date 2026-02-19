@@ -58,165 +58,20 @@ Deno.serve(async (req) => {
       }
     )
 
-    // NUEVA LÓGICA FINANCIERA EN ELIMINACIÓN DE CUENTA
+    // LÓGICA FINANCIERA: una sola llamada atómica a la función SQL
     try {
-      // 1. Procesar citas pendientes del usuario como cliente
-      const { data: upcomingAppts } = await supabaseAdmin
-        .from('appointments')
-        .select('id, start_time, psychologist_id, subscription_id, status')
-        .eq('patient_id', userId)
-        .eq('status', 'pending')
-        .gte('start_time', new Date().toISOString())
+      const { error: financialError } = await supabaseAdmin.rpc(
+        'handle_account_deletion_financials',
+        { _user_id: userId }
+      )
+      if (financialError) throw financialError
 
-      for (const appt of upcomingAppts ?? []) {
-        const sessionTime = new Date(appt.start_time)
-        const now = new Date()
-        const hoursUntilSession = (sessionTime.getTime() - now.getTime()) / (1000 * 60 * 60)
-
-        if (appt.subscription_id) {
-          // Es parte de una suscripción
-          const { data: sub } = await supabaseAdmin
-            .from('client_subscriptions')
-            .select('package_type')
-            .eq('id', appt.subscription_id)
-            .single()
-
-          if (hoursUntilSession < 24) {
-            // Sesión < 24h: reconocer ingreso (split 95/5 o 100/0 según paquete)
-            await supabaseAdmin.rpc('recognize_session_revenue', {
-              _appointment_id: appt.id,
-              _subscription_id: appt.subscription_id,
-              _psychologist_id: appt.psychologist_id
-            })
-          }
-          // Si > 24h, el dinero de esa sesión queda en diferido y luego va a admin
-        }
-
-        // Cancelar la cita
-        await supabaseAdmin
-          .from('appointments')
-          .update({ 
-            status: 'cancelled',
-            cancellation_reason: 'Cuenta eliminada'
-          })
-          .eq('id', appt.id)
-      }
-
-      // 2. Procesar suscripciones activas del usuario como cliente
+      // Cleanup de datos dependientes
       const { data: clientSubs } = await supabaseAdmin
         .from('client_subscriptions')
-        .select('id, psychologist_id, package_type')
+        .select('id')
         .eq('client_id', userId)
-        .eq('status', 'active')
 
-      for (const sub of clientSubs ?? []) {
-        // Obtener ingreso diferido de esta suscripción
-        const { data: deferred } = await supabaseAdmin
-          .from('deferred_revenue')
-          .select('deferred_amount')
-          .eq('subscription_id', sub.id)
-          .single()
-
-        if (deferred && deferred.deferred_amount > 0) {
-          // Todo el dinero diferido restante va al admin
-          const { data: adminWallet } = await supabaseAdmin
-            .from('admin_wallet')
-            .select('id, balance')
-            .limit(1)
-            .single()
-
-          if (adminWallet) {
-            const newBalance = adminWallet.balance + deferred.deferred_amount
-            
-            await supabaseAdmin
-              .from('admin_wallet')
-              .update({ balance: newBalance })
-              .eq('id', adminWallet.id)
-
-            await supabaseAdmin
-              .from('wallet_transactions')
-              .insert({
-                transaction_type: 'account_deleted',
-                wallet_type: 'admin',
-                subscription_id: sub.id,
-                amount: deferred.deferred_amount,
-                balance_before: adminWallet.balance,
-                balance_after: newBalance,
-                description: 'Ingreso diferido por eliminación de cuenta'
-              })
-
-            // Actualizar deferred_revenue
-            await supabaseAdmin
-              .from('deferred_revenue')
-              .update({ deferred_amount: 0 })
-              .eq('subscription_id', sub.id)
-          }
-        }
-
-        // Cancelar auto-renovación
-        await supabaseAdmin
-          .from('client_subscriptions')
-          .update({ 
-            auto_renew: false,
-            cancelled_at: new Date().toISOString()
-          })
-          .eq('id', sub.id)
-      }
-
-      // 3. Procesar créditos pendientes del usuario
-      const { data: credits } = await supabaseAdmin
-        .from('client_credits')
-        .select('id, amount, original_appointment_id')
-        .eq('client_id', userId)
-        .eq('status', 'available')
-
-      for (const credit of credits ?? []) {
-        if (credit.original_appointment_id) {
-          // Obtener subscription del appointment original
-          const { data: appt } = await supabaseAdmin
-            .from('appointments')
-            .select('subscription_id')
-            .eq('id', credit.original_appointment_id)
-            .single()
-
-          if (appt?.subscription_id) {
-            // El crédito no usado va al admin
-            const { data: adminWallet } = await supabaseAdmin
-              .from('admin_wallet')
-              .select('id, balance')
-              .limit(1)
-              .single()
-
-            if (adminWallet) {
-              const newBalance = adminWallet.balance + credit.amount
-              
-              await supabaseAdmin
-                .from('admin_wallet')
-                .update({ balance: newBalance })
-                .eq('id', adminWallet.id)
-
-              await supabaseAdmin
-                .from('wallet_transactions')
-                .insert({
-                  transaction_type: 'credit_expired',
-                  wallet_type: 'admin',
-                  amount: credit.amount,
-                  balance_before: adminWallet.balance,
-                  balance_after: newBalance,
-                  description: 'Crédito no usado por eliminación de cuenta'
-                })
-            }
-          }
-        }
-
-        // Marcar crédito como expirado
-        await supabaseAdmin
-          .from('client_credits')
-          .update({ status: 'expired' })
-          .eq('id', credit.id)
-      }
-
-      // 4. Cleanup de datos dependientes
       const clientSubIds = (clientSubs ?? []).map((s: any) => s.id)
       if (clientSubIds.length) {
         await supabaseAdmin.from('subscription_history').delete().in('subscription_id', clientSubIds)

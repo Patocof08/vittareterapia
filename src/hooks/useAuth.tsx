@@ -24,16 +24,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  const fetchUserRole = async (userId: string) => {
+  const fetchUserRole = async (userId: string, metadata?: Record<string, any>) => {
     try {
-      // @ts-ignore - Types will regenerate automatically  
       const { data, error } = await supabase
         .from("user_roles")
         .select("role, created_at")
         .eq("user_id", userId);
 
       if (error) throw error;
-      if (!data || data.length === 0) return null;
+
+      if (!data || data.length === 0) {
+        // No role found — try to recover from signup metadata (happens when email
+        // confirmation is required and the role INSERT failed without a session)
+        const intendedRole = metadata?.role_intended;
+        if (intendedRole && ["psicologo", "cliente"].includes(intendedRole)) {
+          const { error: insertError } = await supabase
+            .from("user_roles")
+            .insert({ user_id: userId, role: intendedRole });
+          if (!insertError) return intendedRole as UserRole;
+        }
+        return null;
+      }
 
       // Prefer role priority: admin > psicologo > cliente
       const roles = data.map((r: any) => r.role as string);
@@ -69,7 +80,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         // Defer async Supabase calls with setTimeout to prevent deadlocks
         if (session?.user) {
           setTimeout(() => {
-            fetchUserRole(session.user.id).then((userRole) => {
+            fetchUserRole(session.user.id, session.user.user_metadata).then((userRole) => {
               if (isMounted) {
                 setRole(userRole);
               }
@@ -84,12 +95,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!isMounted) return;
-      
+
       setSession(session);
       setUser(session?.user ?? null);
-      
+
       if (session?.user) {
-        fetchUserRole(session.user.id).then((userRole) => {
+        fetchUserRole(session.user.id, session.user.user_metadata).then((userRole) => {
           if (isMounted) {
             setRole(userRole);
             setLoading(false);
@@ -146,31 +157,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         emailRedirectTo: redirectUrl,
         data: {
           full_name: fullName,
+          // Store intended role in metadata so it can be recovered after email confirmation
+          role_intended: selectedRole,
         },
       },
     });
 
     if (error) throw error;
 
-    // Insert role
     if (data.user) {
-      // @ts-ignore - Types will regenerate automatically
-      const { error: roleError } = await supabase
-        .from("user_roles")
-        .insert({
-          user_id: data.user.id,
-          role: selectedRole,
-        });
+      if (data.session) {
+        // Session exists (email confirmation disabled) — insert role immediately
+        const { error: roleError } = await supabase
+          .from("user_roles")
+          .insert({ user_id: data.user.id, role: selectedRole });
 
-      if (roleError) throw roleError;
+        if (roleError) throw roleError;
 
-      // Redirect based on role
-      if (selectedRole === "admin") {
-        navigate("/admin/dashboard");
-      } else if (selectedRole === "psicologo") {
-        navigate("/onboarding-psicologo");
-      } else if (selectedRole === "cliente") {
-        navigate("/portal");
+        // Redirect based on role
+        if (selectedRole === "psicologo") {
+          navigate("/onboarding-psicologo");
+        } else if (selectedRole === "cliente") {
+          navigate("/portal");
+        }
+      } else {
+        // No session yet — email confirmation required.
+        // The role is saved in metadata and will be inserted automatically on first login.
+        throw new Error("Revisa tu correo y confirma tu cuenta para continuar.");
       }
     }
 

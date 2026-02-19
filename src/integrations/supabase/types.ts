@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "13.0.5"
+    PostgrestVersion: "14.1"
   }
   public: {
     Tables: {
@@ -1181,8 +1181,8 @@ export type Database = {
       process_cancellation_with_refund: {
         Args: {
           _appointment_id: string
-          _payment_id?: string
-          _subscription_id?: string
+          _payment_id: string
+          _subscription_id: string
         }
         Returns: undefined
       }

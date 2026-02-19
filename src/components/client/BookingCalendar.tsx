@@ -281,16 +281,6 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
 
       if (paymentError) throw paymentError;
 
-      // Create deferred revenue entry
-      await supabase.rpc("create_deferred_revenue", {
-        _psychologist_id: psychologistId,
-        _appointment_id: appointment.id,
-        _subscription_id: subscription.id,
-        _payment_id: payment.id,
-        _amount: sessionPrice,
-      });
-
-
       // Consumir 1 sesión de la suscripción
       const { error: subUpdateError } = await supabase
         .from("client_subscriptions")
@@ -355,15 +345,6 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
             .single();
 
           if (paymentError) throw paymentError;
-
-          // Create deferred revenue entry
-          await supabase.rpc("create_deferred_revenue", {
-            _psychologist_id: psychologistId,
-            _appointment_id: appointment.id,
-            _subscription_id: null,
-            _payment_id: payment.id,
-            _amount: Number(pricing?.session_price || 0),
-          });
 
           toast.success("Cita agendada con éxito");
           navigate("/portal/sesiones");

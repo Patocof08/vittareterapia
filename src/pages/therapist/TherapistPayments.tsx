@@ -35,8 +35,6 @@ interface EarningsStats {
   monthlySessions: number;
   pendingPayments: number;
   totalEarnings: number;
-  walletBalance: number;
-  deferredRevenue: number;
 }
 
 export default function TherapistPayments() {
@@ -48,8 +46,6 @@ export default function TherapistPayments() {
     monthlySessions: 0,
     pendingPayments: 0,
     totalEarnings: 0,
-    walletBalance: 0,
-    deferredRevenue: 0,
   });
   const [loading, setLoading] = useState(true);
   const [sessionPriceFallback, setSessionPriceFallback] = useState<number>(0);
@@ -181,20 +177,11 @@ export default function TherapistPayments() {
         p.appointment.status !== "completed"
       );
 
-      // Get wallet balance
-      const { data: walletData } = await supabase
-        .rpc('get_psychologist_wallet_balance', {
-          _psychologist_id: psychProfile.id
-        })
-        .single();
-
       setStats({
         monthlyIncome: monthlyCompleted.reduce((sum, p) => sum + getDisplayAmount(p), 0),
         monthlySessions: monthlyCompleted.length,
         pendingPayments: pending.reduce((sum, p) => sum + getDisplayAmount(p), 0),
         totalEarnings: completed.reduce((sum, p) => sum + getDisplayAmount(p), 0),
-        walletBalance: Number(walletData?.balance || 0),
-        deferredRevenue: Number(walletData?.deferred_revenue || 0),
       });
 
       // Apply default filter
