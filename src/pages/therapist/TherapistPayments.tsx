@@ -48,7 +48,8 @@ export default function TherapistPayments() {
   const [loading, setLoading] = useState(true);
   const [sessionPriceFallback, setSessionPriceFallback] = useState<number>(0);
 
-  // Ganancia neta del psicólogo por sesión (sin exponer tipo de paquete)
+  // Ganancia neta del psicólogo: siempre 85% de su precio de sesión establecido.
+  // El descuento de paquete (5% o 15%) se descuenta únicamente del porcentaje admin.
   const getDisplayAmount = (payment: Payment) => {
     const appointment = payment.appointment;
     const cancelReason = appointment?.cancellation_reason || "";
@@ -59,11 +60,13 @@ export default function TherapistPayments() {
     ) {
       return 0;
     }
-    const amt = Number(payment.amount || 0);
-    if (payment.payment_type === "package_4") return (amt / 4) * 0.95;
-    if (payment.payment_type === "package_8") return (amt / 8) * 1.0;
-    // single_session: 85% del precio de sesión
-    if (amt > 0) return amt * 0.85;
+    // Para sesión individual, amount = session_price, así que amount × 85% es exacto
+    if (payment.payment_type === "single_session") {
+      const amt = Number(payment.amount || 0);
+      if (amt > 0) return amt * 0.85;
+    }
+    // Para paquetes, amount puede ser el total del paquete (no por sesión),
+    // así que usamos directamente session_price × 85% del perfil del psicólogo
     return Number(sessionPriceFallback || 0);
   };
   useEffect(() => {
