@@ -18,8 +18,6 @@ interface Payment {
   completed_at: string;
   appointment_id?: string;
   subscription_id?: string;
-  // For package sessions, use this to display per-session price
-  subscription_session_price?: number;
   client: {
     full_name: string;
   };
@@ -50,32 +48,23 @@ export default function TherapistPayments() {
   const [loading, setLoading] = useState(true);
   const [sessionPriceFallback, setSessionPriceFallback] = useState<number>(0);
 
-  // Monto a mostrar: si viene de paquete usa precio por sesión; canceladas a tiempo = 0
+  // Ganancia neta del psicólogo por sesión (sin exponer tipo de paquete)
   const getDisplayAmount = (payment: Payment) => {
     const appointment = payment.appointment;
     const cancelReason = appointment?.cancellation_reason || "";
+    // Cancelación a tiempo = sin cobro
     if (
       payment.payment_status === "cancelled" ||
       (appointment?.status === "cancelled" && !cancelReason.includes("menos de 24h"))
     ) {
       return 0;
     }
-    if (
-      payment.subscription_session_price !== undefined &&
-      payment.subscription_session_price !== null
-    ) {
-      return Number(payment.subscription_session_price);
-    }
-    // Fallback para sesión individual cuando el monto aún no está asignado
-    if (payment.payment_type === "single_session") {
-      const amt = Number(payment.amount || 0);
-      if (amt > 0) {
-        // Mostrar la ganancia neta del psicólogo (85%)
-        return amt * 0.85;
-      }
-      return Number(sessionPriceFallback || 0);
-    }
-    return Number(payment.amount || 0);
+    const amt = Number(payment.amount || 0);
+    if (payment.payment_type === "package_4") return (amt / 4) * 0.95;
+    if (payment.payment_type === "package_8") return (amt / 8) * 1.0;
+    // single_session: 85% del precio de sesión
+    if (amt > 0) return amt * 0.85;
+    return Number(sessionPriceFallback || 0);
   };
   useEffect(() => {
     fetchPayments();
@@ -128,29 +117,13 @@ export default function TherapistPayments() {
 
       if (error) throw error;
 
-      // Preparar mapa de precios por sesión de suscripciones
       const rawPayments = paymentsData || [];
-      const subscriptionIds = rawPayments
-        .map((p: any) => p.subscription_id)
-        .filter((id: string | null): id is string => !!id);
 
-      // For subscriptions, use the payment amount as session price
-      let subsMap = new Map<string, number>();
-      if (subscriptionIds.length > 0) {
-        // Use payment amounts directly
-        rawPayments.forEach((p: any) => {
-          if (p.subscription_id) {
-            subsMap.set(p.subscription_id, Number(p.amount));
-          }
-        });
-      }
-
-      // Transform data
+      // Normalizar arrays que Supabase puede devolver como array o objeto
       const transformedPayments = rawPayments.map((p: any) => ({
         ...p,
         client: Array.isArray(p.client) ? p.client[0] : p.client,
         appointment: Array.isArray(p.appointment) ? p.appointment[0] : p.appointment,
-        subscription_session_price: p.subscription_id ? subsMap.get(p.subscription_id) : undefined,
       }));
 
       setPayments(transformedPayments);
