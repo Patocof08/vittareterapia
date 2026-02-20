@@ -346,6 +346,18 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
 
           if (paymentError) throw paymentError;
 
+          // Crear ingreso diferido para la sesión individual
+          const { error: deferredError } = await supabase.rpc("create_single_session_deferred", {
+            _appointment_id: appointment.id,
+            _payment_id: payment.id,
+            _psychologist_id: psychologistId,
+            _amount: pricing?.session_price || 0,
+          });
+          if (deferredError) {
+            console.error("Error al crear ingreso diferido:", deferredError);
+            toast.error("La cita fue agendada pero hubo un error al registrar el pago. Contacta a soporte.");
+          }
+
           toast.success("Cita agendada con éxito");
           navigate("/portal/sesiones");
         } else {
