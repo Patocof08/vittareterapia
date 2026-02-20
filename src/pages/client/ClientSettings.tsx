@@ -226,13 +226,22 @@ export default function ClientSettings() {
       }
 
       // Call edge function to delete user account
-      const { data, error } = await supabase.functions.invoke('delete-user-account', {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-user-account`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+          },
         }
-      });
+      );
 
-      if (error) throw error;
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Error al eliminar cuenta');
+      }
 
       toast({
         title: "Cuenta eliminada",

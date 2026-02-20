@@ -411,16 +411,21 @@ export default function TherapistSettings() {
         return;
       }
 
-      const { data, error } = await supabase.functions.invoke('delete-user-account', {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-user-account`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+          },
+        }
+      );
 
-      if (error) {
-        logger.error("Error deleting account:", error);
-        toast.error("Error al eliminar la cuenta. Por favor intenta de nuevo.");
-        return;
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Error al eliminar cuenta');
       }
 
       toast.success("Tu cuenta ha sido eliminada exitosamente");
