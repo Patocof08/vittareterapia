@@ -154,34 +154,35 @@ export default function TherapistPayments() {
       }));
 
       setPayments(transformedPayments);
-      // Calculate stats
+      // Calcular stats desde wallet_transactions (montos exactos ya reconocidos al psicólogo)
+      const { data: txData } = await supabase
+        .from("wallet_transactions")
+        .select("amount, created_at")
+        .eq("psychologist_id", psychProfile.id)
+        .eq("wallet_type", "psychologist")
+        .eq("transaction_type", "session_completed");
+
       const now = new Date();
       const monthStart = startOfMonth(now);
       const monthEnd = endOfMonth(now);
 
-      // Completados: sesiones completadas O canceladas tarde (se cobran)
-      const completed = transformedPayments.filter(p => 
-        p.appointment?.status === "completed" ||
-        (p.appointment?.status === "cancelled" && p.appointment?.cancellation_reason?.includes("menos de 24h"))
-      );
-      
-      const monthlyCompleted = completed.filter(p => {
-        const paymentDate = new Date(p.completed_at || p.created_at);
-        return paymentDate >= monthStart && paymentDate <= monthEnd;
+      const monthlyTx = (txData || []).filter(tx => {
+        const d = new Date(tx.created_at);
+        return d >= monthStart && d <= monthEnd;
       });
-      
-      // Pendientes: sesiones activas que aún no se toman
-      const pending = transformedPayments.filter(p => 
-        p.appointment && 
-        p.appointment.status !== "cancelled" && 
+
+      // Pendientes: sesiones activas que aún no se han tomado (sin wallet_transaction aún)
+      const pending = transformedPayments.filter(p =>
+        p.appointment &&
+        p.appointment.status !== "cancelled" &&
         p.appointment.status !== "completed"
       );
 
       setStats({
-        monthlyIncome: monthlyCompleted.reduce((sum, p) => sum + getDisplayAmount(p), 0),
-        monthlySessions: monthlyCompleted.length,
+        monthlyIncome:   monthlyTx.reduce((sum, tx) => sum + Number(tx.amount), 0),
+        monthlySessions: monthlyTx.length,
         pendingPayments: pending.reduce((sum, p) => sum + getDisplayAmount(p), 0),
-        totalEarnings: completed.reduce((sum, p) => sum + getDisplayAmount(p), 0),
+        totalEarnings:   (txData || []).reduce((sum, tx) => sum + Number(tx.amount), 0),
       });
 
       // Apply default filter
