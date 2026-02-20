@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { format } from "date-fns";
+import { format, startOfDay, startOfWeek, startOfMonth } from "date-fns";
 import { es } from "date-fns/locale";
-import { Wallet, TrendingUp, Clock, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { Wallet, TrendingUp, Clock, ArrowUpRight, ChevronDown, ChevronUp, Calendar } from "lucide-react";
 
 interface AdminWallet {
   balance: number;
@@ -26,6 +27,7 @@ interface Transaction {
   amount: number;
   transaction_type: string;
   wallet_type: string;
+  appointment_id: string | null;
   description: string | null;
   created_at: string;
   psychologist_profiles: {
@@ -34,9 +36,90 @@ interface Transaction {
   } | null;
 }
 
+interface GroupedSession {
+  key: string;
+  psychologist_name: string;
+  session_type: string;
+  created_at: string;
+  admin_amount: number;
+  psych_amount: number;
+}
+
 interface DeferredSummary {
   total_deferred: number;
   total_recognized: number;
+}
+
+type Period = "today" | "week" | "month" | "all";
+
+const PERIOD_LABELS: Record<Period, string> = {
+  today: "Hoy",
+  week: "Esta semana",
+  month: "Este mes",
+  all: "Todas",
+};
+
+const SESSION_TYPE_LABEL: Record<string, string> = {
+  single_session: "Sesión individual",
+  "4_sessions": "Paquete 4 sesiones",
+  "8_sessions": "Paquete 8 sesiones",
+  package_4: "Paquete 4 sesiones",
+  package_8: "Paquete 8 sesiones",
+};
+
+function getPercentages(sessionType: string) {
+  if (sessionType === "4_sessions" || sessionType === "package_4") return { admin: 5, psych: 95 };
+  if (sessionType === "8_sessions" || sessionType === "package_8") return { admin: 0, psych: 100 };
+  return { admin: 15, psych: 85 };
+}
+
+function extractSessionType(description: string | null): string {
+  if (!description) return "single_session";
+  const match = description.match(/\(([^)]+)\)/);
+  return match ? match[1] : "single_session";
+}
+
+function filterByPeriod(txs: Transaction[], period: Period): Transaction[] {
+  if (period === "all") return txs;
+  const now = new Date();
+  const cutoff =
+    period === "today"
+      ? startOfDay(now)
+      : period === "week"
+      ? startOfWeek(now, { weekStartsOn: 1 })
+      : startOfMonth(now);
+  return txs.filter((tx) => new Date(tx.created_at) >= cutoff);
+}
+
+function groupTransactions(txs: Transaction[]): GroupedSession[] {
+  const map = new Map<string, { admin: Transaction | null; psych: Transaction | null }>();
+
+  for (const tx of txs) {
+    if (tx.transaction_type !== "session_completed") continue;
+    const key = tx.appointment_id ?? tx.id;
+    if (!map.has(key)) map.set(key, { admin: null, psych: null });
+    if (tx.wallet_type === "admin") map.get(key)!.admin = tx;
+    else map.get(key)!.psych = tx;
+  }
+
+  return Array.from(map.entries())
+    .map(([key, { admin, psych }]) => {
+      const ref = psych ?? admin!;
+      const session_type = extractSessionType(ref.description);
+      const name = ref.psychologist_profiles
+        ? `${ref.psychologist_profiles.first_name} ${ref.psychologist_profiles.last_name}`
+        : "Desconocido";
+      return {
+        key,
+        psychologist_name: name,
+        session_type,
+        created_at: ref.created_at,
+        admin_amount: admin ? Number(admin.amount) : 0,
+        psych_amount: psych ? Number(psych.amount) : 0,
+      };
+    })
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .slice(0, 10);
 }
 
 export default function AdminFinancials() {
@@ -45,6 +128,8 @@ export default function AdminFinancials() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [deferred, setDeferred] = useState<DeferredSummary>({ total_deferred: 0, total_recognized: 0 });
   const [loading, setLoading] = useState(true);
+  const [transactionPeriod, setTransactionPeriod] = useState<Period>("month");
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchAll();
@@ -61,12 +146,10 @@ export default function AdminFinancials() {
           .order("balance", { ascending: false }),
         supabase
           .from("wallet_transactions")
-          .select("id, amount, transaction_type, wallet_type, description, created_at, psychologist_profiles(first_name, last_name)")
+          .select("id, amount, transaction_type, wallet_type, appointment_id, description, created_at, psychologist_profiles(first_name, last_name)")
           .order("created_at", { ascending: false })
-          .limit(20),
-        supabase
-          .from("deferred_revenue")
-          .select("deferred_amount, recognized_amount"),
+          .limit(100),
+        supabase.from("deferred_revenue").select("deferred_amount, recognized_amount"),
       ]);
 
       if (walletRes.data) setAdminWallet(walletRes.data as AdminWallet);
@@ -87,21 +170,8 @@ export default function AdminFinancials() {
 
   const totalPsychBalance = psychWallets.reduce((sum, w) => sum + (w.balance || 0), 0);
 
-  const txTypeLabel: Record<string, { label: string; color: string }> = {
-    session_completed: { label: "Sesión completada", color: "bg-green-100 text-green-700" },
-    session_revenue:   { label: "Sesión reconocida", color: "bg-green-100 text-green-700" },
-    admin_commission:  { label: "Comisión admin",    color: "bg-blue-100 text-blue-700"  },
-    credit_expired:    { label: "Crédito expirado",  color: "bg-orange-100 text-orange-700" },
-    account_deleted:   { label: "Cuenta eliminada",  color: "bg-red-100 text-red-700"   },
-    refund:            { label: "Reembolso",          color: "bg-gray-100 text-gray-700" },
-    late_cancellation: { label: "Canc. tardía",       color: "bg-yellow-100 text-yellow-700" },
-  };
-
-  // Para mostrar a quién fue la transacción (admin o psicólogo)
-  const walletTypeLabel: Record<string, string> = {
-    admin: "Admin",
-    psychologist: "Psicólogo",
-  };
+  const filteredTxs = filterByPeriod(transactions, transactionPeriod);
+  const groupedSessions = groupTransactions(filteredTxs);
 
   if (loading) {
     return (
@@ -128,9 +198,7 @@ export default function AdminFinancials() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              ${(adminWallet?.balance ?? 0).toFixed(2)}
-            </div>
+            <div className="text-2xl font-bold">${(adminWallet?.balance ?? 0).toFixed(2)}</div>
             <p className="text-xs text-muted-foreground mt-1">MXN</p>
           </CardContent>
         </Card>
@@ -206,45 +274,90 @@ export default function AdminFinancials() {
           </CardContent>
         </Card>
 
-        {/* Recent transactions */}
+        {/* Grouped transactions */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Últimas Transacciones</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Calendar className="w-4 h-4" />
+                Últimas Transacciones
+              </CardTitle>
+            </div>
+            {/* Period filter */}
+            <div className="flex gap-1.5 flex-wrap mt-2">
+              {(Object.keys(PERIOD_LABELS) as Period[]).map((p) => (
+                <Button
+                  key={p}
+                  size="sm"
+                  variant={transactionPeriod === p ? "default" : "outline"}
+                  className="h-7 text-xs px-2.5"
+                  onClick={() => {
+                    setTransactionPeriod(p);
+                    setExpandedId(null);
+                  }}
+                >
+                  {PERIOD_LABELS[p]}
+                </Button>
+              ))}
+            </div>
           </CardHeader>
           <CardContent>
-            {transactions.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-6">Sin transacciones registradas</p>
+            {groupedSessions.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-6">
+                Sin sesiones en este período
+              </p>
             ) : (
-              <div className="space-y-3">
-                {transactions.map((tx) => {
-                  const typeInfo = txTypeLabel[tx.transaction_type] ?? {
-                    label: tx.transaction_type,
-                    color: "bg-gray-100 text-gray-700",
-                  };
-                  const isPositive = tx.amount >= 0;
+              <div className="space-y-1">
+                {groupedSessions.map((session) => {
+                  const isExpanded = expandedId === session.key;
+                  const pcts = getPercentages(session.session_type);
+                  const total = session.admin_amount + session.psych_amount;
                   return (
-                    <div key={tx.id} className="flex items-start justify-between py-2 border-b border-border last:border-0">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <Badge className={`text-xs ${typeInfo.color} border-0`}>{typeInfo.label}</Badge>
-                          <Badge variant="outline" className="text-xs">
-                            {walletTypeLabel[tx.wallet_type] ?? tx.wallet_type}
-                          </Badge>
+                    <div key={session.key} className="border border-border rounded-lg overflow-hidden">
+                      {/* Collapsed row */}
+                      <button
+                        className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-accent/50 transition-colors text-left"
+                        onClick={() => setExpandedId(isExpanded ? null : session.key)}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Badge className="text-xs bg-green-100 text-green-700 border-0">
+                              Sesión completada
+                            </Badge>
+                            <span className="text-xs text-muted-foreground">
+                              {SESSION_TYPE_LABEL[session.session_type] ?? session.session_type}
+                            </span>
+                          </div>
+                          <p className="text-sm font-medium mt-0.5 truncate">{session.psychologist_name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {format(new Date(session.created_at), "dd MMM yyyy HH:mm", { locale: es })}
+                          </p>
                         </div>
-                        <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                          {tx.psychologist_profiles
-                            ? `${tx.psychologist_profiles.first_name} ${tx.psychologist_profiles.last_name}`
-                            : "Admin"}
-                          {tx.description ? ` · ${tx.description}` : ""}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {format(new Date(tx.created_at), "dd MMM yyyy HH:mm", { locale: es })}
-                        </p>
-                      </div>
-                      <span className={`font-bold text-sm ml-3 shrink-0 flex items-center gap-1 ${isPositive ? "text-green-600" : "text-red-600"}`}>
-                        {isPositive ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
-                        ${Math.abs(tx.amount).toFixed(2)}
-                      </span>
+                        <div className="flex items-center gap-2 ml-3 shrink-0">
+                          <span className="font-bold text-sm">${total.toFixed(2)}</span>
+                          {isExpanded
+                            ? <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                            : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+                        </div>
+                      </button>
+
+                      {/* Expanded breakdown */}
+                      {isExpanded && (
+                        <div className="bg-muted/50 px-3 py-2 border-t border-border space-y-1">
+                          <div className="flex justify-between text-xs">
+                            <span className="text-muted-foreground">
+                              Comisión Admin ({pcts.admin}%):
+                            </span>
+                            <span className="font-medium">${session.admin_amount.toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between text-xs">
+                            <span className="text-muted-foreground">
+                              Pago Psicólogo ({pcts.psych}%):
+                            </span>
+                            <span className="font-medium">${session.psych_amount.toFixed(2)}</span>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
