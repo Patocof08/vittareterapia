@@ -13,7 +13,8 @@
       "mcp__claude_ai_Supabase__deploy_edge_function",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "mcp__claude_ai_Supabase__list_projects"
     ]
   }
 }
