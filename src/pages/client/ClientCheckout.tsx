@@ -154,7 +154,7 @@ export default function ClientCheckout() {
 
         if (subError) throw subError;
 
-        // Create first appointment
+        // Create first appointment (linked to subscription)
         const { data: appointment, error: apptError } = await supabase
           .from("appointments")
           .insert({
@@ -164,6 +164,7 @@ export default function ClientCheckout() {
             end_time: tempData.end_time,
             status: "pending",
             modality: "Videollamada",
+            subscription_id: subscription.id,
           })
           .select()
           .single();

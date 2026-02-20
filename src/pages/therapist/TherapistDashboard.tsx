@@ -58,7 +58,7 @@ export default function TherapistDashboard() {
               patient:profiles!appointments_patient_id_fkey(full_name, avatar_url)
             `)
             .eq("psychologist_id", profileData.id)
-            .neq("status", "cancelled")
+            .in("status", ["pending", "confirmed"])
             .gte("start_time", todayStart.toISOString())
             .lte("start_time", todayEnd.toISOString())
             .order("start_time", { ascending: true });
@@ -75,7 +75,7 @@ export default function TherapistDashboard() {
             .from("appointments")
             .select("id")
             .eq("psychologist_id", profileData.id)
-            .neq("status", "cancelled")
+            .in("status", ["pending", "confirmed"])
             .gte("start_time", weekStart.toISOString())
             .lte("start_time", weekEnd.toISOString());
 
