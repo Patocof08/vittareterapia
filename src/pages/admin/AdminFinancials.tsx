@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format, startOfDay, startOfWeek, startOfMonth } from "date-fns";
@@ -284,21 +284,25 @@ export default function AdminFinancials() {
               </CardTitle>
             </div>
             {/* Period filter */}
-            <div className="flex gap-1.5 flex-wrap mt-2">
-              {(Object.keys(PERIOD_LABELS) as Period[]).map((p) => (
-                <Button
-                  key={p}
-                  size="sm"
-                  variant={transactionPeriod === p ? "default" : "outline"}
-                  className="h-7 text-xs px-2.5"
-                  onClick={() => {
-                    setTransactionPeriod(p);
-                    setExpandedId(null);
-                  }}
-                >
-                  {PERIOD_LABELS[p]}
-                </Button>
-              ))}
+            <div className="mt-2">
+              <Select
+                value={transactionPeriod}
+                onValueChange={(val) => {
+                  setTransactionPeriod(val as Period);
+                  setExpandedId(null);
+                }}
+              >
+                <SelectTrigger className="w-40 h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {(Object.keys(PERIOD_LABELS) as Period[]).map((p) => (
+                    <SelectItem key={p} value={p} className="text-xs">
+                      {PERIOD_LABELS[p]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </CardHeader>
           <CardContent>
