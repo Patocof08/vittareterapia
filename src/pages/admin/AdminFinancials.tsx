@@ -9,13 +9,11 @@ import { Wallet, TrendingUp, Clock, ArrowUpRight, ArrowDownRight } from "lucide-
 
 interface AdminWallet {
   balance: number;
-  currency: string;
   updated_at: string;
 }
 
 interface PsychWallet {
   balance: number;
-  currency: string;
   updated_at: string;
   psychologist_profiles: {
     first_name: string;
@@ -27,6 +25,7 @@ interface Transaction {
   id: string;
   amount: number;
   transaction_type: string;
+  wallet_type: string;
   description: string | null;
   created_at: string;
   psychologist_profiles: {
@@ -55,14 +54,14 @@ export default function AdminFinancials() {
     setLoading(true);
     try {
       const [walletRes, psychRes, txRes, deferredRes] = await Promise.all([
-        supabase.from("admin_wallet").select("balance, currency, updated_at").maybeSingle(),
+        supabase.from("admin_wallet").select("balance, updated_at").maybeSingle(),
         supabase
           .from("psychologist_wallets")
-          .select("balance, currency, updated_at, psychologist_profiles(first_name, last_name)")
+          .select("balance, updated_at, psychologist_profiles(first_name, last_name)")
           .order("balance", { ascending: false }),
         supabase
           .from("wallet_transactions")
-          .select("id, amount, transaction_type, description, created_at, psychologist_profiles(first_name, last_name)")
+          .select("id, amount, transaction_type, wallet_type, description, created_at, psychologist_profiles(first_name, last_name)")
           .order("created_at", { ascending: false })
           .limit(20),
         supabase
@@ -89,11 +88,19 @@ export default function AdminFinancials() {
   const totalPsychBalance = psychWallets.reduce((sum, w) => sum + (w.balance || 0), 0);
 
   const txTypeLabel: Record<string, { label: string; color: string }> = {
-    session_revenue: { label: "Sesión reconocida", color: "bg-green-100 text-green-700" },
-    admin_commission: { label: "Comisión admin", color: "bg-blue-100 text-blue-700" },
-    credit_expired: { label: "Crédito expirado", color: "bg-orange-100 text-orange-700" },
-    account_deleted: { label: "Cuenta eliminada", color: "bg-red-100 text-red-700" },
-    refund: { label: "Reembolso", color: "bg-gray-100 text-gray-700" },
+    session_completed: { label: "Sesión completada", color: "bg-green-100 text-green-700" },
+    session_revenue:   { label: "Sesión reconocida", color: "bg-green-100 text-green-700" },
+    admin_commission:  { label: "Comisión admin",    color: "bg-blue-100 text-blue-700"  },
+    credit_expired:    { label: "Crédito expirado",  color: "bg-orange-100 text-orange-700" },
+    account_deleted:   { label: "Cuenta eliminada",  color: "bg-red-100 text-red-700"   },
+    refund:            { label: "Reembolso",          color: "bg-gray-100 text-gray-700" },
+    late_cancellation: { label: "Canc. tardía",       color: "bg-yellow-100 text-yellow-700" },
+  };
+
+  // Para mostrar a quién fue la transacción (admin o psicólogo)
+  const walletTypeLabel: Record<string, string> = {
+    admin: "Admin",
+    psychologist: "Psicólogo",
   };
 
   if (loading) {
@@ -124,7 +131,7 @@ export default function AdminFinancials() {
             <div className="text-2xl font-bold">
               ${(adminWallet?.balance ?? 0).toFixed(2)}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">{adminWallet?.currency ?? "MXN"}</p>
+            <p className="text-xs text-muted-foreground mt-1">MXN</p>
           </CardContent>
         </Card>
 
@@ -191,7 +198,7 @@ export default function AdminFinancials() {
                         Actualizado: {format(new Date(w.updated_at), "dd MMM yyyy", { locale: es })}
                       </p>
                     </div>
-                    <span className="font-bold text-sm">${(w.balance || 0).toFixed(2)} {w.currency}</span>
+                    <span className="font-bold text-sm">${(w.balance || 0).toFixed(2)} MXN</span>
                   </div>
                 ))}
               </div>
@@ -220,6 +227,9 @@ export default function AdminFinancials() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <Badge className={`text-xs ${typeInfo.color} border-0`}>{typeInfo.label}</Badge>
+                          <Badge variant="outline" className="text-xs">
+                            {walletTypeLabel[tx.wallet_type] ?? tx.wallet_type}
+                          </Badge>
                         </div>
                         <p className="text-xs text-muted-foreground mt-0.5 truncate">
                           {tx.psychologist_profiles
