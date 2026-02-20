@@ -43,6 +43,7 @@ interface GroupedSession {
   created_at: string;
   admin_amount: number;
   psych_amount: number;
+  session_price: number; // psych_amount / 0.85 = precio real de la sesión
 }
 
 interface DeferredSummary {
@@ -118,6 +119,7 @@ function groupTransactions(txs: Transaction[]): GroupedSession[] {
         created_at: ref.created_at,
         admin_amount: admin ? Number(admin.amount) : 0,
         psych_amount: psych ? Number(psych.amount) : 0,
+        session_price: psych ? Math.round(Number(psych.amount) / 0.85 * 100) / 100 : 0,
       };
     })
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
@@ -317,7 +319,7 @@ export default function AdminFinancials() {
                 {groupedSessions.map((session) => {
                   const isExpanded = expandedId === session.key;
                   const pcts = getPercentages(session.session_type);
-                  const total = session.admin_amount + session.psych_amount;
+                  const discount = Math.round((session.session_price - session.admin_amount - session.psych_amount) * 100) / 100;
                   return (
                     <div key={session.key} className="border border-border rounded-lg overflow-hidden">
                       {/* Collapsed row */}
@@ -340,7 +342,7 @@ export default function AdminFinancials() {
                           </p>
                         </div>
                         <div className="flex items-center gap-2 ml-3 shrink-0">
-                          <span className="font-bold text-sm">${total.toFixed(2)}</span>
+                          <span className="font-bold text-sm">${session.session_price.toFixed(2)}</span>
                           {isExpanded
                             ? <ChevronUp className="w-4 h-4 text-muted-foreground" />
                             : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
@@ -362,6 +364,14 @@ export default function AdminFinancials() {
                             </span>
                             <span className="font-medium">${session.psych_amount.toFixed(2)}</span>
                           </div>
+                          {discount > 0.01 && (
+                            <div className="flex justify-between text-xs border-t border-border pt-1 mt-1">
+                              <span className="text-muted-foreground">
+                                Descuento cliente ({100 - pcts.admin - pcts.psych}%):
+                              </span>
+                              <span className="text-orange-600 font-medium">-${discount.toFixed(2)}</span>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
