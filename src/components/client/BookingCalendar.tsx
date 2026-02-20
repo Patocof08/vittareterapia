@@ -174,48 +174,21 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
       startTime.setHours(hours, minutes, 0, 0);
       const endTime = addMinutes(startTime, pricing?.session_duration_minutes || 50);
 
-      // Create appointment
-      const { data: appointment, error: apptError } = await supabase
-        .from("appointments")
-        .insert({
-          patient_id: user.id,
-          psychologist_id: psychologistId,
-          start_time: startTime.toISOString(),
-          end_time: endTime.toISOString(),
-          status: "pending",
-          modality: "Videollamada",
-        })
-        .select()
-        .single();
-
-      if (apptError) throw apptError;
-
-      // Mark credit as used
-      await supabase
-        .from("client_credits")
-        .update({
-          status: "used",
-          used_at: new Date().toISOString(),
-          used_for_appointment_id: appointment.id,
-        })
-        .eq("id", credit.id);
-
-      // Create payment record
-      await supabase.from("payments").insert({
-        client_id: user.id,
-        psychologist_id: psychologistId,
-        appointment_id: appointment.id,
-        amount: 0,
-        payment_type: "single_session",
-        payment_status: "completed",
-        currency: "MXN",
-        description: "Sesión pagada con crédito de plataforma",
+      const { data: appointmentId, error } = await supabase.rpc("book_with_credit", {
+        _credit_id: credit.id,
+        _patient_id: user.id,
+        _psychologist_id: psychologistId,
+        _start_time: startTime.toISOString(),
+        _end_time: endTime.toISOString(),
+        _modality: "Videollamada",
       });
+
+      if (error) throw error;
 
       toast.success("Cita agendada con tu crédito disponible");
       navigate("/portal/sesiones");
     } catch (error: any) {
-      console.error("Error booking with credit:", error);
+      console.error("Error al agendar con crédito:", error);
       toast.error(error.message || "Error al agendar con crédito");
     } finally {
       setLoading(false);
