@@ -67,6 +67,13 @@ const SESSION_TYPE_LABEL: Record<string, string> = {
   package_8: "Paquete 8 sesiones",
 };
 
+// Porcentajes sobre el precio de sesión del psicólogo (no sobre lo que pagó el cliente)
+// El psicólogo siempre recibe 85%. El descuento del paquete reduce la comisión del admin.
+function getPercentages(sessionType: string) {
+  if (sessionType === "4_sessions" || sessionType === "package_4") return { admin: 5, psych: 85 };
+  if (sessionType === "8_sessions" || sessionType === "package_8") return { admin: 0, psych: 85 };
+  return { admin: 15, psych: 85 };
+}
 
 function extractSessionType(description: string | null): string {
   if (!description) return "single_session";
@@ -309,9 +316,8 @@ export default function AdminFinancials() {
               <div className="space-y-1">
                 {groupedSessions.map((session) => {
                   const isExpanded = expandedId === session.key;
+                  const pcts = getPercentages(session.session_type);
                   const total = session.admin_amount + session.psych_amount;
-                  const adminPct = total > 0 ? +((session.admin_amount / total) * 100).toFixed(1) : 0;
-                  const psychPct = total > 0 ? +((session.psych_amount / total) * 100).toFixed(1) : 0;
                   return (
                     <div key={session.key} className="border border-border rounded-lg overflow-hidden">
                       {/* Collapsed row */}
@@ -346,13 +352,13 @@ export default function AdminFinancials() {
                         <div className="bg-muted/50 px-3 py-2 border-t border-border space-y-1">
                           <div className="flex justify-between text-xs">
                             <span className="text-muted-foreground">
-                              Comisión Admin ({adminPct}%):
+                              Comisión Admin ({pcts.admin}%):
                             </span>
                             <span className="font-medium">${session.admin_amount.toFixed(2)}</span>
                           </div>
                           <div className="flex justify-between text-xs">
                             <span className="text-muted-foreground">
-                              Pago Psicólogo ({psychPct}%):
+                              Pago Psicólogo ({pcts.psych}%):
                             </span>
                             <span className="font-medium">${session.psych_amount.toFixed(2)}</span>
                           </div>
