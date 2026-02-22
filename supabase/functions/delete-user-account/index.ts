@@ -18,9 +18,9 @@ Deno.serve(async (req) => {
       console.error('No authorization header provided')
       return new Response(
         JSON.stringify({ error: 'No authorization header' }),
-        { 
+        {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 401 
+          status: 401
         }
       )
     }
@@ -37,9 +37,9 @@ Deno.serve(async (req) => {
       console.error('Invalid JWT: cannot extract user id')
       return new Response(
         JSON.stringify({ error: 'Unauthorized' }),
-        { 
+        {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 401 
+          status: 401
         }
       )
     }
@@ -58,90 +58,112 @@ Deno.serve(async (req) => {
       }
     )
 
-    // LÓGICA FINANCIERA: una sola llamada atómica a la función SQL
+    // STEP 1: Financial processing — atomic SQL function handles all money logic
     try {
       const { error: financialError } = await supabaseAdmin.rpc(
         'handle_account_deletion_financials',
         { _user_id: userId }
       )
       if (financialError) throw financialError
-
-      // Cleanup de datos dependientes
-      const { data: clientSubs } = await supabaseAdmin
-        .from('client_subscriptions')
-        .select('id')
-        .eq('client_id', userId)
-
-      const clientSubIds = (clientSubs ?? []).map((s: any) => s.id)
-      if (clientSubIds.length) {
-        await supabaseAdmin.from('subscription_history').delete().in('subscription_id', clientSubIds)
-        await supabaseAdmin.from('deferred_revenue').delete().in('subscription_id', clientSubIds)
-        await supabaseAdmin.from('client_subscriptions').delete().in('id', clientSubIds)
-      }
-
-      // Psychologist-related cleanup
-      const { data: psychProfiles } = await supabaseAdmin
-        .from('psychologist_profiles')
-        .select('id')
-        .eq('user_id', userId)
-
-      const psychIds = (psychProfiles ?? []).map((p: any) => p.id)
-      if (psychIds.length) {
-        await supabaseAdmin.from('psychologist_documents').delete().in('psychologist_id', psychIds)
-        await supabaseAdmin.from('psychologist_availability').delete().in('psychologist_id', psychIds)
-        await supabaseAdmin.from('psychologist_pricing').delete().in('psychologist_id', psychIds)
-        await supabaseAdmin.from('appointments').delete().in('psychologist_id', psychIds)
-        await supabaseAdmin.from('session_clinical_notes').delete().in('psychologist_id', psychIds)
-        await supabaseAdmin.from('psychologist_verifications').delete().in('psychologist_id', psychIds)
-        await supabaseAdmin.from('wallet_transactions').delete().in('psychologist_id', psychIds)
-        await supabaseAdmin.from('psychologist_wallets').delete().in('psychologist_id', psychIds)
-        await supabaseAdmin.from('psychologist_profiles').delete().eq('user_id', userId)
-      }
-
-      // Appointments, payments, credits, messages donde user es cliente
-      const { data: appts } = await supabaseAdmin
-        .from('appointments')
-        .select('id')
-        .eq('patient_id', userId)
-
-      const apptIds = (appts ?? []).map((a: any) => a.id)
-      if (apptIds.length) {
-        await supabaseAdmin.from('session_clinical_notes').delete().in('appointment_id', apptIds)
-        await supabaseAdmin.from('payments').delete().in('appointment_id', apptIds)
-        await supabaseAdmin.from('appointments').delete().in('id', apptIds)
-      }
-      
-      await supabaseAdmin.from('session_clinical_notes').delete().eq('patient_id', userId)
-      await supabaseAdmin.from('payments').delete().eq('client_id', userId)
-      await supabaseAdmin.from('client_credits').delete().eq('client_id', userId)
-
-      // Conversations and messages
-      const { data: convos } = await supabaseAdmin
-        .from('conversations')
-        .select('id')
-        .eq('client_id', userId)
-      
-      const convoIds = (convos ?? []).map((c: any) => c.id)
-      if (convoIds.length) {
-        await supabaseAdmin.from('messages').delete().in('conversation_id', convoIds)
-        await supabaseAdmin.from('conversations').delete().in('id', convoIds)
-      }
-
-      // Preferences, profile, roles
-      await supabaseAdmin.from('patient_preferences').delete().eq('user_id', userId)
-      await supabaseAdmin.from('profiles').delete().eq('id', userId)
-      await supabaseAdmin.from('user_roles').delete().eq('user_id', userId)
-    } catch (cleanupError) {
-      console.error('User data cleanup encountered issues:', cleanupError)
-      throw cleanupError
+    } catch (financialErr) {
+      console.error('Financial processing failed:', financialErr)
+      throw financialErr
     }
 
-    // Try hard delete
+    // STEP 2: Delete operational subscription data (deferred_revenue already zeroed by step 1)
+    const { data: clientSubs } = await supabaseAdmin
+      .from('client_subscriptions')
+      .select('id')
+      .eq('client_id', userId)
+
+    const clientSubIds = (clientSubs ?? []).map((s: any) => s.id)
+    if (clientSubIds.length) {
+      await supabaseAdmin.from('subscription_history').delete().in('subscription_id', clientSubIds)
+      await supabaseAdmin.from('deferred_revenue').delete().in('subscription_id', clientSubIds)
+      await supabaseAdmin.from('client_subscriptions').delete().in('id', clientSubIds)
+    }
+
+    // STEP 3: Psychologist-specific non-financial cleanup
+    const { data: psychProfiles } = await supabaseAdmin
+      .from('psychologist_profiles')
+      .select('id')
+      .eq('user_id', userId)
+
+    const psychIds = (psychProfiles ?? []).map((p: any) => p.id)
+    if (psychIds.length) {
+      // Also clean up client subscriptions where this therapist is the psychologist
+      const { data: therapistSubs } = await supabaseAdmin
+        .from('client_subscriptions')
+        .select('id')
+        .in('psychologist_id', psychIds)
+
+      const therapistSubIds = (therapistSubs ?? []).map((s: any) => s.id)
+      if (therapistSubIds.length) {
+        await supabaseAdmin.from('subscription_history').delete().in('subscription_id', therapistSubIds)
+        await supabaseAdmin.from('deferred_revenue').delete().in('subscription_id', therapistSubIds)
+        await supabaseAdmin.from('client_subscriptions').delete().in('id', therapistSubIds)
+      }
+
+      await supabaseAdmin.from('psychologist_documents').delete().in('psychologist_id', psychIds)
+      await supabaseAdmin.from('psychologist_availability').delete().in('psychologist_id', psychIds)
+      await supabaseAdmin.from('psychologist_pricing').delete().in('psychologist_id', psychIds)
+      await supabaseAdmin.from('session_clinical_notes').delete().in('psychologist_id', psychIds)
+      await supabaseAdmin.from('psychologist_verifications').delete().in('psychologist_id', psychIds)
+      await supabaseAdmin.from('psychologist_wallets').delete().in('psychologist_id', psychIds)
+      // NOTE: wallet_transactions are NOT deleted — they are the financial audit trail.
+      // psychologist_profiles FK on wallet_transactions is ON DELETE SET NULL.
+      // NOTE: appointments are NOT deleted — they are kept for audit with psychologist_id = NULL.
+      // NOTE: payments are NOT deleted — they are kept for audit with psychologist_id = NULL.
+      await supabaseAdmin.from('psychologist_profiles').delete().eq('user_id', userId)
+    }
+
+    // STEP 4: Client-specific non-financial cleanup
+    // Clinical notes for this patient (private medical data — delete)
+    await supabaseAdmin.from('session_clinical_notes').delete().eq('patient_id', userId)
+    // Session credits (operational data — delete)
+    await supabaseAdmin.from('client_credits').delete().eq('client_id', userId)
+    // NOTE: payments are NOT deleted — kept for audit trail. FK client_id will be SET NULL when profile is deleted.
+    // NOTE: appointments are NOT deleted — kept for audit trail. FK patient_id will be SET NULL when auth user is deleted.
+
+    // STEP 5: Conversations and messages (communication data — delete)
+    const { data: convos } = await supabaseAdmin
+      .from('conversations')
+      .select('id')
+      .eq('client_id', userId)
+
+    const convoIds = (convos ?? []).map((c: any) => c.id)
+    if (convoIds.length) {
+      await supabaseAdmin.from('messages').delete().in('conversation_id', convoIds)
+      await supabaseAdmin.from('conversations').delete().in('id', convoIds)
+    }
+
+    // Also delete conversations where this user is the psychologist
+    if (psychIds.length) {
+      const { data: psychConvos } = await supabaseAdmin
+        .from('conversations')
+        .select('id')
+        .in('psychologist_id', psychIds)
+
+      const psychConvoIds = (psychConvos ?? []).map((c: any) => c.id)
+      if (psychConvoIds.length) {
+        await supabaseAdmin.from('messages').delete().in('conversation_id', psychConvoIds)
+        await supabaseAdmin.from('conversations').delete().in('id', psychConvoIds)
+      }
+    }
+
+    // STEP 6: Personal data cleanup — deleting profiles cascades FK SET NULL to payments/appointments
+    await supabaseAdmin.from('patient_preferences').delete().eq('user_id', userId)
+    // Deleting profiles will SET NULL payments.client_id (via FK fk_payment_client ON DELETE SET NULL)
+    await supabaseAdmin.from('profiles').delete().eq('id', userId)
+    await supabaseAdmin.from('user_roles').delete().eq('user_id', userId)
+
+    // STEP 7: Delete auth user (hard delete preferred)
+    // Hard delete will SET NULL appointments.patient_id (via FK appointments_patient_id_fkey ON DELETE SET NULL)
     let { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId)
 
-    // Fallback to soft delete if hard delete fails due to DB constraints
     if (deleteError) {
-      console.error('Error deleting user (hard delete):', deleteError)
+      console.error('Hard delete failed, attempting soft delete:', deleteError)
+      // Soft delete: bans the user permanently (keeps auth.users row but prevents login)
       const res = await (supabaseAdmin as any).auth.admin.deleteUser(userId, { shouldSoftDelete: true })
       deleteError = res.error
       if (deleteError) {
@@ -153,23 +175,23 @@ Deno.serve(async (req) => {
       }
       console.log('User soft-deleted successfully:', userId)
     } else {
-      console.log('User deleted successfully:', userId)
+      console.log('User hard-deleted successfully:', userId)
     }
 
     return new Response(
       JSON.stringify({ message: 'Account deleted successfully' }),
-      { 
+      {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200 
+        status: 200
       }
     )
   } catch (error) {
     console.error('Error in delete-user-account function:', error)
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
-      { 
+      {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500 
+        status: 500
       }
     )
   }
