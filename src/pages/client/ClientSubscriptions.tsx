@@ -208,7 +208,7 @@ export default function ClientSubscriptions() {
 
   const hasSubscriptions = subscriptions.length > 0;
   const hasCredits = credits.length > 0;
-  const totalCreditsValue = credits.reduce((sum, credit) => sum + Number(credit.amount), 0);
+  // totalCreditsValue eliminado — los créditos se muestran como sesiones, no montos
 
   return (
     <div className="space-y-6">
@@ -245,9 +245,9 @@ export default function ClientSubscriptions() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">${totalCreditsValue.toFixed(2)}</div>
+              <div className="text-2xl font-bold">{credits.length}</div>
               <p className="text-xs text-muted-foreground">
-                {credits.length} {credits.length === 1 ? 'crédito disponible' : 'créditos disponibles'}
+                {credits.length === 1 ? 'sesión disponible como crédito' : 'sesiones disponibles como crédito'}
               </p>
             </CardContent>
           </Card>
@@ -428,9 +428,9 @@ export default function ClientSubscriptions() {
 
         <div className="bg-muted/50 p-4 rounded-lg">
           <p className="text-sm text-muted-foreground">
-            Los créditos individuales son diferentes a las suscripciones. Se generan cuando cancelas 
-            una sesión individual con más de 24 horas de anticipación. <strong>Nunca expiran</strong> y 
-            puedes usarlos para agendar nuevas sesiones con cualquier psicólogo.
+            Los créditos se generan cuando cancelas una sesión individual con más de 24 horas de anticipación.
+            Cada crédito equivale a <strong>1 sesión</strong> y solo puede usarse con el mismo terapeuta
+            con quien la agendaste originalmente.
           </p>
         </div>
 
@@ -471,17 +471,20 @@ export default function ClientSubscriptions() {
                         <p className="font-medium">
                           {credit.psychologist_profiles.first_name} {credit.psychologist_profiles.last_name}
                         </p>
-                        <p className="text-sm text-muted-foreground">{credit.reason}</p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Creado el {format(new Date(credit.created_at), 'dd MMM yyyy', { locale: es })}
+                        <p className="text-xs text-muted-foreground">
+                          Válido solo con este terapeuta
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          Generado el {format(new Date(credit.created_at), 'dd MMM yyyy', { locale: es })}
                         </p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-2xl font-bold text-primary">
-                        ${Number(credit.amount).toFixed(2)}
-                      </p>
-                      <Badge variant="secondary" className="mt-2">Disponible</Badge>
+                    <div className="text-right flex flex-col items-end gap-2">
+                      <div className="flex items-center gap-1.5">
+                        <Coins className="w-4 h-4 text-primary" />
+                        <span className="text-xl font-bold text-primary">1 sesión</span>
+                      </div>
+                      <Badge variant="secondary">Disponible</Badge>
                     </div>
                   </div>
                 </CardContent>
@@ -508,9 +511,9 @@ export default function ClientSubscriptions() {
               Recibes un número fijo de sesiones cada mes con descuento. Incluyen sistema de rollover 
               del 25% de sesiones no utilizadas.
               <br /><br />
-              <strong>Créditos Individuales:</strong> Son reembolsos monetarios que recibes al cancelar 
-              sesiones individuales (no de paquetes) con más de 24 horas de anticipación. No se renuevan 
-              automáticamente y puedes usarlos con cualquier psicólogo.
+              <strong>Créditos Individuales:</strong> Equivalen a 1 sesión y se generan al cancelar
+              una sesión individual con más de 24 horas de anticipación. Solo pueden usarse con el
+              mismo terapeuta con quien agendaste originalmente.
             </AccordionContent>
           </AccordionItem>
 
