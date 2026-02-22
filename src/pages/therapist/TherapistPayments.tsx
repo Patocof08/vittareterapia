@@ -136,7 +136,7 @@ export default function TherapistPayments() {
         .select("amount, created_at")
         .eq("psychologist_id", psychProfile.id)
         .eq("wallet_type", "psychologist")
-        .eq("transaction_type", "session_completed");
+        .in("transaction_type", ["session_completed", "account_deletion"]);
 
       const now = new Date();
       const monthStart = startOfMonth(now);
