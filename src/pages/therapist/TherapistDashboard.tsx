@@ -25,6 +25,7 @@ export default function TherapistDashboard() {
   const [todaySessions, setTodaySessions] = useState<any[]>([]);
   const [weekSessions, setWeekSessions] = useState<any[]>([]);
   const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
+  const [walletBalance, setWalletBalance] = useState<number>(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -46,6 +47,14 @@ export default function TherapistDashboard() {
           console.log("Profile data:", profileData);
           console.log("Pricing data:", profileData.pricing);
           setProfile(profileData as any);
+
+          // Fetch wallet balance
+          const { data: walletData } = await supabase
+            .from("psychologist_wallets")
+            .select("balance")
+            .eq("psychologist_id", profileData.id)
+            .maybeSingle();
+          if (walletData) setWalletBalance(Number(walletData.balance) || 0);
 
           // Fetch sessions for today (exclude cancelled)
           const todayStart = startOfDay(new Date());
@@ -200,36 +209,13 @@ export default function TherapistDashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Ganancia por sesión
+              Balance acumulado
             </CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              ${(() => {
-                if (!profile?.pricing) return 0;
-                let sessionPrice = 0;
-                if (Array.isArray(profile.pricing) && profile.pricing.length > 0) {
-                  sessionPrice = profile.pricing[0].session_price;
-                } else if (typeof profile.pricing === 'object' && 'session_price' in profile.pricing) {
-                  sessionPrice = (profile.pricing as any).session_price;
-                }
-                // El psicólogo recibe 85% del precio de sesión
-                return (sessionPrice * 0.85).toFixed(2);
-              })()}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {(() => {
-                if (!profile?.pricing) return 'Por configurar';
-                if (Array.isArray(profile.pricing) && profile.pricing.length > 0) {
-                  return 'Tu ganancia neta';
-                }
-                if (typeof profile.pricing === 'object' && 'session_price' in profile.pricing) {
-                  return 'Tu ganancia neta';
-                }
-                return 'Por configurar';
-              })()}
-            </p>
+            <div className="text-2xl font-bold">${walletBalance.toFixed(2)}</div>
+            <p className="text-xs text-muted-foreground">MXN en tu wallet</p>
           </CardContent>
         </Card>
 
