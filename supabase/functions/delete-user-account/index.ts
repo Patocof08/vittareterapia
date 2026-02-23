@@ -25,11 +25,13 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Extract user id from JWT (request is already JWT-verified by Functions)
+    // Extract user id from JWT
     const token = authHeader.replace('Bearer ', '')
     let userId: string | null = null
     try {
-      const payload = JSON.parse(atob(token.split('.')[1]))
+      // JWT payload is base64url encoded — normalize to standard base64 before decoding
+      const base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')
+      const payload = JSON.parse(atob(base64))
       userId = payload.sub as string
     } catch (_) {}
 
@@ -47,6 +49,7 @@ Deno.serve(async (req) => {
     console.log('Deleting user account:', userId)
 
     // Create a Supabase Admin client with service role
+    // (verify_jwt is false — we verify the user manually below)
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
@@ -57,6 +60,16 @@ Deno.serve(async (req) => {
         }
       }
     )
+
+    // Verify the token belongs to a real active user
+    const { data: { user }, error: userError } = await supabaseAdmin.auth.admin.getUserById(userId)
+    if (userError || !user) {
+      console.error('User not found or invalid token:', userError)
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      )
+    }
 
     // STEP 1: Financial processing — atomic SQL function handles all money logic
     try {
