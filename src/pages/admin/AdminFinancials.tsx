@@ -1,184 +1,263 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { format, startOfDay, startOfWeek, startOfMonth } from "date-fns";
+import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { Wallet, TrendingUp, Clock, ArrowUpRight, ChevronDown, ChevronUp, Calendar } from "lucide-react";
+import {
+  DollarSign, TrendingUp, Clock, CheckCircle, Download,
+  AlertTriangle, Filter, FileSpreadsheet,
+} from "lucide-react";
+import * as XLSX from "xlsx";
 
-interface AdminWallet {
-  balance: number;
-  updated_at: string;
+// ── Types ──────────────────────────────────────────────────────────
+interface PlatformSummary {
+  gross_income: number;
+  admin_commission: number;
+  psychologist_payments: number;
+  pending_deferred: number;
+  completed_sessions: number;
+  account_deletion_income: number;
 }
 
-interface PsychWallet {
-  balance: number;
-  updated_at: string;
-  psychologist_profiles: {
-    first_name: string;
-    last_name: string;
-  } | null;
-}
-
-interface Transaction {
-  id: string;
-  amount: number;
-  transaction_type: string;
-  wallet_type: string;
-  appointment_id: string | null;
-  description: string | null;
-  created_at: string;
-  psychologist_profiles: {
-    first_name: string;
-    last_name: string;
-  } | null;
-}
-
-interface GroupedSession {
-  key: string;
-  psychologist_name: string;
+interface TransactionRow {
+  transaction_date: string;
+  event_type: string;
   session_type: string;
-  created_at: string;
+  client_name: string;
+  psychologist_id: string | null;
+  psychologist_name: string;
+  gross_amount: number;
   admin_amount: number;
-  psych_amount: number;
+  psychologist_amount: number;
+  admin_percentage: number;
+  psychologist_percentage: number;
+  appointment_id: string | null;
 }
 
-interface DeferredSummary {
-  total_deferred: number;
-  total_recognized: number;
+interface PsychSummaryRow {
+  psychologist_id: string;
+  psychologist_name: string;
+  sessions_count: number;
+  gross_income: number;
+  admin_commission: number;
+  psychologist_payment: number;
+  pending_deferred: number;
+  account_deletion_income: number;
 }
 
-type Period = "today" | "week" | "month" | "all";
+// ── Helpers ────────────────────────────────────────────────────────
+const fmx = (n: number) =>
+  n.toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-const PERIOD_LABELS: Record<Period, string> = {
-  today: "Hoy",
-  week: "Esta semana",
-  month: "Este mes",
-  all: "Todas",
+const SESSION_TYPE_LABELS: Record<string, string> = {
+  single_session:   "Sesión Individual",
+  "4_sessions":     "Paquete 4",
+  package_4:        "Paquete 4",
+  "8_sessions":     "Paquete 8",
+  package_8:        "Paquete 8",
+  account_deletion: "Eliminación de cuenta",
 };
 
-const SESSION_TYPE_LABEL: Record<string, string> = {
-  single_session: "Sesión individual",
-  "4_sessions": "Paquete 4 sesiones",
-  "8_sessions": "Paquete 8 sesiones",
-  package_4: "Paquete 4 sesiones",
-  package_8: "Paquete 8 sesiones",
-};
-
-// Porcentajes sobre el precio de sesión del psicólogo (no sobre lo que pagó el cliente)
-// El psicólogo siempre recibe 85%. El descuento del paquete reduce la comisión del admin.
-function getPercentages(sessionType: string) {
-  if (sessionType === "4_sessions" || sessionType === "package_4") return { admin: 5, psych: 85 };
-  if (sessionType === "8_sessions" || sessionType === "package_8") return { admin: 0, psych: 85 };
-  return { admin: 15, psych: 85 };
+function getEventBadge(eventType: string) {
+  if (eventType === "account_deletion")
+    return { label: "Eliminación", cls: "bg-red-100 text-red-700 border-red-200 dark:bg-red-950 dark:text-red-400 dark:border-red-800" };
+  return { label: "Sesión completada", cls: "bg-green-100 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-400 dark:border-green-800" };
 }
 
-function extractSessionType(description: string | null): string {
-  if (!description) return "single_session";
-  const match = description.match(/\(([^)]+)\)/);
-  return match ? match[1] : "single_session";
-}
-
-function filterByPeriod(txs: Transaction[], period: Period): Transaction[] {
-  if (period === "all") return txs;
-  const now = new Date();
-  const cutoff =
-    period === "today"
-      ? startOfDay(now)
-      : period === "week"
-      ? startOfWeek(now, { weekStartsOn: 1 })
-      : startOfMonth(now);
-  return txs.filter((tx) => new Date(tx.created_at) >= cutoff);
-}
-
-function groupTransactions(txs: Transaction[]): GroupedSession[] {
-  const map = new Map<string, { admin: Transaction | null; psych: Transaction | null }>();
-
-  for (const tx of txs) {
-    if (tx.transaction_type !== "session_completed") continue;
-    const key = tx.appointment_id ?? tx.id;
-    if (!map.has(key)) map.set(key, { admin: null, psych: null });
-    if (tx.wallet_type === "admin") map.get(key)!.admin = tx;
-    else map.get(key)!.psych = tx;
-  }
-
-  return Array.from(map.entries())
-    .map(([key, { admin, psych }]) => {
-      const ref = psych ?? admin!;
-      const session_type = extractSessionType(ref.description);
-      const name = ref.psychologist_profiles
-        ? `${ref.psychologist_profiles.first_name} ${ref.psychologist_profiles.last_name}`
-        : "Desconocido";
-      return {
-        key,
-        psychologist_name: name,
-        session_type,
-        created_at: ref.created_at,
-        admin_amount: admin ? Number(admin.amount) : 0,
-        psych_amount: psych ? Number(psych.amount) : 0,
-      };
-    })
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-    .slice(0, 10);
-}
-
+// ── Component ──────────────────────────────────────────────────────
 export default function AdminFinancials() {
-  const [adminWallet, setAdminWallet] = useState<AdminWallet | null>(null);
-  const [psychWallets, setPsychWallets] = useState<PsychWallet[]>([]);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [deferred, setDeferred] = useState<DeferredSummary>({ total_deferred: 0, total_recognized: 0 });
+  const [summary, setSummary] = useState<PlatformSummary | null>(null);
+  const [transactions, setTransactions] = useState<TransactionRow[]>([]);
+  const [psychSummary, setPsychSummary] = useState<PsychSummaryRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [transactionPeriod, setTransactionPeriod] = useState<Period>("month");
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  // Filters
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [selectedPsychId, setSelectedPsychId] = useState("all");
 
   useEffect(() => {
-    fetchAll();
+    fetchData();
   }, []);
 
-  const fetchAll = async () => {
+  const fetchData = async (from = fromDate, to = toDate) => {
     setLoading(true);
     try {
-      const [walletRes, psychRes, txRes, deferredRes] = await Promise.all([
-        supabase.from("admin_wallet").select("balance, updated_at").maybeSingle(),
-        supabase
-          .from("psychologist_wallets")
-          .select("balance, updated_at, psychologist_profiles(first_name, last_name)")
-          .order("balance", { ascending: false }),
-        supabase
-          .from("wallet_transactions")
-          .select("id, amount, transaction_type, wallet_type, appointment_id, description, created_at, psychologist_profiles(first_name, last_name)")
-          .order("created_at", { ascending: false })
-          .limit(100),
-        supabase.from("deferred_revenue").select("deferred_amount, recognized_amount"),
+      const fromDt = from ? `${from}T00:00:00.000Z` : null;
+      const toDt   = to   ? `${to}T23:59:59.999Z`   : null;
+
+      const [summaryRes, txRes, psychRes] = await Promise.all([
+        supabase.rpc("get_platform_financial_summary", { _from_date: fromDt, _to_date: toDt }),
+        supabase.rpc("get_financial_report",            { _from_date: fromDt, _to_date: toDt }),
+        supabase.rpc("get_financial_summary_by_psychologist", { _from_date: fromDt, _to_date: toDt }),
       ]);
 
-      if (walletRes.data) setAdminWallet(walletRes.data as AdminWallet);
-      if (psychRes.data) setPsychWallets(psychRes.data as PsychWallet[]);
-      if (txRes.data) setTransactions(txRes.data as Transaction[]);
-      if (deferredRes.data) {
-        const totalDeferred = deferredRes.data.reduce((sum, r) => sum + (r.deferred_amount || 0), 0);
-        const totalRecognized = deferredRes.data.reduce((sum, r) => sum + (r.recognized_amount || 0), 0);
-        setDeferred({ total_deferred: totalDeferred, total_recognized: totalRecognized });
-      }
-    } catch (error) {
-      console.error("Error cargando financieros:", error);
-      toast.error("Error al cargar el módulo financiero");
+      if (summaryRes.error) throw summaryRes.error;
+      if (txRes.error)      throw txRes.error;
+      if (psychRes.error)   throw psychRes.error;
+
+      if (summaryRes.data?.[0]) setSummary(summaryRes.data[0] as PlatformSummary);
+      setTransactions((txRes.data  ?? []) as TransactionRow[]);
+      setPsychSummary((psychRes.data ?? []) as PsychSummaryRow[]);
+    } catch (err) {
+      console.error("Error cargando reporte:", err);
+      toast.error("Error al cargar el reporte financiero");
     } finally {
       setLoading(false);
     }
   };
 
-  const totalPsychBalance = psychWallets.reduce((sum, w) => sum + (w.balance || 0), 0);
+  const handleApplyFilters = () => {
+    setSelectedPsychId("all");
+    fetchData(fromDate, toDate);
+  };
 
-  const filteredTxs = filterByPeriod(transactions, transactionPeriod);
-  const groupedSessions = groupTransactions(filteredTxs);
+  const filteredTransactions =
+    selectedPsychId === "all"
+      ? transactions
+      : transactions.filter((tx) => tx.psychologist_id === selectedPsychId);
 
+  // ── Excel / CSV builders ───────────────────────────────────────
+  const buildTxRows = (txs: TransactionRow[]) =>
+    txs.map((tx) => ({
+      Fecha: tx.transaction_date
+        ? format(new Date(tx.transaction_date), "dd/MM/yyyy HH:mm", { locale: es })
+        : "",
+      Evento:          tx.event_type === "account_deletion" ? "Eliminación" : "Sesión completada",
+      Tipo:            SESSION_TYPE_LABELS[tx.session_type] ?? tx.session_type,
+      Cliente:         tx.client_name,
+      "Psicólogo":     tx.psychologist_name,
+      "Bruto (MXN)":   tx.gross_amount,
+      "Admin (MXN)":   tx.admin_amount,
+      "Admin (%)":     tx.admin_percentage / 100,
+      "Psicólogo (MXN)": tx.psychologist_amount,
+      "Psicólogo (%)": tx.psychologist_percentage / 100,
+    }));
+
+  const buildPsychRows = (rows: PsychSummaryRow[]) =>
+    rows.map((r) => ({
+      "Psicólogo":              r.psychologist_name,
+      Sesiones:                 r.sessions_count,
+      "Ingreso bruto (MXN)":    r.gross_income,
+      "Comisión admin (MXN)":   r.admin_commission,
+      "Pago psicólogo (MXN)":   r.psychologist_payment,
+      "Diferido pendiente (MXN)": r.pending_deferred,
+      "Eliminaciones (MXN)":    r.account_deletion_income,
+    }));
+
+  const buildSummaryRows = () =>
+    summary
+      ? [
+          { Concepto: "Ingreso bruto total",       "Monto (MXN)": summary.gross_income },
+          { Concepto: "Comisión admin total",       "Monto (MXN)": summary.admin_commission },
+          { Concepto: "Pago a psicólogos total",    "Monto (MXN)": summary.psychologist_payments },
+          { Concepto: "Diferido pendiente",         "Monto (MXN)": summary.pending_deferred },
+          { Concepto: "Sesiones completadas",       "Cantidad":    summary.completed_sessions },
+          { Concepto: "Ingreso por eliminaciones",  "Monto (MXN)": summary.account_deletion_income },
+        ]
+      : [];
+
+  const autoFit = (ws: XLSX.WorkSheet, data: Record<string, unknown>[]) => {
+    if (!data.length) return;
+    ws["!cols"] = Object.keys(data[0]).map((key) => ({
+      wch: Math.min(
+        Math.max(key.length, ...data.map((r) => String(r[key] ?? "").length)) + 2,
+        40
+      ),
+    }));
+  };
+
+  const applyFormats = (
+    ws: XLSX.WorkSheet,
+    data: Record<string, unknown>[],
+    moneyKeys: string[],
+    pctKeys: string[]
+  ) => {
+    if (!data.length) return;
+    const headers = Object.keys(data[0]);
+    const moneyIdxs = moneyKeys.map((k) => headers.indexOf(k)).filter((i) => i >= 0);
+    const pctIdxs   = pctKeys.map((k)   => headers.indexOf(k)).filter((i) => i >= 0);
+    const range = XLSX.utils.decode_range(ws["!ref"] ?? "A1");
+    for (let R = range.s.r + 1; R <= range.e.r; R++) {
+      moneyIdxs.forEach((C) => {
+        const cell = ws[XLSX.utils.encode_cell({ r: R, c: C })];
+        if (cell) cell.z = '"$"#,##0.00';
+      });
+      pctIdxs.forEach((C) => {
+        const cell = ws[XLSX.utils.encode_cell({ r: R, c: C })];
+        if (cell) cell.z = "0.0%";
+      });
+    }
+  };
+
+  const downloadExcel = () => {
+    try {
+      const wb = XLSX.utils.book_new();
+
+      const txData      = buildTxRows(transactions);
+      const psychData   = buildPsychRows(psychSummary);
+      const summaryData = buildSummaryRows();
+
+      const wsTx = XLSX.utils.json_to_sheet(txData);
+      autoFit(wsTx, txData);
+      applyFormats(wsTx, txData,
+        ["Bruto (MXN)", "Admin (MXN)", "Psicólogo (MXN)"],
+        ["Admin (%)", "Psicólogo (%)"]
+      );
+      XLSX.utils.book_append_sheet(wb, wsTx, "Transacciones");
+
+      const wsPsych = XLSX.utils.json_to_sheet(psychData);
+      autoFit(wsPsych, psychData);
+      applyFormats(wsPsych, psychData,
+        ["Ingreso bruto (MXN)", "Comisión admin (MXN)", "Pago psicólogo (MXN)", "Diferido pendiente (MXN)", "Eliminaciones (MXN)"],
+        []
+      );
+      XLSX.utils.book_append_sheet(wb, wsPsych, "Por Psicólogo");
+
+      const wsSummary = XLSX.utils.json_to_sheet(summaryData);
+      autoFit(wsSummary, summaryData);
+      XLSX.utils.book_append_sheet(wb, wsSummary, "Resumen");
+
+      XLSX.writeFile(wb, `vittare_reporte_financiero_${format(new Date(), "yyyy-MM-dd")}.xlsx`);
+      toast.success("Excel descargado correctamente");
+    } catch (err) {
+      console.error("Error generando Excel:", err);
+      toast.error("Error al generar el Excel");
+    }
+  };
+
+  const downloadCSV = () => {
+    try {
+      const ws  = XLSX.utils.json_to_sheet(buildTxRows(transactions));
+      const csv = XLSX.utils.sheet_to_csv(ws);
+      const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement("a");
+      a.href     = url;
+      a.download = `vittare_transacciones_${format(new Date(), "yyyy-MM-dd")}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("CSV descargado correctamente");
+    } catch (err) {
+      console.error("Error generando CSV:", err);
+      toast.error("Error al generar el CSV");
+    }
+  };
+
+  // ── Render ─────────────────────────────────────────────────────
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
       </div>
     );
   }
@@ -186,192 +265,276 @@ export default function AdminFinancials() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Módulo Financiero</h1>
-        <p className="text-muted-foreground mt-1">Balances, ingresos diferidos y transacciones</p>
+        <h1 className="text-3xl font-bold text-foreground">Reportes Financieros</h1>
+        <p className="text-muted-foreground mt-1">Ingresos, comisiones y pagos de la plataforma</p>
       </div>
 
-      {/* Summary cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* ── SECTION A: Summary cards ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Wallet Admin</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Ingreso Bruto Total</CardTitle>
             <div className="p-2 rounded-lg bg-primary/10">
-              <Wallet className="w-4 h-4 text-primary" />
+              <DollarSign className="w-4 h-4 text-primary" />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${(adminWallet?.balance ?? 0).toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground mt-1">MXN</p>
+            <div className="text-2xl font-bold">${fmx(summary?.gross_income ?? 0)}</div>
+            <p className="text-xs text-muted-foreground mt-1">MXN reconocido</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Wallets Psicólogos</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Comisión Admin Total</CardTitle>
+            <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/20">
+              <TrendingUp className="w-4 h-4 text-blue-600" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${fmx(summary?.admin_commission ?? 0)}</div>
+            <p className="text-xs text-muted-foreground mt-1">Wallet admin acumulado</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Pago a Psicólogos</CardTitle>
             <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/20">
               <TrendingUp className="w-4 h-4 text-green-600" />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${totalPsychBalance.toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground mt-1">{psychWallets.length} psicólogos</p>
+            <div className="text-2xl font-bold">${fmx(summary?.psychologist_payments ?? 0)}</div>
+            <p className="text-xs text-muted-foreground mt-1">Wallets psicólogos acumulado</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Ingreso Diferido</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Diferido Pendiente</CardTitle>
             <div className="p-2 rounded-lg bg-yellow-100 dark:bg-yellow-900/20">
               <Clock className="w-4 h-4 text-yellow-600" />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${deferred.total_deferred.toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground mt-1">Pendiente de reconocer</p>
+            <div className="text-2xl font-bold">${fmx(summary?.pending_deferred ?? 0)}</div>
+            <p className="text-xs text-muted-foreground mt-1">Por reconocer</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Ingreso Reconocido</CardTitle>
-            <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/20">
-              <ArrowUpRight className="w-4 h-4 text-blue-600" />
+            <CardTitle className="text-sm font-medium text-muted-foreground">Sesiones Completadas</CardTitle>
+            <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/20">
+              <CheckCircle className="w-4 h-4 text-purple-600" />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${deferred.total_recognized.toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground mt-1">Acumulado histórico</p>
+            <div className="text-2xl font-bold">{summary?.completed_sessions ?? 0}</div>
+            <p className="text-xs text-muted-foreground mt-1">En el período seleccionado</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Ingreso por Eliminaciones</CardTitle>
+            <div className="p-2 rounded-lg bg-red-100 dark:bg-red-900/20">
+              <AlertTriangle className="w-4 h-4 text-red-600" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${fmx(summary?.account_deletion_income ?? 0)}</div>
+            <p className="text-xs text-muted-foreground mt-1">Ingresado por cuentas eliminadas</p>
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Psychologist wallets */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Wallets por Psicólogo</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {psychWallets.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-6">Sin wallets registradas</p>
-            ) : (
-              <div className="space-y-3">
-                {psychWallets.map((w, i) => (
-                  <div key={i} className="flex items-center justify-between py-2 border-b border-border last:border-0">
-                    <div>
-                      <p className="font-medium text-sm">
-                        {w.psychologist_profiles
-                          ? `${w.psychologist_profiles.first_name} ${w.psychologist_profiles.last_name}`
-                          : "Psicólogo desconocido"}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Actualizado: {format(new Date(w.updated_at), "dd MMM yyyy", { locale: es })}
-                      </p>
-                    </div>
-                    <span className="font-bold text-sm">${(w.balance || 0).toFixed(2)} MXN</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Grouped transactions */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Calendar className="w-4 h-4" />
-                Últimas Transacciones
-              </CardTitle>
+      {/* ── SECTION B: Filters & export ── */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Filter className="w-4 h-4" />
+            Filtros y Exportar
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="flex flex-col gap-1.5">
+              <Label className="text-xs">Desde</Label>
+              <Input
+                type="date"
+                value={fromDate}
+                onChange={(e) => setFromDate(e.target.value)}
+                className="w-40 h-9 text-sm"
+              />
             </div>
-            {/* Period filter */}
-            <div className="mt-2">
-              <Select
-                value={transactionPeriod}
-                onValueChange={(val) => {
-                  setTransactionPeriod(val as Period);
-                  setExpandedId(null);
-                }}
-              >
-                <SelectTrigger className="w-40 h-8 text-xs">
-                  <SelectValue />
+            <div className="flex flex-col gap-1.5">
+              <Label className="text-xs">Hasta</Label>
+              <Input
+                type="date"
+                value={toDate}
+                onChange={(e) => setToDate(e.target.value)}
+                className="w-40 h-9 text-sm"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label className="text-xs">Psicólogo</Label>
+              <Select value={selectedPsychId} onValueChange={setSelectedPsychId}>
+                <SelectTrigger className="w-52 h-9 text-sm">
+                  <SelectValue placeholder="Todos los psicólogos" />
                 </SelectTrigger>
                 <SelectContent>
-                  {(Object.keys(PERIOD_LABELS) as Period[]).map((p) => (
-                    <SelectItem key={p} value={p} className="text-xs">
-                      {PERIOD_LABELS[p]}
+                  <SelectItem value="all">Todos los psicólogos</SelectItem>
+                  {psychSummary.map((p) => (
+                    <SelectItem key={p.psychologist_id} value={p.psychologist_id}>
+                      {p.psychologist_name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-          </CardHeader>
-          <CardContent>
-            {groupedSessions.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-6">
-                Sin sesiones en este período
-              </p>
-            ) : (
-              <div className="space-y-1">
-                {groupedSessions.map((session) => {
-                  const isExpanded = expandedId === session.key;
-                  const pcts = getPercentages(session.session_type);
-                  const total = session.admin_amount + session.psych_amount;
-                  return (
-                    <div key={session.key} className="border border-border rounded-lg overflow-hidden">
-                      {/* Collapsed row */}
-                      <button
-                        className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-accent/50 transition-colors text-left"
-                        onClick={() => setExpandedId(isExpanded ? null : session.key)}
-                      >
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <Badge className="text-xs bg-green-100 text-green-700 border-0">
-                              Sesión completada
-                            </Badge>
-                            <span className="text-xs text-muted-foreground">
-                              {SESSION_TYPE_LABEL[session.session_type] ?? session.session_type}
-                            </span>
-                          </div>
-                          <p className="text-sm font-medium mt-0.5 truncate">{session.psychologist_name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {format(new Date(session.created_at), "dd MMM yyyy HH:mm", { locale: es })}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2 ml-3 shrink-0">
-                          <span className="font-bold text-sm">${total.toFixed(2)}</span>
-                          {isExpanded
-                            ? <ChevronUp className="w-4 h-4 text-muted-foreground" />
-                            : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
-                        </div>
-                      </button>
+            <Button onClick={handleApplyFilters} className="h-9">
+              Aplicar filtros
+            </Button>
+            <Button
+              variant="outline"
+              className="h-9 bg-green-50 text-green-700 border-green-200 hover:bg-green-100 hover:text-green-800 dark:bg-green-950 dark:text-green-400 dark:border-green-800"
+              onClick={downloadExcel}
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Descargar Excel
+            </Button>
+            <Button variant="outline" className="h-9" onClick={downloadCSV}>
+              <Download className="w-4 h-4 mr-2" />
+              Descargar CSV
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
-                      {/* Expanded breakdown */}
-                      {isExpanded && (
-                        <div className="bg-muted/50 px-3 py-2 border-t border-border space-y-1">
-                          <div className="flex justify-between text-xs">
-                            <span className="text-muted-foreground">
-                              Comisión Admin ({pcts.admin}%):
-                            </span>
-                            <span className="font-medium">${session.admin_amount.toFixed(2)}</span>
-                          </div>
-                          <div className="flex justify-between text-xs">
-                            <span className="text-muted-foreground">
-                              Pago Psicólogo ({pcts.psych}%):
-                            </span>
-                            <span className="font-medium">${session.psych_amount.toFixed(2)}</span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+      {/* ── SECTION C: Transactions table ── */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <FileSpreadsheet className="w-4 h-4" />
+            Transacciones
+            <span className="text-muted-foreground font-normal text-sm">
+              ({filteredTransactions.length})
+            </span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          {filteredTransactions.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-12">
+              Sin transacciones en este período
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-xs whitespace-nowrap pl-4">Fecha</TableHead>
+                    <TableHead className="text-xs whitespace-nowrap">Evento</TableHead>
+                    <TableHead className="text-xs whitespace-nowrap">Tipo</TableHead>
+                    <TableHead className="text-xs whitespace-nowrap">Cliente</TableHead>
+                    <TableHead className="text-xs whitespace-nowrap">Psicólogo</TableHead>
+                    <TableHead className="text-xs whitespace-nowrap text-right">Bruto</TableHead>
+                    <TableHead className="text-xs whitespace-nowrap text-right">Admin (%)</TableHead>
+                    <TableHead className="text-xs whitespace-nowrap text-right pr-4">Psicólogo (%)</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredTransactions.map((tx, i) => {
+                    const badge = getEventBadge(tx.event_type);
+                    return (
+                      <TableRow key={`${tx.appointment_id ?? i}-${i}`}>
+                        <TableCell className="text-xs whitespace-nowrap text-muted-foreground pl-4">
+                          {tx.transaction_date
+                            ? format(new Date(tx.transaction_date), "dd MMM yyyy HH:mm", { locale: es })
+                            : "—"}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className={`text-xs ${badge.cls}`}>
+                            {badge.label}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-xs whitespace-nowrap">
+                          {SESSION_TYPE_LABELS[tx.session_type] ?? tx.session_type}
+                        </TableCell>
+                        <TableCell className="text-xs max-w-[130px] truncate">
+                          {tx.client_name}
+                        </TableCell>
+                        <TableCell className="text-xs max-w-[130px] truncate">
+                          {tx.psychologist_name}
+                        </TableCell>
+                        <TableCell className="text-xs text-right font-semibold whitespace-nowrap">
+                          ${fmx(tx.gross_amount)}
+                        </TableCell>
+                        <TableCell className="text-xs text-right whitespace-nowrap">
+                          <span className="font-medium">${fmx(tx.admin_amount)}</span>
+                          <span className="text-muted-foreground ml-1">({tx.admin_percentage}%)</span>
+                        </TableCell>
+                        <TableCell className="text-xs text-right whitespace-nowrap pr-4">
+                          <span className="font-medium">${fmx(tx.psychologist_amount)}</span>
+                          <span className="text-muted-foreground ml-1">({tx.psychologist_percentage}%)</span>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* ── SECTION D: Per-psychologist summary ── */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Resumen por Psicólogo</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          {psychSummary.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-12">
+              Sin datos en este período
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-xs pl-4">Psicólogo</TableHead>
+                    <TableHead className="text-xs text-right">Sesiones</TableHead>
+                    <TableHead className="text-xs text-right">Ingreso bruto</TableHead>
+                    <TableHead className="text-xs text-right">Comisión admin</TableHead>
+                    <TableHead className="text-xs text-right">Pago psicólogo</TableHead>
+                    <TableHead className="text-xs text-right">Diferido</TableHead>
+                    <TableHead className="text-xs text-right pr-4">Eliminaciones</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {psychSummary.map((row) => (
+                    <TableRow key={row.psychologist_id}>
+                      <TableCell className="text-xs font-medium pl-4">{row.psychologist_name}</TableCell>
+                      <TableCell className="text-xs text-right">{row.sessions_count}</TableCell>
+                      <TableCell className="text-xs text-right font-semibold">${fmx(row.gross_income)}</TableCell>
+                      <TableCell className="text-xs text-right">${fmx(row.admin_commission)}</TableCell>
+                      <TableCell className="text-xs text-right">${fmx(row.psychologist_payment)}</TableCell>
+                      <TableCell className="text-xs text-right text-yellow-600 dark:text-yellow-400">
+                        ${fmx(row.pending_deferred)}
+                      </TableCell>
+                      <TableCell className="text-xs text-right text-red-600 dark:text-red-400 pr-4">
+                        ${fmx(row.account_deletion_income)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

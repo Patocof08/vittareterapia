@@ -1,4 +1,4 @@
-import { Home, Users, FileCheck, LogOut, X, Wallet } from "lucide-react";
+import { Home, Users, FileCheck, LogOut, X, FileSpreadsheet } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,7 @@ export const AdminSidebar = ({ isOpen, onClose }: AdminSidebarProps) => {
     { icon: Home, label: "Dashboard", to: "/admin/dashboard" },
     { icon: Users, label: "Psicólogos", to: "/admin/verifications" },
     { icon: FileCheck, label: "Documentos", to: "/admin/documents" },
-    { icon: Wallet, label: "Financiero", to: "/admin/financials" },
+    { icon: FileSpreadsheet, label: "Reportes Financieros", to: "/admin/financials" },
   ];
 
   const handleNavClick = () => {
