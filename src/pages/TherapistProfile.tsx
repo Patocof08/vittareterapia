@@ -248,41 +248,90 @@ const TherapistProfile = () => {
         toast.success('Cita agendada con éxito');
         navigate('/portal/sesiones');
       } else {
-        // Create package checkout - first create pending payment for package
+        // Package booking - process directly
         const sessionsTotal = type === "package_4" ? 4 : 8;
         const packagePrice = type === "package_4" ? pricing?.package_4_price : pricing?.package_8_price;
         const paymentType = type === "package_4" ? "package_4" : "package_8";
+        const packageTypeValue = type === "package_4" ? "4_sessions" : "8_sessions";
 
-        // Store appointment data temporarily in localStorage for checkout
-        const tempAppointmentData = {
-          psychologist_id: id as string,
-          start_time: startTime.toISOString(),
-          end_time: endTime.toISOString(),
-          package_type: type,
-          sessions_total: sessionsTotal,
-        };
-        localStorage.setItem("pending_package_appointment", JSON.stringify(tempAppointmentData));
+        const regularPrice = (pricing?.session_price || 0) * sessionsTotal;
+        const discountPercentage = regularPrice > 0
+          ? Math.round(((regularPrice - (packagePrice || 0)) / regularPrice) * 100)
+          : 0;
 
-        // Create payment record for package
+        // 1. Create payment
         // @ts-ignore - Types will regenerate automatically
-        const { data: payment, error: paymentError } = await supabase
-          .from("payments")
-          .insert({
-            client_id: user.id,
-            psychologist_id: id,
-            amount: packagePrice || 0,
-            payment_type: paymentType,
-            payment_status: "pending",
-            currency: "MXN",
-            description: `Paquete de ${sessionsTotal} sesiones`,
-          })
-          .select()
-          .single();
-
+        const { data: payment, error: paymentError } = await supabase.from("payments").insert({
+          client_id: user.id,
+          psychologist_id: id,
+          amount: packagePrice || 0,
+          payment_type: paymentType,
+          payment_status: "completed",
+          completed_at: new Date().toISOString(),
+          payment_method: "Transferencia/Efectivo",
+          currency: "MXN",
+          description: `Paquete de ${sessionsTotal} sesiones`,
+        }).select().single();
         if (paymentError) throw paymentError;
 
-        // Redirect to checkout
-        navigate(`/portal/checkout?payment_id=${payment.id}`);
+        // 2. Create subscription
+        // @ts-ignore - Types will regenerate automatically
+        const { data: subscription, error: subError } = await supabase.from("client_subscriptions").insert({
+          client_id: user.id,
+          psychologist_id: id,
+          session_price: pricing?.session_price || 0,
+          discount_percentage: discountPercentage,
+          sessions_total: sessionsTotal,
+          sessions_used: 1,
+          sessions_remaining: sessionsTotal - 1,
+          package_type: packageTypeValue,
+          status: "active",
+          auto_renew: true,
+          current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        }).select().single();
+        if (subError) throw subError;
+
+        // 3. Create deferred revenue for entire package
+        await supabase.rpc("create_deferred_revenue", {
+          _psychologist_id: id as string,
+          _appointment_id: null,
+          _subscription_id: subscription.id,
+          _payment_id: payment.id,
+          _amount: Number(packagePrice || 0),
+        });
+
+        // 4. Create first appointment with subscription_id
+        // @ts-ignore - Types will regenerate automatically
+        const { data: appointment, error: apptError } = await supabase.from("appointments").insert({
+          patient_id: user.id,
+          psychologist_id: id,
+          start_time: startTime.toISOString(),
+          end_time: endTime.toISOString(),
+          status: "pending",
+          modality: "Videollamada",
+          subscription_id: subscription.id,
+        }).select().single();
+        if (apptError) throw apptError;
+
+        // 5. Update payment with appointment and subscription
+        // @ts-ignore - Types will regenerate automatically
+        await supabase.from("payments").update({
+          subscription_id: subscription.id,
+          appointment_id: appointment.id,
+        }).eq("id", payment.id);
+
+        // 6. Create invoice
+        // @ts-ignore - Types will regenerate automatically
+        await supabase.from("invoices").insert({
+          payment_id: payment.id,
+          client_id: user.id,
+          psychologist_id: id,
+          amount: packagePrice || 0,
+          invoice_number: '',
+        });
+
+        toast.success(`¡Paquete de ${sessionsTotal} sesiones adquirido con éxito!`);
+        navigate('/portal/sesiones');
       }
     } catch (error: any) {
       console.error("Error booking:", error);
