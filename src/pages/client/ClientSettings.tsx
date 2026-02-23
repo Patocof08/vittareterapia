@@ -218,29 +218,11 @@ export default function ClientSettings() {
 
     setLoading(true);
     try {
-      // Get the current session to pass the access token
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        throw new Error('No hay sesión activa');
-      }
-
       // Call edge function to delete user account
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-user-account`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json',
-            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          },
-        }
-      );
+      const { error: fnError } = await supabase.functions.invoke('delete-user-account');
 
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.error || 'Error al eliminar cuenta');
+      if (fnError) {
+        throw new Error(fnError.message || 'Error al eliminar cuenta');
       }
 
       toast({

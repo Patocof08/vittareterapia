@@ -404,28 +404,11 @@ export default function TherapistSettings() {
     
     setIsDeleting(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        toast.error("No se pudo verificar tu sesión");
-        return;
-      }
+      // Call edge function to delete user account
+      const { error: fnError } = await supabase.functions.invoke('delete-user-account');
 
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-user-account`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json',
-            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.error || 'Error al eliminar cuenta');
+      if (fnError) {
+        throw new Error(fnError.message || 'Error al eliminar cuenta');
       }
 
       toast.success("Tu cuenta ha sido eliminada exitosamente");
