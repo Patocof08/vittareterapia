@@ -4,12 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { format, addMinutes, isSameDay, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import { BookingTypeDialog } from "@/components/client/BookingTypeDialog";
+import { StripePaymentForm } from "@/components/client/StripePaymentForm";
 import { useNavigate } from "react-router-dom";
 
 interface BookingCalendarProps {
@@ -23,6 +25,8 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [showBookingDialog, setShowBookingDialog] = useState(false);
+  const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
   const feeRate = 0.05; // Cargo por servicio de la plataforma (5%)
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -288,171 +292,68 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
       startTime.setHours(hours, minutes, 0, 0);
       const endTime = addMinutes(startTime, pricing?.session_duration_minutes || 50);
 
-        if (type === "single") {
-          // Create single appointment
-          const { data: appointment, error: apptError } = await supabase
-            .from("appointments")
-            .insert({
-              patient_id: user.id,
-              psychologist_id: psychologistId,
-              start_time: startTime.toISOString(),
-              end_time: endTime.toISOString(),
-              status: "pending",
-              modality: "Videollamada",
-            })
-            .select()
-            .single();
+      const paymentTypeMap = {
+        single: "single_session",
+        package_4: "package_4",
+        package_8: "package_8",
+      } as const;
 
-          if (apptError) throw apptError;
+      const baseAmountMap = {
+        single: pricing?.session_price || 0,
+        package_4: pricing?.package_4_price || 0,
+        package_8: pricing?.package_8_price || 0,
+      };
 
-          // Create payment record for individual session
-          const basePrice = pricing?.session_price || 0;
-          const platformFee = Math.round(basePrice * feeRate * 100) / 100;
-          const { data: payment, error: paymentError } = await supabase
-            .from("payments")
-            .insert({
-              client_id: user.id,
-              psychologist_id: psychologistId,
-              appointment_id: appointment.id,
-              base_amount: basePrice,
-              platform_fee_rate: feeRate,
-              platform_fee: platformFee,
-              amount: basePrice + platformFee,
-              payment_type: "single_session",
-              payment_status: "pending",
-              currency: "MXN",
-              description: "Sesión individual",
-            })
-            .select()
-            .single();
+      const { data: { session } } = await supabase.auth.getSession();
+      const jwt = session?.access_token;
+      if (!jwt) throw new Error("No se pudo obtener la sesión de usuario");
 
-          if (paymentError) throw paymentError;
+      const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+      const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-          // Crear ingreso diferido para la sesión individual (monto base, sin fee)
-          const { error: deferredError } = await supabase.rpc("create_single_session_deferred", {
-            _appointment_id: appointment.id,
-            _payment_id: payment.id,
-            _psychologist_id: psychologistId,
-            _amount: basePrice,
-          });
-          if (deferredError) {
-            console.error("Error al crear ingreso diferido:", deferredError);
-            toast.error("La cita fue agendada pero hubo un error al registrar el pago. Contacta a soporte.");
-          }
-
-          // Registrar platform fee en admin wallet
-          if (!deferredError && platformFee > 0) {
-            await supabase.rpc("record_platform_fee", {
-              _payment_id: payment.id,
-              _psychologist_id: psychologistId,
-              _fee_amount: platformFee,
-            });
-          }
-
-          toast.success("Cita agendada con éxito");
-          navigate("/portal/sesiones");
-        } else {
-          // Package booking - process directly
-          const sessionsTotal = type === "package_4" ? 4 : 8;
-          const packagePrice = type === "package_4" ? pricing?.package_4_price : pricing?.package_8_price;
-          const paymentType = type === "package_4" ? "package_4" : "package_8";
-          const packageTypeValue = type === "package_4" ? "4_sessions" : "8_sessions";
-
-          const regularPrice = (pricing?.session_price || 0) * sessionsTotal;
-          const discountPercentage = regularPrice > 0
-            ? Math.round(((regularPrice - (packagePrice || 0)) / regularPrice) * 100)
-            : 0;
-
-          // 1. Create payment
-          const basePackagePrice = packagePrice || 0;
-          const packagePlatformFee = Math.round(basePackagePrice * feeRate * 100) / 100;
-          const { data: payment, error: paymentError } = await supabase.from("payments").insert({
-            client_id: user.id,
-            psychologist_id: psychologistId,
-            base_amount: basePackagePrice,
-            platform_fee_rate: feeRate,
-            platform_fee: packagePlatformFee,
-            amount: basePackagePrice + packagePlatformFee,
-            payment_type: paymentType,
-            payment_status: "completed",
-            completed_at: new Date().toISOString(),
-            payment_method: "Transferencia/Efectivo",
-            currency: "MXN",
-            description: `Paquete de ${sessionsTotal} sesiones`,
-          }).select().single();
-          if (paymentError) throw paymentError;
-
-          // 2. Create subscription
-          const { data: subscription, error: subError } = await supabase.from("client_subscriptions").insert({
-            client_id: user.id,
-            psychologist_id: psychologistId,
-            session_price: pricing?.session_price || 0,
-            discount_percentage: discountPercentage,
-            sessions_total: sessionsTotal,
-            sessions_used: 1,
-            sessions_remaining: sessionsTotal - 1,
-            package_type: packageTypeValue,
-            status: "active",
-            auto_renew: true,
-            current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-          }).select().single();
-          if (subError) throw subError;
-
-          // 3. Create deferred revenue for entire package (monto base, sin fee)
-          await supabase.rpc("create_deferred_revenue", {
-            _psychologist_id: psychologistId,
-            _appointment_id: null,
-            _subscription_id: subscription.id,
-            _payment_id: payment.id,
-            _amount: basePackagePrice,
-          });
-
-          // Registrar platform fee en admin wallet
-          if (packagePlatformFee > 0) {
-            await supabase.rpc("record_platform_fee", {
-              _payment_id: payment.id,
-              _psychologist_id: psychologistId,
-              _fee_amount: packagePlatformFee,
-            });
-          }
-
-          // 4. Create first appointment with subscription_id
-          const { data: appointment, error: apptError } = await supabase.from("appointments").insert({
-            patient_id: user.id,
-            psychologist_id: psychologistId,
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/create-payment-intent`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${jwt}`,
+          "apikey": SUPABASE_KEY,
+        },
+        body: JSON.stringify({
+          psychologist_id: psychologistId,
+          payment_type: paymentTypeMap[type],
+          base_amount: baseAmountMap[type],
+          appointment_data: {
             start_time: startTime.toISOString(),
             end_time: endTime.toISOString(),
-            status: "pending",
-            modality: "Videollamada",
-            subscription_id: subscription.id,
-          }).select().single();
-          if (apptError) throw apptError;
+          },
+        }),
+      });
 
-          // 5. Update payment with appointment and subscription
-          await supabase.from("payments").update({
-            subscription_id: subscription.id,
-            appointment_id: appointment.id,
-          }).eq("id", payment.id);
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        throw new Error(data.error || "Error al iniciar el pago");
+      }
 
-          // 6. Create invoice
-          await supabase.from("invoices").insert({
-            payment_id: payment.id,
-            client_id: user.id,
-            psychologist_id: psychologistId,
-            amount: basePackagePrice + packagePlatformFee,
-            invoice_number: '',
-          });
-
-          toast.success(`¡Paquete de ${sessionsTotal} sesiones adquirido con éxito!`);
-          navigate("/portal/sesiones");
-        }
+      setClientSecret(data.clientSecret);
+      setShowBookingDialog(false);
+      setShowPaymentForm(true);
     } catch (error: any) {
-      console.error("Error booking:", error);
-      toast.error(error.message || "Error al procesar la reserva");
+      console.error("Error initiating payment:", error);
+      toast.error(error.message || "Error al iniciar el pago");
     } finally {
       setLoading(false);
-      setShowBookingDialog(false);
     }
+  };
+
+  const handlePaymentSuccess = () => {
+    setShowPaymentForm(false);
+    setClientSecret(null);
+    navigate("/portal/sesiones");
+  };
+
+  const handlePaymentCancel = () => {
+    setShowPaymentForm(false);
+    setClientSecret(null);
   };
 
   return (
@@ -528,6 +429,21 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
           onConfirm={handleBookingTypeConfirm}
         />
       )}
+
+      <Dialog open={showPaymentForm} onOpenChange={(open) => { if (!open) handlePaymentCancel(); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Completa tu pago</DialogTitle>
+          </DialogHeader>
+          {clientSecret && (
+            <StripePaymentForm
+              clientSecret={clientSecret}
+              onSuccess={handlePaymentSuccess}
+              onCancel={handlePaymentCancel}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
