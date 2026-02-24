@@ -4,14 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { format, addMinutes, isSameDay, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import { BookingTypeDialog } from "@/components/client/BookingTypeDialog";
-import { StripePaymentForm } from "@/components/client/StripePaymentForm";
+import { StripePaymentForm, SessionInfo } from "@/components/client/StripePaymentForm";
 import { useNavigate } from "react-router-dom";
 
 interface BookingCalendarProps {
@@ -27,9 +27,27 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
   const [showBookingDialog, setShowBookingDialog] = useState(false);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [pendingSessionInfo, setPendingSessionInfo] = useState<SessionInfo | null>(null);
+  const [therapistDisplayName, setTherapistDisplayName] = useState("");
+  const [therapistDisplaySpecialty, setTherapistDisplaySpecialty] = useState("");
   const feeRate = 0.05; // Cargo por servicio de la plataforma (5%)
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  // Fetch therapist name once on mount for checkout display
+  useEffect(() => {
+    supabase
+      .from("psychologist_profiles")
+      .select("first_name, last_name, therapeutic_approaches")
+      .eq("id", psychologistId)
+      .single()
+      .then(({ data }) => {
+        if (data) {
+          setTherapistDisplayName(`${data.first_name} ${data.last_name}`);
+          setTherapistDisplaySpecialty((data.therapeutic_approaches as string[])?.[0] ?? "");
+        }
+      });
+  }, [psychologistId]);
 
   useEffect(() => {
     if (selectedDate) {
@@ -304,6 +322,17 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
         package_8: pricing?.package_8_price || 0,
       };
 
+      const sessionInfo: SessionInfo = {
+        therapistName: therapistDisplayName || "Psicólogo",
+        therapistSpecialty: therapistDisplaySpecialty || undefined,
+        startTime,
+        durationMinutes: pricing?.session_duration_minutes || 50,
+        sessionType: paymentTypeMap[type],
+        baseAmount: baseAmountMap[type],
+        feeRate,
+      };
+      setPendingSessionInfo(sessionInfo);
+
       const { data: { session } } = await supabase.auth.getSession();
       const jwt = session?.access_token;
       if (!jwt) throw new Error("No se pudo obtener la sesión de usuario");
@@ -348,12 +377,14 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
   const handlePaymentSuccess = () => {
     setShowPaymentForm(false);
     setClientSecret(null);
+    setPendingSessionInfo(null);
     navigate("/portal/sesiones");
   };
 
   const handlePaymentCancel = () => {
     setShowPaymentForm(false);
     setClientSecret(null);
+    setPendingSessionInfo(null);
   };
 
   return (
@@ -431,13 +462,11 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
       )}
 
       <Dialog open={showPaymentForm} onOpenChange={(open) => { if (!open) handlePaymentCancel(); }}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Completa tu pago</DialogTitle>
-          </DialogHeader>
+        <DialogContent className="p-0 sm:max-w-[480px] overflow-hidden rounded-[20px] border-0 max-h-[90vh] overflow-y-auto [&>button]:text-white [&>button]:opacity-80 [&>button:hover]:opacity-100">
           {clientSecret && (
             <StripePaymentForm
               clientSecret={clientSecret}
+              sessionInfo={pendingSessionInfo ?? undefined}
               onSuccess={handlePaymentSuccess}
               onCancel={handlePaymentCancel}
             />

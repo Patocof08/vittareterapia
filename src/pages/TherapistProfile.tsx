@@ -4,14 +4,14 @@ import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Star, Video, Globe, GraduationCap, Award, Heart, ArrowLeft } from "lucide-react";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { BookingTypeDialog } from "@/components/client/BookingTypeDialog";
-import { StripePaymentForm } from "@/components/client/StripePaymentForm";
+import { StripePaymentForm, SessionInfo } from "@/components/client/StripePaymentForm";
 import { AuthPopup } from "@/components/AuthPopup";
 
 const TherapistProfile = () => {
@@ -28,6 +28,7 @@ const TherapistProfile = () => {
   const [showAuthPopup, setShowAuthPopup] = useState(false);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [pendingSessionInfo, setPendingSessionInfo] = useState<SessionInfo | null>(null);
   const [bookedSlots, setBookedSlots] = useState<string[]>([]);
   const feeRate = 0.05; // Cargo por servicio de la plataforma (5%)
 
@@ -212,6 +213,17 @@ const TherapistProfile = () => {
         package_8: pricing?.package_8_price || 0,
       };
 
+      const sessionInfo: SessionInfo = {
+        therapistName: therapist ? `${therapist.first_name} ${therapist.last_name}` : "Psicólogo",
+        therapistSpecialty: therapist?.therapeutic_approaches?.[0] ?? undefined,
+        startTime,
+        durationMinutes: pricing?.session_duration_minutes || 50,
+        sessionType: paymentTypeMap[type],
+        baseAmount: baseAmountMap[type],
+        feeRate,
+      };
+      setPendingSessionInfo(sessionInfo);
+
       const { data: { session } } = await supabase.auth.getSession();
       const jwt = session?.access_token;
       if (!jwt) throw new Error("No se pudo obtener la sesión de usuario");
@@ -254,12 +266,14 @@ const TherapistProfile = () => {
   const handlePaymentSuccess = () => {
     setShowPaymentForm(false);
     setClientSecret(null);
+    setPendingSessionInfo(null);
     navigate("/portal/sesiones");
   };
 
   const handlePaymentCancel = () => {
     setShowPaymentForm(false);
     setClientSecret(null);
+    setPendingSessionInfo(null);
   };
 
   return (
@@ -506,13 +520,11 @@ const TherapistProfile = () => {
 
       {/* Stripe Payment Dialog */}
       <Dialog open={showPaymentForm} onOpenChange={(open) => { if (!open) handlePaymentCancel(); }}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Completa tu pago</DialogTitle>
-          </DialogHeader>
+        <DialogContent className="p-0 sm:max-w-[480px] overflow-hidden rounded-[20px] border-0 max-h-[90vh] overflow-y-auto [&>button]:text-white [&>button]:opacity-80 [&>button:hover]:opacity-100">
           {clientSecret && (
             <StripePaymentForm
               clientSecret={clientSecret}
+              sessionInfo={pendingSessionInfo ?? undefined}
               onSuccess={handlePaymentSuccess}
               onCancel={handlePaymentCancel}
             />
