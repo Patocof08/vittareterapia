@@ -27,6 +27,18 @@ const TherapistProfile = () => {
   const [showBookingDialog, setShowBookingDialog] = useState(false);
   const [showAuthPopup, setShowAuthPopup] = useState(false);
   const [bookedSlots, setBookedSlots] = useState<string[]>([]);
+  const [feeRate, setFeeRate] = useState(0.05);
+
+  useEffect(() => {
+    supabase
+      .from("platform_settings")
+      .select("value")
+      .eq("key", "platform_fee_rate")
+      .single()
+      .then(({ data }) => {
+        if (data) setFeeRate(Number(data.value));
+      });
+  }, []);
 
   useEffect(() => {
     const loadTherapist = async () => {
@@ -216,6 +228,8 @@ const TherapistProfile = () => {
         if (error) throw error;
 
         // Create payment record for single session
+        const basePrice = pricing?.session_price || 0;
+        const platformFee = Math.round(basePrice * feeRate * 100) / 100;
         // @ts-ignore - Types will regenerate automatically
         const { data: payment, error: paymentError } = await supabase
           .from("payments")
@@ -223,7 +237,10 @@ const TherapistProfile = () => {
             client_id: user.id,
             psychologist_id: id,
             appointment_id: appointment.id,
-            amount: pricing?.session_price || 0,
+            base_amount: basePrice,
+            platform_fee_rate: feeRate,
+            platform_fee: platformFee,
+            amount: basePrice + platformFee,
             payment_type: "single_session",
             payment_status: "pending",
             description: `Sesión individual - ${format(startTime, "dd 'de' MMMM, yyyy 'a las' HH:mm", { locale: es })}`,
@@ -233,16 +250,25 @@ const TherapistProfile = () => {
 
         if (paymentError) throw paymentError;
 
-        // Crear ingreso diferido para la sesión individual
+        // Crear ingreso diferido para la sesión individual (monto base, sin fee)
         const { error: deferredError } = await supabase.rpc("create_single_session_deferred", {
           _appointment_id: appointment.id,
           _payment_id: payment.id,
           _psychologist_id: id as string,
-          _amount: pricing?.session_price || 0,
+          _amount: basePrice,
         });
         if (deferredError) {
           console.error("Error al crear ingreso diferido:", deferredError);
           toast.error("La cita fue agendada pero hubo un error al registrar el pago. Contacta a soporte.");
+        }
+
+        // Registrar platform fee en admin wallet
+        if (!deferredError && platformFee > 0) {
+          await supabase.rpc("record_platform_fee", {
+            _payment_id: payment.id,
+            _psychologist_id: id as string,
+            _fee_amount: platformFee,
+          });
         }
 
         toast.success('Cita agendada con éxito');
@@ -260,11 +286,16 @@ const TherapistProfile = () => {
           : 0;
 
         // 1. Create payment
+        const basePackagePrice = packagePrice || 0;
+        const packagePlatformFee = Math.round(basePackagePrice * feeRate * 100) / 100;
         // @ts-ignore - Types will regenerate automatically
         const { data: payment, error: paymentError } = await supabase.from("payments").insert({
           client_id: user.id,
           psychologist_id: id,
-          amount: packagePrice || 0,
+          base_amount: basePackagePrice,
+          platform_fee_rate: feeRate,
+          platform_fee: packagePlatformFee,
+          amount: basePackagePrice + packagePlatformFee,
           payment_type: paymentType,
           payment_status: "completed",
           completed_at: new Date().toISOString(),
@@ -291,14 +322,23 @@ const TherapistProfile = () => {
         }).select().single();
         if (subError) throw subError;
 
-        // 3. Create deferred revenue for entire package
+        // 3. Create deferred revenue for entire package (monto base, sin fee)
         await supabase.rpc("create_deferred_revenue", {
           _psychologist_id: id as string,
           _appointment_id: null,
           _subscription_id: subscription.id,
           _payment_id: payment.id,
-          _amount: Number(packagePrice || 0),
+          _amount: basePackagePrice,
         });
+
+        // Registrar platform fee en admin wallet
+        if (packagePlatformFee > 0) {
+          await supabase.rpc("record_platform_fee", {
+            _payment_id: payment.id,
+            _psychologist_id: id as string,
+            _fee_amount: packagePlatformFee,
+          });
+        }
 
         // 4. Create first appointment with subscription_id
         // @ts-ignore - Types will regenerate automatically
@@ -326,7 +366,7 @@ const TherapistProfile = () => {
           payment_id: payment.id,
           client_id: user.id,
           psychologist_id: id,
-          amount: packagePrice || 0,
+          amount: basePackagePrice + packagePlatformFee,
           invoice_number: '',
         });
 
@@ -573,6 +613,7 @@ const TherapistProfile = () => {
           open={showBookingDialog}
           onOpenChange={setShowBookingDialog}
           pricing={pricing}
+          feeRate={feeRate}
           onConfirm={handleBookingTypeConfirm}
         />
       )}

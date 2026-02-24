@@ -29,6 +29,7 @@ interface BookingTypeDialogProps {
     first_session_price?: number;
     currency: string;
   };
+  feeRate?: number;
   onConfirm: (type: "single" | "package_4" | "package_8") => void;
 }
 
@@ -36,6 +37,7 @@ export function BookingTypeDialog({
   open,
   onOpenChange,
   pricing,
+  feeRate = 0.05,
   onConfirm,
 }: BookingTypeDialogProps) {
   const [selectedType, setSelectedType] = useState<"single" | "package_4" | "package_8">("single");
@@ -45,6 +47,9 @@ export function BookingTypeDialog({
     onConfirm(selectedType);
     onOpenChange(false);
   };
+
+  const withFee = (base: number) => Math.round(base * (1 + feeRate) * 100) / 100;
+  const feeAmount = (base: number) => Math.round(base * feeRate * 100) / 100;
 
   const calculateSavings = (packagePrice: number, sessions: number) => {
     const regularTotal = pricing.session_price * sessions;
@@ -81,11 +86,14 @@ export function BookingTypeDialog({
                   <span className="font-semibold">Sesión Individual</span>
                 </div>
                 <span className="text-2xl font-bold">
-                  ${pricing.first_session_price || pricing.session_price}
+                  ${withFee(pricing.first_session_price || pricing.session_price)}
                 </span>
               </div>
               <p className="text-sm text-muted-foreground">
                 Paga una sola sesión
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Incluye ${feeAmount(pricing.first_session_price || pricing.session_price)} de cargo por servicio ({Math.round(feeRate * 100)}%)
               </p>
               {pricing.first_session_price && (
                 <Badge variant="secondary" className="w-fit mt-2">
@@ -109,17 +117,20 @@ export function BookingTypeDialog({
                     <span className="font-semibold">Paquete 4 Sesiones</span>
                   </div>
                   <div className="text-right">
-                    <span className="text-2xl font-bold">${pricing.package_4_price}</span>
+                    <span className="text-2xl font-bold">${withFee(pricing.package_4_price)}</span>
                   </div>
                 </div>
                 <div className="flex items-center justify-between">
                   <p className="text-sm text-muted-foreground">
-                    ${(pricing.package_4_price / 4).toFixed(2)} por sesión
+                    ${(withFee(pricing.package_4_price) / 4).toFixed(2)} por sesión
                   </p>
                   <Badge variant="default" className="ml-auto">
                     Ahorra {calculateSavings(pricing.package_4_price, 4).percentage}%
                   </Badge>
                 </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Incluye ${feeAmount(pricing.package_4_price)} de cargo por servicio ({Math.round(feeRate * 100)}%)
+                </p>
               </Label>
             </div>
           )}
@@ -138,17 +149,20 @@ export function BookingTypeDialog({
                     <span className="font-semibold">Paquete 8 Sesiones</span>
                   </div>
                   <div className="text-right">
-                    <span className="text-2xl font-bold">${pricing.package_8_price}</span>
+                    <span className="text-2xl font-bold">${withFee(pricing.package_8_price)}</span>
                   </div>
                 </div>
                 <div className="flex items-center justify-between">
                   <p className="text-sm text-muted-foreground">
-                    ${(pricing.package_8_price / 8).toFixed(2)} por sesión
+                    ${(withFee(pricing.package_8_price) / 8).toFixed(2)} por sesión
                   </p>
                   <Badge variant="default" className="ml-auto">
                     Ahorra {calculateSavings(pricing.package_8_price, 8).percentage}%
                   </Badge>
                 </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Incluye ${feeAmount(pricing.package_8_price)} de cargo por servicio ({Math.round(feeRate * 100)}%)
+                </p>
               </Label>
             </div>
           )}
