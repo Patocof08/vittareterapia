@@ -11,6 +11,7 @@ import { toast } from "sonner";
 interface Payment {
   id: string;
   amount: number;
+  base_amount: number;
   currency: string;
   payment_type: string;
   payment_status: string;
@@ -60,13 +61,13 @@ export default function TherapistPayments() {
     ) {
       return 0;
     }
-    // Para sesión individual, amount = session_price, así que amount × 85% es exacto
+    // Usar base_amount (precio sin platform fee) para calcular el 85% del psicólogo
+    // amount incluye el 5% de platform fee que va al admin, no al psicólogo
     if (payment.payment_type === "single_session") {
-      const amt = Number(payment.amount || 0);
-      if (amt > 0) return amt * 0.85;
+      const base = Number(payment.base_amount || payment.amount || 0);
+      if (base > 0) return base * 0.85;
     }
-    // Para paquetes, amount puede ser el total del paquete (no por sesión),
-    // así que usamos directamente session_price × 85% del perfil del psicólogo
+    // Para paquetes, usamos session_price × 85% del perfil del psicólogo
     return Number(sessionPriceFallback || 0);
   };
   useEffect(() => {
