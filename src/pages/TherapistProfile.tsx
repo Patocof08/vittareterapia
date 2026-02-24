@@ -27,21 +27,7 @@ const TherapistProfile = () => {
   const [showBookingDialog, setShowBookingDialog] = useState(false);
   const [showAuthPopup, setShowAuthPopup] = useState(false);
   const [bookedSlots, setBookedSlots] = useState<string[]>([]);
-  const [feeRate, setFeeRate] = useState(0.05);
-
-  useEffect(() => {
-    supabase
-      .from("platform_settings")
-      .select("value")
-      .eq("key", "platform_fee_rate")
-      .single()
-      .then(({ data, error }) => {
-        if (!error && data?.value != null) {
-          const rate = Number(data.value);
-          if (!isNaN(rate) && rate > 0) setFeeRate(rate);
-        }
-      });
-  }, []);
+  const feeRate = 0.05; // Cargo por servicio de la plataforma (5%)
 
   useEffect(() => {
     const loadTherapist = async () => {

@@ -23,23 +23,9 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [showBookingDialog, setShowBookingDialog] = useState(false);
-  const [feeRate, setFeeRate] = useState(0.05);
+  const feeRate = 0.05; // Cargo por servicio de la plataforma (5%)
   const { user } = useAuth();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    supabase
-      .from("platform_settings")
-      .select("value")
-      .eq("key", "platform_fee_rate")
-      .single()
-      .then(({ data, error }) => {
-        if (!error && data?.value != null) {
-          const rate = Number(data.value);
-          if (!isNaN(rate) && rate > 0) setFeeRate(rate);
-        }
-      });
-  }, []);
 
   useEffect(() => {
     if (selectedDate) {
