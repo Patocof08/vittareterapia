@@ -43,8 +43,8 @@ export type Database = {
           end_time: string
           id: string
           modality: string
-          patient_id: string
-          psychologist_id: string
+          patient_id: string | null
+          psychologist_id: string | null
           session_notes: string | null
           start_time: string
           status: string
@@ -59,8 +59,8 @@ export type Database = {
           end_time: string
           id?: string
           modality: string
-          patient_id: string
-          psychologist_id: string
+          patient_id?: string | null
+          psychologist_id?: string | null
           session_notes?: string | null
           start_time: string
           status?: string
@@ -75,8 +75,8 @@ export type Database = {
           end_time?: string
           id?: string
           modality?: string
-          patient_id?: string
-          psychologist_id?: string
+          patient_id?: string | null
+          psychologist_id?: string | null
           session_notes?: string | null
           start_time?: string
           status?: string
@@ -274,7 +274,7 @@ export type Database = {
           deferred_amount: number
           id: string
           payment_id: string | null
-          psychologist_id: string
+          psychologist_id: string | null
           recognized_amount: number
           subscription_id: string | null
           total_amount: number
@@ -287,7 +287,7 @@ export type Database = {
           deferred_amount: number
           id?: string
           payment_id?: string | null
-          psychologist_id: string
+          psychologist_id?: string | null
           recognized_amount?: number
           subscription_id?: string | null
           total_amount: number
@@ -300,7 +300,7 @@ export type Database = {
           deferred_amount?: number
           id?: string
           payment_id?: string | null
-          psychologist_id?: string
+          psychologist_id?: string | null
           recognized_amount?: number
           subscription_id?: string | null
           total_amount?: number
@@ -340,7 +340,7 @@ export type Database = {
       invoices: {
         Row: {
           amount: number
-          client_id: string
+          client_id: string | null
           created_at: string
           currency: string
           due_at: string | null
@@ -353,7 +353,7 @@ export type Database = {
         }
         Insert: {
           amount: number
-          client_id: string
+          client_id?: string | null
           created_at?: string
           currency?: string
           due_at?: string | null
@@ -366,7 +366,7 @@ export type Database = {
         }
         Update: {
           amount?: number
-          client_id?: string
+          client_id?: string | null
           created_at?: string
           currency?: string
           due_at?: string | null
@@ -509,7 +509,8 @@ export type Database = {
         Row: {
           amount: number
           appointment_id: string | null
-          client_id: string
+          base_amount: number
+          client_id: string | null
           completed_at: string | null
           created_at: string
           currency: string
@@ -518,14 +519,20 @@ export type Database = {
           payment_method: string | null
           payment_status: string
           payment_type: string
-          psychologist_id: string
+          platform_fee: number
+          platform_fee_rate: number
+          processor: string | null
+          processor_client_secret: string | null
+          processor_payment_id: string | null
+          psychologist_id: string | null
           subscription_id: string | null
           transaction_reference: string | null
         }
         Insert: {
           amount: number
           appointment_id?: string | null
-          client_id: string
+          base_amount: number
+          client_id?: string | null
           completed_at?: string | null
           created_at?: string
           currency?: string
@@ -534,14 +541,20 @@ export type Database = {
           payment_method?: string | null
           payment_status?: string
           payment_type: string
-          psychologist_id: string
+          platform_fee?: number
+          platform_fee_rate?: number
+          processor?: string | null
+          processor_client_secret?: string | null
+          processor_payment_id?: string | null
+          psychologist_id?: string | null
           subscription_id?: string | null
           transaction_reference?: string | null
         }
         Update: {
           amount?: number
           appointment_id?: string | null
-          client_id?: string
+          base_amount?: number
+          client_id?: string | null
           completed_at?: string | null
           created_at?: string
           currency?: string
@@ -550,7 +563,12 @@ export type Database = {
           payment_method?: string | null
           payment_status?: string
           payment_type?: string
-          psychologist_id?: string
+          platform_fee?: number
+          platform_fee_rate?: number
+          processor?: string | null
+          processor_client_secret?: string | null
+          processor_payment_id?: string | null
+          psychologist_id?: string | null
           subscription_id?: string | null
           transaction_reference?: string | null
         }
@@ -585,6 +603,33 @@ export type Database = {
           },
         ]
       }
+      platform_settings: {
+        Row: {
+          description: string | null
+          id: string
+          key: string
+          updated_at: string | null
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          description?: string | null
+          id?: string
+          key: string
+          updated_at?: string | null
+          updated_by?: string | null
+          value: Json
+        }
+        Update: {
+          description?: string | null
+          id?: string
+          key?: string
+          updated_at?: string | null
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -593,6 +638,7 @@ export type Database = {
           full_name: string | null
           id: string
           phone: string | null
+          processor_customer_id: string | null
           updated_at: string
         }
         Insert: {
@@ -602,6 +648,7 @@ export type Database = {
           full_name?: string | null
           id: string
           phone?: string | null
+          processor_customer_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -611,6 +658,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           phone?: string | null
+          processor_customer_id?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -1061,6 +1109,7 @@ export type Database = {
           payment_id: string | null
           psychologist_id: string | null
           subscription_id: string | null
+          transaction_category: string | null
           transaction_type: string
           wallet_type: string
         }
@@ -1075,6 +1124,7 @@ export type Database = {
           payment_id?: string | null
           psychologist_id?: string | null
           subscription_id?: string | null
+          transaction_category?: string | null
           transaction_type: string
           wallet_type: string
         }
@@ -1089,6 +1139,7 @@ export type Database = {
           payment_id?: string | null
           psychologist_id?: string | null
           subscription_id?: string | null
+          transaction_category?: string | null
           transaction_type?: string
           wallet_type?: string
         }
@@ -1125,16 +1176,73 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      v_financial_ledger: {
+        Row: {
+          amount: number | null
+          appointment_id: string | null
+          cliente_nombre: string | null
+          description: string | null
+          fecha: string | null
+          fecha_cita: string | null
+          id: string | null
+          monto_bruto_pago: number | null
+          payment_type: string | null
+          psicologo_nombre: string | null
+          psychologist_id: string | null
+          tipo_evento: string | null
+          tipo_sesion: string | null
+          transaction_type: string | null
+          wallet_type: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallet_transactions_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wallet_transactions_psychologist_id_fkey"
+            columns: ["psychologist_id"]
+            isOneToOne: false
+            referencedRelation: "psychologist_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       approve_psychologist: {
         Args: { _admin_notes?: string; _psychologist_id: string }
         Returns: undefined
       }
+      book_with_credit: {
+        Args: {
+          _credit_id: string
+          _end_time: string
+          _modality: string
+          _patient_id: string
+          _psychologist_id: string
+          _start_time: string
+        }
+        Returns: string
+      }
       calculate_rollover_sessions: {
         Args: { _sessions_total: number; _sessions_used: number }
         Returns: number
+      }
+      cancel_package_session_early: {
+        Args: { _appointment_id: string }
+        Returns: undefined
+      }
+      cancel_session_late: {
+        Args: { _appointment_id: string }
+        Returns: undefined
+      }
+      cancel_session_with_refund: {
+        Args: { _appointment_id: string; _payment_id: string }
+        Returns: undefined
       }
       create_deferred_revenue: {
         Args: {
@@ -1146,8 +1254,73 @@ export type Database = {
         }
         Returns: string
       }
+      create_package_deferred: {
+        Args: {
+          _payment_id: string
+          _psychologist_id: string
+          _subscription_id: string
+          _total_amount: number
+        }
+        Returns: string
+      }
+      create_single_session_deferred: {
+        Args: {
+          _amount: number
+          _appointment_id: string
+          _payment_id: string
+          _psychologist_id: string
+        }
+        Returns: string
+      }
+      ensure_admin_wallet: { Args: never; Returns: string }
       expire_client_credit: { Args: { _credit_id: string }; Returns: undefined }
+      expire_session_credit: {
+        Args: { _credit_id: string }
+        Returns: undefined
+      }
       generate_invoice_number: { Args: never; Returns: string }
+      get_financial_report: {
+        Args: { _from_date?: string; _to_date?: string }
+        Returns: {
+          admin_amount: number
+          admin_percentage: number
+          appointment_id: string
+          client_name: string
+          event_type: string
+          gross_amount: number
+          psychologist_amount: number
+          psychologist_id: string
+          psychologist_name: string
+          psychologist_percentage: number
+          session_type: string
+          transaction_date: string
+        }[]
+      }
+      get_financial_summary_by_psychologist: {
+        Args: { _from_date?: string; _to_date?: string }
+        Returns: {
+          account_deletion_income: number
+          admin_commission: number
+          gross_income: number
+          pending_deferred: number
+          psychologist_id: string
+          psychologist_name: string
+          psychologist_payment: number
+          sessions_count: number
+        }[]
+      }
+      get_platform_financial_summary: {
+        Args: { _from_date?: string; _to_date?: string }
+        Returns: {
+          account_deletion_income: number
+          admin_commission: number
+          completed_sessions: number
+          gross_income: number
+          pending_deferred: number
+          platform_fee_total: number
+          psychologist_payments: number
+        }[]
+      }
       get_psychologist_wallet_balance: {
         Args: { _psychologist_id: string }
         Returns: {
@@ -1170,6 +1343,10 @@ export type Database = {
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
+      }
+      handle_account_deletion_financials: {
+        Args: { _user_id: string }
+        Returns: undefined
       }
       has_role: {
         Args: {
@@ -1218,6 +1395,14 @@ export type Database = {
       }
       recognize_session_revenue: {
         Args: { _appointment_id: string }
+        Returns: undefined
+      }
+      record_platform_fee: {
+        Args: {
+          _fee_amount: number
+          _payment_id: string
+          _psychologist_id: string
+        }
         Returns: undefined
       }
       reject_psychologist: {
