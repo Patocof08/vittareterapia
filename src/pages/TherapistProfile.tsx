@@ -35,8 +35,11 @@ const TherapistProfile = () => {
       .select("value")
       .eq("key", "platform_fee_rate")
       .single()
-      .then(({ data }) => {
-        if (data) setFeeRate(Number(data.value));
+      .then(({ data, error }) => {
+        if (!error && data?.value != null) {
+          const rate = Number(data.value);
+          if (!isNaN(rate) && rate > 0) setFeeRate(rate);
+        }
       });
   }, []);
 
