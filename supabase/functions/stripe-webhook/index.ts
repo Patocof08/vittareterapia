@@ -38,21 +38,26 @@ Deno.serve(async (req) => {
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
+    const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY')!
+    const ok = new Response(JSON.stringify({ received: true }), { headers: { 'Content-Type': 'application/json' }, status: 200 })
+
     // ============================================================
-    // PAYMENT_INTENT.SUCCEEDED — Single session payments only
+    // PAYMENT_INTENT.SUCCEEDED — Single sessions AND first package payment
     // ============================================================
     if (event.type === 'payment_intent.succeeded') {
       const pi = event.data.object
-      if (pi.invoice) return new Response(JSON.stringify({ received: true }), { status: 200 })
+      // Skip if this PI was created by a subscription invoice (handled by invoice.paid)
+      if (pi.invoice) return ok
 
       const { data: payment } = await supabase.from('payments').select('*').eq('processor_payment_id', pi.id).single()
-      if (!payment || payment.payment_status === 'completed') return new Response(JSON.stringify({ received: true }), { status: 200 })
+      if (!payment || payment.payment_status === 'completed') return ok
 
       const baseAmount = Number(payment.base_amount)
       const platformFee = Number(payment.platform_fee)
       let apptData: any = null
       try { apptData = payment.transaction_reference ? JSON.parse(payment.transaction_reference) : null } catch {}
 
+      // Platform fee → admin wallet (both single sessions and packages)
       if (platformFee > 0) {
         const { data: aw } = await supabase.from('admin_wallet').select('id, balance').single()
         const before = Number(aw?.balance ?? 0)
@@ -65,75 +70,67 @@ Deno.serve(async (req) => {
         })
       }
 
-      let appointmentId = null
-      if (apptData?.appointment_start_time) {
-        const { data: appt } = await supabase.from('appointments').insert({
-          patient_id: payment.client_id, psychologist_id: payment.psychologist_id,
-          start_time: apptData.appointment_start_time, end_time: apptData.appointment_end_time,
-          status: 'pending', modality: 'Videollamada',
-        }).select().single()
-        if (appt) {
-          appointmentId = appt.id
-          await supabase.from('deferred_revenue').insert({
-            psychologist_id: payment.psychologist_id, appointment_id: appointmentId,
-            payment_id: payment.id, total_amount: baseAmount, deferred_amount: baseAmount, recognized_amount: 0,
+      const packageType = pi.metadata?.package_type
+      const isPackage = packageType === 'package_4' || packageType === 'package_8'
+
+      if (isPackage) {
+        // ── Package: create Stripe Subscription for auto-renewals, DB subscription, deferred_revenue, appointment ──
+        const sessionsTotal = Number(pi.metadata?.sessions_total || (packageType === 'package_4' ? 4 : 8))
+        const discountPercentage = Number(pi.metadata?.discount_percentage || 0)
+        const sessionPrice = Number(pi.metadata?.session_price || 0)
+        const feeRate = Number(payment.platform_fee_rate || 0.05)
+        const userId = payment.client_id
+        const psychologistId = payment.psychologist_id
+        const amountInCents = Math.round(Number(payment.amount) * 100)
+
+        // Create Stripe Subscription for auto-renewals (trial_end = 30 days from now)
+        let stripeSubId: string | null = null
+        try {
+          // Create product for renewal billing
+          const productRes = await fetch('https://api.stripe.com/v1/products', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${STRIPE_SECRET_KEY}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+              'name': `Paquete ${sessionsTotal} sesiones - Renovación`,
+              'metadata[psychologist_id]': psychologistId,
+            })
           })
-        }
-      }
+          const product = await productRes.json()
 
-      await supabase.from('payments').update({ payment_status: 'completed', completed_at: new Date().toISOString(), appointment_id: appointmentId }).eq('id', payment.id)
-      await supabase.from('invoices').insert({ payment_id: payment.id, client_id: payment.client_id, psychologist_id: payment.psychologist_id, amount: Number(payment.amount), invoice_number: `INV-${Date.now()}` })
-      console.log('Single session processed:', payment.id)
-    }
+          const trialEnd = Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60
+          const sp = new URLSearchParams()
+          sp.append('customer', pi.customer)
+          sp.append('items[0][price_data][currency]', 'mxn')
+          sp.append('items[0][price_data][product]', product.id)
+          sp.append('items[0][price_data][unit_amount]', amountInCents.toString())
+          sp.append('items[0][price_data][recurring][interval]', 'month')
+          sp.append('trial_end', trialEnd.toString())
+          if (pi.payment_method) sp.append('default_payment_method', pi.payment_method)
+          sp.append('metadata[supabase_user_id]', userId)
+          sp.append('metadata[psychologist_id]', psychologistId)
+          sp.append('metadata[package_type]', packageType)
+          sp.append('metadata[base_amount]', baseAmount.toString())
+          sp.append('metadata[platform_fee]', platformFee.toString())
+          sp.append('metadata[platform_fee_rate]', feeRate.toString())
+          sp.append('metadata[sessions_total]', sessionsTotal.toString())
+          sp.append('metadata[discount_percentage]', discountPercentage.toString())
+          sp.append('metadata[session_price]', sessionPrice.toString())
 
-    // ============================================================
-    // INVOICE.PAID — Subscription payments (initial + renewals)
-    // ============================================================
-    else if (event.type === 'invoice.paid') {
-      const invoice = event.data.object
-      const stripeSubId = invoice.subscription
-      if (!stripeSubId) return new Response(JSON.stringify({ received: true }), { status: 200 })
-
-      const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY')!
-      const subRes = await fetch(`https://api.stripe.com/v1/subscriptions/${stripeSubId}`, { headers: { 'Authorization': `Bearer ${STRIPE_SECRET_KEY}` } })
-      const stripeSub = await subRes.json()
-      const meta = stripeSub.metadata || {}
-
-      const userId = meta.supabase_user_id
-      const psychologistId = meta.psychologist_id
-      const packageType = meta.package_type
-      const baseAmount = Number(meta.base_amount || 0)
-      const platformFee = Number(meta.platform_fee || 0)
-      const totalAmount = baseAmount + platformFee
-      const feeRate = Number(meta.platform_fee_rate || 0.05)
-      const sessionsTotal = Number(meta.sessions_total || (packageType === 'package_4' ? 4 : 8))
-      const discountPercentage = Number(meta.discount_percentage || 0)
-      const sessionPrice = Number(meta.session_price || 0)
-
-      if (!userId || !psychologistId) {
-        console.error('Missing metadata on subscription:', stripeSubId)
-        return new Response(JSON.stringify({ received: true }), { status: 200 })
-      }
-
-      // ── First payment ──
-      if (invoice.billing_reason === 'subscription_create') {
-        const { data: payment } = await supabase.from('payments').select('*').eq('processor_payment_id', invoice.payment_intent).single()
-        if (!payment || payment.payment_status === 'completed') return new Response(JSON.stringify({ received: true }), { status: 200 })
-
-        if (platformFee > 0) {
-          const { data: aw } = await supabase.from('admin_wallet').select('id, balance').single()
-          const before = Number(aw?.balance ?? 0)
-          await supabase.from('admin_wallet').update({ balance: before + platformFee, updated_at: new Date().toISOString() }).eq('id', aw!.id)
-          await supabase.from('wallet_transactions').insert({
-            transaction_type: 'platform_fee', transaction_category: 'platform_fee', wallet_type: 'admin',
-            payment_id: payment.id, psychologist_id: psychologistId,
-            amount: platformFee, balance_before: before, balance_after: before + platformFee,
-            description: `Cargo por servicio (${(feeRate * 100).toFixed(0)}%) - ${payment.description}`,
+          const subRes = await fetch('https://api.stripe.com/v1/subscriptions', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${STRIPE_SECRET_KEY}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: sp
           })
+          const stripeSub = await subRes.json()
+          if (stripeSub.id) {
+            stripeSubId = stripeSub.id
+            console.log('Stripe subscription created:', stripeSubId)
+          } else {
+            console.error('Stripe subscription creation failed:', JSON.stringify(stripeSub))
+          }
+        } catch (subErr) {
+          console.error('Error creating Stripe subscription:', subErr)
         }
-
-        let apptData: any = null
-        try { apptData = payment.transaction_reference ? JSON.parse(payment.transaction_reference) : null } catch {}
 
         const periodStart = new Date()
         const periodEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
@@ -145,9 +142,11 @@ Deno.serve(async (req) => {
           sessions_total: sessionsTotal, sessions_used: 0, sessions_remaining: sessionsTotal,
           rollover_sessions: 0, status: 'active', auto_renew: true,
           current_period_start: periodStart.toISOString(), current_period_end: periodEnd.toISOString(),
-          next_billing_date: periodEnd.toISOString(), stripe_subscription_id: stripeSubId, stripe_invoice_id: invoice.id,
+          next_billing_date: periodEnd.toISOString(),
+          stripe_subscription_id: stripeSubId,
         }).select().single()
-        if (!sub) throw new Error('Failed to create subscription')
+
+        if (!sub) throw new Error('Failed to create DB subscription')
 
         await supabase.from('deferred_revenue').insert({
           psychologist_id: psychologistId, subscription_id: sub.id, payment_id: payment.id,
@@ -170,58 +169,124 @@ Deno.serve(async (req) => {
         }
 
         await supabase.from('psychologist_wallets').upsert({ psychologist_id: psychologistId, balance: 0 }, { onConflict: 'psychologist_id', ignoreDuplicates: true })
-        await supabase.from('payments').update({ payment_status: 'completed', completed_at: new Date().toISOString(), subscription_id: sub.id, appointment_id: appointmentId }).eq('id', payment.id)
-        await supabase.from('invoices').insert({ payment_id: payment.id, client_id: userId, psychologist_id: psychologistId, amount: totalAmount, invoice_number: `INV-${Date.now()}` })
-        console.log('Subscription created:', sub.id, 'stripe:', stripeSubId)
-      }
-
-      // ── Renewal ──
-      else if (invoice.billing_reason === 'subscription_cycle') {
-        const { data: existingSub } = await supabase.from('client_subscriptions').select('*').eq('stripe_subscription_id', stripeSubId).single()
-        if (!existingSub) return new Response(JSON.stringify({ received: true }), { status: 200 })
-
-        const { data: rolloverResult } = await supabase.rpc('calculate_rollover_sessions', { _sessions_total: existingSub.sessions_total, _sessions_used: existingSub.sessions_used })
-        const rolloverSessions = rolloverResult ?? 0
-
-        const { data: payment } = await supabase.from('payments').insert({
-          client_id: userId, psychologist_id: psychologistId,
-          base_amount: baseAmount, platform_fee_rate: feeRate, platform_fee: platformFee, amount: totalAmount,
-          payment_type: packageType, payment_status: 'completed', payment_method: 'stripe', processor: 'stripe',
-          processor_payment_id: invoice.payment_intent, subscription_id: existingSub.id,
-          description: `Renovación: ${packageType === 'package_4' ? 'Paquete 4' : 'Paquete 8'} sesiones`,
-          completed_at: new Date().toISOString(),
-        }).select().single()
-
-        if (platformFee > 0) {
-          const { data: aw } = await supabase.from('admin_wallet').select('id, balance').single()
-          const before = Number(aw?.balance ?? 0)
-          await supabase.from('admin_wallet').update({ balance: before + platformFee, updated_at: new Date().toISOString() }).eq('id', aw!.id)
-          await supabase.from('wallet_transactions').insert({
-            transaction_type: 'platform_fee', transaction_category: 'platform_fee', wallet_type: 'admin',
-            payment_id: payment?.id, psychologist_id: psychologistId,
-            amount: platformFee, balance_before: before, balance_after: before + platformFee,
-            description: `Cargo por servicio renovación (${(feeRate * 100).toFixed(0)}%)`,
-          })
-        }
-
-        await supabase.from('deferred_revenue').insert({
-          psychologist_id: psychologistId, subscription_id: existingSub.id, payment_id: payment?.id,
-          total_amount: baseAmount, deferred_amount: baseAmount, recognized_amount: 0,
-          sessions_total: sessionsTotal, sessions_recognized: 0,
-          price_per_session: Math.round((baseAmount / sessionsTotal) * 100) / 100,
+        await supabase.from('payments').update({
+          payment_status: 'completed', completed_at: new Date().toISOString(),
+          subscription_id: sub.id, appointment_id: appointmentId
+        }).eq('id', payment.id)
+        await supabase.from('invoices').insert({
+          payment_id: payment.id, client_id: userId, psychologist_id: psychologistId,
+          amount: Number(payment.amount), invoice_number: `INV-${Date.now()}`
         })
+        console.log('Package processed:', sub.id, 'stripe_sub:', stripeSubId)
 
-        const newPeriodEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-        await supabase.from('client_subscriptions').update({
-          sessions_used: 0, sessions_remaining: sessionsTotal + rolloverSessions, rollover_sessions: rolloverSessions,
-          current_period_start: new Date().toISOString(), current_period_end: newPeriodEnd.toISOString(),
-          next_billing_date: newPeriodEnd.toISOString(), stripe_invoice_id: invoice.id,
-          status: 'active', updated_at: new Date().toISOString(),
-        }).eq('id', existingSub.id)
-
-        await supabase.from('invoices').insert({ payment_id: payment?.id, client_id: userId, psychologist_id: psychologistId, amount: totalAmount, invoice_number: `INV-R-${Date.now()}` })
-        console.log('Subscription renewed:', existingSub.id, 'rollover:', rolloverSessions)
+      } else {
+        // ── Single session ──
+        let appointmentId = null
+        if (apptData?.appointment_start_time) {
+          const { data: appt } = await supabase.from('appointments').insert({
+            patient_id: payment.client_id, psychologist_id: payment.psychologist_id,
+            start_time: apptData.appointment_start_time, end_time: apptData.appointment_end_time,
+            status: 'pending', modality: 'Videollamada',
+          }).select().single()
+          if (appt) {
+            appointmentId = appt.id
+            await supabase.from('deferred_revenue').insert({
+              psychologist_id: payment.psychologist_id, appointment_id: appointmentId,
+              payment_id: payment.id, total_amount: baseAmount, deferred_amount: baseAmount, recognized_amount: 0,
+            })
+          }
+        }
+        await supabase.from('payments').update({ payment_status: 'completed', completed_at: new Date().toISOString(), appointment_id: appointmentId }).eq('id', payment.id)
+        await supabase.from('invoices').insert({
+          payment_id: payment.id, client_id: payment.client_id, psychologist_id: payment.psychologist_id,
+          amount: Number(payment.amount), invoice_number: `INV-${Date.now()}`
+        })
+        console.log('Single session processed:', payment.id)
       }
+    }
+
+    // ============================================================
+    // INVOICE.PAID — Subscription RENEWALS only (billing_reason = subscription_cycle)
+    // ============================================================
+    else if (event.type === 'invoice.paid') {
+      const invoice = event.data.object
+      // Only process renewals — first payment is handled by payment_intent.succeeded
+      if (invoice.billing_reason !== 'subscription_cycle') return ok
+
+      const stripeSubId = invoice.subscription
+      if (!stripeSubId) return ok
+
+      const subRes = await fetch(`https://api.stripe.com/v1/subscriptions/${stripeSubId}`, {
+        headers: { 'Authorization': `Bearer ${STRIPE_SECRET_KEY}` }
+      })
+      const stripeSub = await subRes.json()
+      const meta = stripeSub.metadata || {}
+
+      const userId = meta.supabase_user_id
+      const psychologistId = meta.psychologist_id
+      const packageType = meta.package_type
+      const baseAmount = Number(meta.base_amount || 0)
+      const platformFee = Number(meta.platform_fee || 0)
+      const totalAmount = baseAmount + platformFee
+      const feeRate = Number(meta.platform_fee_rate || 0.05)
+      const sessionsTotal = Number(meta.sessions_total || (packageType === 'package_4' ? 4 : 8))
+      const discountPercentage = Number(meta.discount_percentage || 0)
+      const sessionPrice = Number(meta.session_price || 0)
+
+      if (!userId || !psychologistId) {
+        console.error('Missing metadata on subscription:', stripeSubId)
+        return ok
+      }
+
+      const { data: existingSub } = await supabase.from('client_subscriptions').select('*').eq('stripe_subscription_id', stripeSubId).single()
+      if (!existingSub) return ok
+
+      const { data: rolloverResult } = await supabase.rpc('calculate_rollover_sessions', {
+        _sessions_total: existingSub.sessions_total, _sessions_used: existingSub.sessions_used
+      })
+      const rolloverSessions = rolloverResult ?? 0
+
+      const { data: payment } = await supabase.from('payments').insert({
+        client_id: userId, psychologist_id: psychologistId,
+        base_amount: baseAmount, platform_fee_rate: feeRate, platform_fee: platformFee, amount: totalAmount,
+        payment_type: packageType, payment_status: 'completed', payment_method: 'stripe', processor: 'stripe',
+        processor_payment_id: invoice.payment_intent, subscription_id: existingSub.id,
+        description: `Renovación: ${packageType === 'package_4' ? 'Paquete 4' : 'Paquete 8'} sesiones`,
+        completed_at: new Date().toISOString(),
+      }).select().single()
+
+      if (platformFee > 0) {
+        const { data: aw } = await supabase.from('admin_wallet').select('id, balance').single()
+        const before = Number(aw?.balance ?? 0)
+        await supabase.from('admin_wallet').update({ balance: before + platformFee, updated_at: new Date().toISOString() }).eq('id', aw!.id)
+        await supabase.from('wallet_transactions').insert({
+          transaction_type: 'platform_fee', transaction_category: 'platform_fee', wallet_type: 'admin',
+          payment_id: payment?.id, psychologist_id: psychologistId,
+          amount: platformFee, balance_before: before, balance_after: before + platformFee,
+          description: `Cargo por servicio renovación (${(feeRate * 100).toFixed(0)}%)`,
+        })
+      }
+
+      await supabase.from('deferred_revenue').insert({
+        psychologist_id: psychologistId, subscription_id: existingSub.id, payment_id: payment?.id,
+        total_amount: baseAmount, deferred_amount: baseAmount, recognized_amount: 0,
+        sessions_total: sessionsTotal, sessions_recognized: 0,
+        price_per_session: Math.round((baseAmount / sessionsTotal) * 100) / 100,
+      })
+
+      const newPeriodEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+      await supabase.from('client_subscriptions').update({
+        sessions_used: 0, sessions_remaining: sessionsTotal + rolloverSessions, rollover_sessions: rolloverSessions,
+        current_period_start: new Date().toISOString(), current_period_end: newPeriodEnd.toISOString(),
+        next_billing_date: newPeriodEnd.toISOString(), stripe_invoice_id: invoice.id,
+        status: 'active', updated_at: new Date().toISOString(),
+      }).eq('id', existingSub.id)
+
+      await supabase.from('invoices').insert({
+        payment_id: payment?.id, client_id: userId, psychologist_id: psychologistId,
+        amount: totalAmount, invoice_number: `INV-R-${Date.now()}`
+      })
+      console.log('Subscription renewed:', existingSub.id, 'rollover:', rolloverSessions)
     }
 
     else if (event.type === 'invoice.payment_failed') {
@@ -242,7 +307,7 @@ Deno.serve(async (req) => {
       if (!pi.invoice) await supabase.from('payments').update({ payment_status: 'failed' }).eq('processor_payment_id', pi.id)
     }
 
-    return new Response(JSON.stringify({ received: true }), { headers: { 'Content-Type': 'application/json' }, status: 200 })
+    return ok
   } catch (error) {
     console.error('Webhook error:', error)
     return new Response(JSON.stringify({ received: true }), { status: 200 })
