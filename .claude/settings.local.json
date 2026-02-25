@@ -19,7 +19,8 @@
       "Bash(grep:*)",
       "mcp__claude_ai_Supabase__get_publishable_keys",
       "Bash(find:*)",
-      "mcp__claude_ai_Supabase__list_edge_functions"
+      "mcp__claude_ai_Supabase__list_edge_functions",
+      "mcp__claude_ai_Supabase__list_tables"
     ]
   }
 }
