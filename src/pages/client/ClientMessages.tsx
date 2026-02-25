@@ -356,7 +356,7 @@ export default function ClientMessages() {
         </Card>
 
         {/* Chat area */}
-        <Card className="md:col-span-2 min-h-[600px] flex flex-col">
+        <Card className="md:col-span-2 h-[600px] flex flex-col overflow-hidden">
           {selectedConversation ? (
             <>
               <CardHeader className="border-b">
@@ -373,7 +373,7 @@ export default function ClientMessages() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="flex-1 flex flex-col p-0">
+              <CardContent className="flex-1 flex flex-col p-0 min-h-0">
                 {/* Emergency warning */}
                 <div className="bg-destructive/10 border-b border-destructive/20 p-4">
                   <p className="text-sm text-destructive font-medium">

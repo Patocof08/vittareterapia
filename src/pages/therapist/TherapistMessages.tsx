@@ -390,9 +390,9 @@ export default function TherapistMessages() {
       </Card>
 
       {/* Messaging interface */}
-      <div className="grid lg:grid-cols-3 gap-6">
+      <div className="grid lg:grid-cols-3 gap-6 h-[600px]">
         {/* Conversations list */}
-        <Card className="lg:col-span-1 flex flex-col h-[600px]">
+        <Card className="lg:col-span-1 flex flex-col">
           <CardHeader>
             <CardTitle>Conversaciones</CardTitle>
           </CardHeader>
@@ -446,7 +446,7 @@ export default function TherapistMessages() {
         </Card>
 
         {/* Chat area */}
-        <Card className="lg:col-span-2 flex flex-col h-[600px] overflow-hidden">
+        <Card className="lg:col-span-2 flex flex-col overflow-hidden">
           <CardHeader className="border-b flex-shrink-0">
             <CardTitle className="flex items-center gap-3">
               {selectedConversation ? (
