@@ -126,7 +126,7 @@ export default function TherapistSessions() {
     if (statusFilter === "todas") {
       matchesStatus = true;
     } else if (statusFilter === "pendiente") {
-      matchesStatus = session.status === "pending";
+      matchesStatus = session.status === "pending" || session.status === "confirmed";
     } else if (statusFilter === "completada") {
       matchesStatus = session.status === "completed";
     } else if (statusFilter === "cancelada") {
@@ -223,7 +223,9 @@ export default function TherapistSessions() {
                   </div>
                   <span
                     className={`px-3 py-1 rounded text-sm font-medium ${
-                      session.status === "pending"
+                      session.status === "confirmed"
+                        ? "bg-primary/10 text-primary"
+                        : session.status === "pending"
                         ? "bg-secondary/10 text-secondary"
                         : session.status === "completed"
                         ? "bg-accent text-accent-foreground"
@@ -234,7 +236,8 @@ export default function TherapistSessions() {
                         : "bg-muted text-muted-foreground"
                     }`}
                   >
-                    {session.status === "pending" ? "pendiente" :
+                    {session.status === "confirmed" ? "confirmada" :
+                     session.status === "pending" ? "pendiente" :
                      session.status === "completed" ? "completada" :
                      session.status === "cancelled" ? "cancelada" :
                      session.status === "no_show" ? "sin asistencia" : session.status}
@@ -255,7 +258,7 @@ export default function TherapistSessions() {
                   )}
 
                   <div className="flex flex-wrap gap-2">
-                    {session.video_link && session.status === "pending" && (
+                    {session.video_link && (session.status === "pending" || session.status === "confirmed") && (
                       <Button
                         onClick={() =>
                           handleStartSession(session.id, session.video_link)
@@ -265,7 +268,7 @@ export default function TherapistSessions() {
                         Iniciar videollamada
                       </Button>
                     )}
-                    {session.status === "pending" && (
+                    {(session.status === "pending" || session.status === "confirmed") && (
                       <Button
                         variant="outline"
                         onClick={() => handleCompleteSession(session.id)}
