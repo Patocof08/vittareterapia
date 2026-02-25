@@ -201,29 +201,6 @@ const TherapistProfile = () => {
       const endTime = new Date(startTime);
       endTime.setMinutes(endTime.getMinutes() + (pricing?.session_duration_minutes || 50));
 
-      const paymentTypeMap = {
-        single: "single_session",
-        package_4: "package_4",
-        package_8: "package_8",
-      } as const;
-
-      const baseAmountMap = {
-        single: pricing?.session_price || 0,
-        package_4: pricing?.package_4_price || 0,
-        package_8: pricing?.package_8_price || 0,
-      };
-
-      const sessionInfo: SessionInfo = {
-        therapistName: therapist ? `${therapist.first_name} ${therapist.last_name}` : "Psicólogo",
-        therapistSpecialty: therapist?.therapeutic_approaches?.[0] ?? undefined,
-        startTime,
-        durationMinutes: pricing?.session_duration_minutes || 50,
-        sessionType: paymentTypeMap[type],
-        baseAmount: baseAmountMap[type],
-        feeRate,
-      };
-      setPendingSessionInfo(sessionInfo);
-
       const { data: { session } } = await supabase.auth.getSession();
       const jwt = session?.access_token;
       if (!jwt) throw new Error("No se pudo obtener la sesión de usuario");
@@ -231,32 +208,84 @@ const TherapistProfile = () => {
       const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
       const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/create-payment-intent`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${jwt}`,
-          "apikey": SUPABASE_KEY,
-        },
-        body: JSON.stringify({
-          psychologist_id: id,
-          payment_type: paymentTypeMap[type],
-          base_amount: baseAmountMap[type],
-          appointment_data: {
-            start_time: startTime.toISOString(),
-            end_time: endTime.toISOString(),
+      if (type === "single") {
+        // Single session → create-payment-intent
+        const sessionInfo: SessionInfo = {
+          therapistName: therapist ? `${therapist.first_name} ${therapist.last_name}` : "Psicólogo",
+          therapistSpecialty: therapist?.therapeutic_approaches?.[0] ?? undefined,
+          startTime,
+          durationMinutes: pricing?.session_duration_minutes || 50,
+          sessionType: "single_session",
+          baseAmount: pricing?.session_price || 0,
+          feeRate,
+        };
+        setPendingSessionInfo(sessionInfo);
+
+        const res = await fetch(`${SUPABASE_URL}/functions/v1/create-payment-intent`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${jwt}`,
+            "apikey": SUPABASE_KEY,
           },
-        }),
-      });
+          body: JSON.stringify({
+            psychologist_id: id,
+            payment_type: "single_session",
+            base_amount: pricing?.session_price || 0,
+            appointment_data: {
+              start_time: startTime.toISOString(),
+              end_time: endTime.toISOString(),
+            },
+          }),
+        });
 
-      const data = await res.json();
-      if (!res.ok || data.error) {
-        throw new Error(data.error || "Error al iniciar el pago");
+        const data = await res.json();
+        if (!res.ok || data.error) throw new Error(data.error || "Error al iniciar el pago");
+
+        setClientSecret(data.clientSecret);
+        setShowBookingDialog(false);
+        setShowPaymentForm(true);
+      } else {
+        // Package → create-subscription
+        const res = await fetch(`${SUPABASE_URL}/functions/v1/create-subscription`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${jwt}`,
+            "apikey": SUPABASE_KEY,
+          },
+          body: JSON.stringify({
+            psychologist_id: id,
+            package_type: type,
+            appointment_data: {
+              start_time: startTime.toISOString(),
+              end_time: endTime.toISOString(),
+            },
+          }),
+        });
+
+        const data = await res.json();
+        if (!res.ok || data.error) throw new Error(data.error || "Error al iniciar el pago");
+
+        const sessionInfo: SessionInfo = {
+          therapistName: therapist ? `${therapist.first_name} ${therapist.last_name}` : "Psicólogo",
+          therapistSpecialty: therapist?.therapeutic_approaches?.[0] ?? undefined,
+          startTime,
+          durationMinutes: pricing?.session_duration_minutes || 50,
+          sessionType: type,
+          baseAmount: data.breakdown.base_amount,
+          feeRate,
+          isSubscription: true,
+          sessionsTotal: data.breakdown.sessions_total,
+          discountPercentage: data.breakdown.discount_percentage,
+          monthlyAmount: data.breakdown.total,
+        };
+        setPendingSessionInfo(sessionInfo);
+
+        setClientSecret(data.clientSecret);
+        setShowBookingDialog(false);
+        setShowPaymentForm(true);
       }
-
-      setClientSecret(data.clientSecret);
-      setShowBookingDialog(false);
-      setShowPaymentForm(true);
     } catch (error: any) {
       console.error("Error initiating payment:", error);
       toast.error(error.message || "Error al iniciar el pago");

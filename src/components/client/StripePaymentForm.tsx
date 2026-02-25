@@ -58,6 +58,11 @@ export interface SessionInfo {
   sessionType: 'single_session' | 'package_4' | 'package_8';
   baseAmount: number;
   feeRate: number;
+  // Subscription-specific fields
+  isSubscription?: boolean;
+  sessionsTotal?: number;
+  discountPercentage?: number;
+  monthlyAmount?: number; // total with fee, used for renewal notice
 }
 
 const SESSION_LABELS: Record<string, string> = {
@@ -82,6 +87,12 @@ function CheckoutForm({ sessionInfo, onSuccess, onCancel }: CheckoutFormProps) {
   const fee    = sessionInfo ? Math.round(sessionInfo.baseAmount * sessionInfo.feeRate * 100) / 100 : 0;
   const total  = sessionInfo ? sessionInfo.baseAmount + fee : 0;
   const initial = sessionInfo?.therapistName.trim().split(' ').pop()?.[0]?.toUpperCase() ?? 'T';
+
+  // Subscription discount display
+  const originalTotal = sessionInfo?.isSubscription && sessionInfo.discountPercentage
+    ? Math.round(sessionInfo.baseAmount / (1 - sessionInfo.discountPercentage / 100) * 100) / 100
+    : null;
+  const discountAmount = originalTotal ? Math.round((originalTotal - sessionInfo!.baseAmount) * 100) / 100 : 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -172,13 +183,52 @@ function CheckoutForm({ sessionInfo, onSuccess, onCancel }: CheckoutFormProps) {
 
         {/* ── Price breakdown ── */}
         {sessionInfo && (
-          <div style={{ marginBottom: '24px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid #f3f4f6' }}>
-              <span style={{ fontSize: '14px', color: '#374151' }}>Sesión de psicología</span>
-              <span style={{ fontSize: '14px', fontWeight: 500, color: '#1a1a1a' }}>
-                ${sessionInfo.baseAmount.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
-              </span>
-            </div>
+          <div style={{ marginBottom: '20px' }}>
+            {/* Subscription: show original price with strikethrough */}
+            {sessionInfo.isSubscription && originalTotal ? (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid #f3f4f6' }}>
+                <span style={{ fontSize: '14px', color: '#374151' }}>
+                  Paquete {sessionInfo.sessionsTotal} sesiones
+                </span>
+                <span style={{ fontSize: '14px', fontWeight: 500, color: '#9ca3af', textDecoration: 'line-through' }}>
+                  ${originalTotal.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                </span>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid #f3f4f6' }}>
+                <span style={{ fontSize: '14px', color: '#374151' }}>Sesión de psicología</span>
+                <span style={{ fontSize: '14px', fontWeight: 500, color: '#1a1a1a' }}>
+                  ${sessionInfo.baseAmount.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                </span>
+              </div>
+            )}
+
+            {/* Subscription: discount line */}
+            {sessionInfo.isSubscription && sessionInfo.discountPercentage && discountAmount > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid #f3f4f6' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontSize: '14px', color: '#374151' }}>Descuento paquete</span>
+                  <span style={{ fontSize: '11px', color: '#065f46', background: '#d1fae5', padding: '2px 6px', borderRadius: '4px', fontWeight: 600 }}>
+                    -{sessionInfo.discountPercentage}%
+                  </span>
+                </div>
+                <span style={{ fontSize: '14px', fontWeight: 500, color: '#059669' }}>
+                  -${discountAmount.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                </span>
+              </div>
+            )}
+
+            {/* Subscription: discounted base */}
+            {sessionInfo.isSubscription && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid #f3f4f6' }}>
+                <span style={{ fontSize: '14px', color: '#374151' }}>Subtotal</span>
+                <span style={{ fontSize: '14px', fontWeight: 500, color: '#1a1a1a' }}>
+                  ${sessionInfo.baseAmount.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                </span>
+              </div>
+            )}
+
+            {/* Fee line */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid #f3f4f6' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <span style={{ fontSize: '14px', color: '#374151' }}>Cargo por servicio</span>
@@ -190,12 +240,29 @@ function CheckoutForm({ sessionInfo, onSuccess, onCancel }: CheckoutFormProps) {
                 ${fee.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
               </span>
             </div>
+
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 0 0' }}>
               <span style={{ fontSize: '15px', fontWeight: 600, color: '#1a1a1a' }}>Total a pagar</span>
               <span style={{ fontSize: '18px', fontWeight: 700, color: '#065f46' }}>
                 ${total.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
               </span>
             </div>
+
+            {/* Auto-renewal notice for subscriptions */}
+            {sessionInfo.isSubscription && (
+              <div style={{
+                marginTop: '14px', padding: '10px 14px',
+                background: '#f0fdf4', border: '1px solid #bbf7d0',
+                borderRadius: '10px', display: 'flex', alignItems: 'flex-start', gap: '8px',
+              }}>
+                <span style={{ fontSize: '16px', flexShrink: 0, marginTop: '1px' }}>⟳</span>
+                <p style={{ margin: 0, fontSize: '12px', color: '#065f46', lineHeight: 1.5 }}>
+                  <strong>Renovación automática mensual</strong> — Se cobrará $
+                  {(sessionInfo.monthlyAmount ?? total).toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN/mes.
+                  Cancela cuando quieras.
+                </p>
+              </div>
+            )}
           </div>
         )}
 

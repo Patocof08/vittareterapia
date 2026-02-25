@@ -133,15 +133,25 @@ export default function ClientSubscriptions() {
 
   const handleCancelSubscription = async (subscriptionId: string) => {
     try {
-      const { error } = await supabase
-        .from('client_subscriptions')
-        .update({
-          auto_renew: false,
-          cancelled_at: new Date().toISOString()
-        })
-        .eq('id', subscriptionId);
+      const { data: { session } } = await supabase.auth.getSession();
+      const jwt = session?.access_token;
+      if (!jwt) throw new Error("No se pudo obtener la sesión de usuario");
 
-      if (error) throw error;
+      const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+      const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/cancel-subscription`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${jwt}`,
+          "apikey": SUPABASE_KEY,
+        },
+        body: JSON.stringify({ subscription_id: subscriptionId }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || data.error) throw new Error(data.error || "Error al cancelar la suscripción");
 
       toast({
         title: "Suscripción cancelada",
@@ -163,15 +173,25 @@ export default function ClientSubscriptions() {
 
   const handleReactivateSubscription = async (subscriptionId: string) => {
     try {
-      const { error } = await supabase
-        .from('client_subscriptions')
-        .update({
-          auto_renew: true,
-          cancelled_at: null
-        })
-        .eq('id', subscriptionId);
+      const { data: { session } } = await supabase.auth.getSession();
+      const jwt = session?.access_token;
+      if (!jwt) throw new Error("No se pudo obtener la sesión de usuario");
 
-      if (error) throw error;
+      const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+      const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/reactivate-subscription`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${jwt}`,
+          "apikey": SUPABASE_KEY,
+        },
+        body: JSON.stringify({ subscription_id: subscriptionId }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || data.error) throw new Error(data.error || "Error al reactivar la suscripción");
 
       toast({
         title: "Suscripción reactivada",
@@ -367,6 +387,24 @@ export default function ClientSubscriptions() {
                       </div>
 
                     </div>
+
+                    {/* Próximo cobro */}
+                    {subscription.auto_renew && subscription.next_billing_date && (
+                      <div className="mt-4 p-3 bg-muted rounded-lg flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Calendar className="w-4 h-4" />
+                          <span>Próximo cobro</span>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-medium">
+                            ${calculatePrice(subscription).discounted.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {format(new Date(subscription.next_billing_date), 'dd MMM yyyy', { locale: es })}
+                          </p>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Información de Rollover */}
                     <div className="mt-6 p-4 bg-primary/10 rounded-lg">
