@@ -223,9 +223,7 @@ export default function TherapistSessions() {
                   </div>
                   <span
                     className={`px-3 py-1 rounded text-sm font-medium ${
-                      session.status === "confirmed"
-                        ? "bg-primary/10 text-primary"
-                        : session.status === "pending"
+                      (session.status === "pending" || session.status === "confirmed")
                         ? "bg-secondary/10 text-secondary"
                         : session.status === "completed"
                         ? "bg-accent text-accent-foreground"
@@ -236,8 +234,7 @@ export default function TherapistSessions() {
                         : "bg-muted text-muted-foreground"
                     }`}
                   >
-                    {session.status === "confirmed" ? "confirmada" :
-                     session.status === "pending" ? "pendiente" :
+                    {(session.status === "pending" || session.status === "confirmed") ? "pendiente" :
                      session.status === "completed" ? "completada" :
                      session.status === "cancelled" ? "cancelada" :
                      session.status === "no_show" ? "sin asistencia" : session.status}
