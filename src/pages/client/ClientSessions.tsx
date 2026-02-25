@@ -230,6 +230,7 @@ export default function ClientSessions() {
   const getStatusBadge = (status: string) => {
     const variants: Record<string, { label: string; className: string }> = {
       pending: { label: "Pendiente", className: "bg-yellow-50 text-yellow-700 border-yellow-200" },
+      confirmed: { label: "Pendiente", className: "bg-yellow-50 text-yellow-700 border-yellow-200" },
       completed: { label: "Completada", className: "bg-green-50 text-green-700 border-green-200" },
       cancelled: { label: "Cancelada", className: "bg-red-50 text-red-700 border-red-200" },
       no_show: { label: "Sin asistencia", className: "bg-gray-50 text-gray-700 border-gray-200" },
@@ -294,7 +295,7 @@ export default function ClientSessions() {
                     </div>
                     <div className="flex flex-col items-end gap-2">
                       {getStatusBadge(session.status)}
-                      {session.status === "pending" && (
+                      {(session.status === "pending" || session.status === "confirmed") && (
                         <Button
                           variant="ghost"
                           size="sm"
