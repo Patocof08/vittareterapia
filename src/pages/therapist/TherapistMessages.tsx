@@ -446,7 +446,7 @@ export default function TherapistMessages() {
         </Card>
 
         {/* Chat area */}
-        <Card className="lg:col-span-2 flex flex-col overflow-hidden">
+        <Card className="lg:col-span-2 flex flex-col h-[600px] overflow-hidden">
           <CardHeader className="border-b flex-shrink-0">
             <CardTitle className="flex items-center gap-3">
               {selectedConversation ? (
