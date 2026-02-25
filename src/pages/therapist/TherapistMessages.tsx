@@ -390,9 +390,9 @@ export default function TherapistMessages() {
       </Card>
 
       {/* Messaging interface */}
-      <div className="grid lg:grid-cols-3 gap-6 h-[600px]">
+      <div className="grid lg:grid-cols-3 gap-6">
         {/* Conversations list */}
-        <Card className="lg:col-span-1 flex flex-col">
+        <Card className="lg:col-span-1 flex flex-col h-[600px]">
           <CardHeader>
             <CardTitle>Conversaciones</CardTitle>
           </CardHeader>
