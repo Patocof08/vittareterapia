@@ -386,54 +386,52 @@ export default function ClientMessages() {
                 </div>
 
                 {/* Messages area */}
-                <div className="flex-1 overflow-hidden">
-                  <ScrollArea className="h-full p-4">
-                    {messages.length === 0 ? (
-                      <div className="flex items-center justify-center h-full min-h-[300px]">
-                        <div className="text-center">
-                          <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-50 text-muted-foreground" />
-                          <p className="text-muted-foreground">No hay mensajes aún</p>
-                          <p className="text-sm mt-1 text-muted-foreground">
-                            Inicia una conversación con tu psicólogo
-                          </p>
-                        </div>
+                <div className="flex-1 overflow-y-auto p-4 min-h-0">
+                  {messages.length === 0 ? (
+                    <div className="flex items-center justify-center h-full min-h-[200px]">
+                      <div className="text-center">
+                        <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-50 text-muted-foreground" />
+                        <p className="text-muted-foreground">No hay mensajes aún</p>
+                        <p className="text-sm mt-1 text-muted-foreground">
+                          Inicia una conversación con tu psicólogo
+                        </p>
                       </div>
-                    ) : (
-                      <div className="space-y-4">
-                        {messages.map((message) => {
-                          const isClient = message.sender_id === user?.id;
-                          return (
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {messages.map((message) => {
+                        const isClient = message.sender_id === user?.id;
+                        return (
+                          <div
+                            key={message.id}
+                            className={`flex ${isClient ? "justify-end" : "justify-start"}`}
+                          >
                             <div
-                              key={message.id}
-                              className={`flex ${isClient ? "justify-end" : "justify-start"}`}
+                              className={`max-w-[70%] p-3 rounded-lg ${
+                                isClient
+                                  ? "bg-primary text-primary-foreground"
+                                  : "bg-accent"
+                              }`}
                             >
-                              <div
-                                className={`max-w-[70%] p-3 rounded-lg ${
+                              <p className="text-sm whitespace-pre-wrap break-words">
+                                {message.content}
+                              </p>
+                              <p
+                                className={`text-xs mt-1 ${
                                   isClient
-                                    ? "bg-primary text-primary-foreground"
-                                    : "bg-accent"
+                                    ? "text-primary-foreground/70"
+                                    : "text-muted-foreground"
                                 }`}
                               >
-                                <p className="text-sm whitespace-pre-wrap break-words">
-                                  {message.content}
-                                </p>
-                                <p
-                                  className={`text-xs mt-1 ${
-                                    isClient
-                                      ? "text-primary-foreground/70"
-                                      : "text-muted-foreground"
-                                  }`}
-                                >
-                                  {format(new Date(message.created_at), "HH:mm", { locale: es })}
-                                </p>
-                              </div>
+                                {format(new Date(message.created_at), "HH:mm", { locale: es })}
+                              </p>
                             </div>
-                          );
-                        })}
-                        <div ref={messagesEndRef} />
-                      </div>
-                    )}
-                  </ScrollArea>
+                          </div>
+                        );
+                      })}
+                      <div ref={messagesEndRef} />
+                    </div>
+                  )}
                 </div>
 
                 {/* Input area */}
