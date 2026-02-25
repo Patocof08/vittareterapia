@@ -83,13 +83,34 @@ Deno.serve(async (req) => {
       throw financialErr
     }
 
-    // STEP 2: Delete operational subscription data (deferred_revenue already zeroed by step 1)
+    // STEP 2: Cancel Stripe subscriptions and delete operational subscription data
     const { data: clientSubs } = await supabaseAdmin
       .from('client_subscriptions')
-      .select('id')
+      .select('id, stripe_subscription_id')
       .eq('client_id', userId)
 
     const clientSubIds = (clientSubs ?? []).map((s: any) => s.id)
+
+    // Cancel active Stripe subscriptions before removing DB records
+    const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY')
+    if (STRIPE_SECRET_KEY) {
+      const stripeSubIds = (clientSubs ?? [])
+        .map((s: any) => s.stripe_subscription_id)
+        .filter(Boolean)
+
+      for (const stripeSubId of stripeSubIds) {
+        try {
+          await fetch(`https://api.stripe.com/v1/subscriptions/${stripeSubId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${STRIPE_SECRET_KEY}` },
+          })
+          console.log('Stripe subscription cancelled:', stripeSubId)
+        } catch (stripeErr) {
+          console.error('Failed to cancel Stripe subscription:', stripeSubId, stripeErr)
+        }
+      }
+    }
+
     if (clientSubIds.length) {
       await supabaseAdmin.from('subscription_history').delete().in('subscription_id', clientSubIds)
       await supabaseAdmin.from('deferred_revenue').delete().in('subscription_id', clientSubIds)
