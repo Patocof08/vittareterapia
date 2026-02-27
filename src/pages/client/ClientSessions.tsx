@@ -47,8 +47,8 @@ export default function ClientSessions() {
     if (!user) return;
     setLoading(true);
     try {
-      // @ts-ignore - Types will regenerate automatically
-      const now = new Date().toISOString();
+      // A session moves to history 1 hour after its start_time
+      const historyThreshold = new Date(Date.now() - 60 * 60 * 1000).toISOString();
 
       // @ts-ignore - Types will regenerate automatically
       const { data, error } = await supabase
@@ -68,9 +68,9 @@ export default function ClientSessions() {
       if (error) throw error;
 
       // @ts-ignore - Types will regenerate automatically
-      const upcoming = data?.filter((a) => a.start_time >= now && a.status !== "cancelled") || [];
+      const upcoming = data?.filter((a) => a.start_time >= historyThreshold && a.status !== "cancelled") || [];
       // @ts-ignore - Types will regenerate automatically
-      const past = data?.filter((a) => a.start_time < now || a.status === "completed" || a.status === "cancelled") || [];
+      const past = data?.filter((a) => a.start_time < historyThreshold || a.status === "completed" || a.status === "cancelled") || [];
 
       setUpcomingSessions(upcoming);
       setPastSessions(past);
