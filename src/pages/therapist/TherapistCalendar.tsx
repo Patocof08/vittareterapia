@@ -1346,17 +1346,19 @@ export default function TherapistCalendar() {
 
       {/* ─── Grid ──────────────────────────────────────────────────────── */}
       <div
-        style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, overflow: "hidden" }}
+        ref={scrollRef}
+        style={{ flex: 1, minHeight: 0, overflowY: "auto" }}
       >
-        {/* Fixed header row: corner + day headers — never scrolls */}
+        {/* Sticky header row — position:sticky inside the scroll container,
+            so it shares the exact same width as the scrollable content below */}
         <div
           style={{
+            position: "sticky",
+            top: 0,
+            zIndex: 20,
             display: "flex",
-            flexShrink: 0,
             background: "white",
             borderBottom: "1px solid #e8ecf0",
-            position: "relative",
-            zIndex: 10,
           }}
         >
           {/* Corner — matches gutter width exactly */}
@@ -1491,12 +1493,8 @@ export default function TherapistCalendar() {
           </div>
         </div>
 
-        {/* Unified scroll area — gutter labels + event grid scroll together */}
-        <div
-          ref={scrollRef}
-          style={{ flex: 1, overflow: "auto" }}
-        >
-          <div style={{ display: "flex" }}>
+        {/* Gutter + event grid — both scroll together inside the same scrollRef */}
+        <div style={{ display: "flex" }}>
             {/* Time gutter — scrolls with the grid, always aligned */}
             <div
               style={{
@@ -1600,7 +1598,6 @@ export default function TherapistCalendar() {
                 );
               })}
             </div>
-          </div>
         </div>
       </div>
 
