@@ -55,16 +55,23 @@ export default function VideoCall({ appointmentId, onLeave, onRoleDetected }: Vi
         return
       }
 
-      // Get session token explicitly to avoid race condition with publishable key
+      // Get session token explicitly
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) throw new Error('Sesión no encontrada, por favor inicia sesión de nuevo')
 
-      // Call edge function
-      const { data, error: fnError } = await supabase.functions.invoke('create-video-room', {
-        body: { appointment_id: appointmentId },
-        headers: { Authorization: `Bearer ${session.access_token}` },
+      // Use fetch directly to get the real error message if something fails
+      const fnUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-video-room`
+      const fnRes = await fetch(fnUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+        body: JSON.stringify({ appointment_id: appointmentId }),
       })
-      if (fnError) throw fnError
+      const data = await fnRes.json()
+      if (!fnRes.ok) throw new Error(data?.error || `Error ${fnRes.status}`)
 
       // Notify parent of role
       onRoleDetected?.(
