@@ -47,14 +47,14 @@ function pad2(n: number) {
 // ─── Event configs ────────────────────────────────────────────────────────────
 const EVENT_CONFIGS: Record<EventType, { bg: string; border: string; text: string }> = {
   vittare: {
-    bg: "linear-gradient(135deg, #059669 0%, #10b981 100%)",
-    border: "#047857",
-    text: "#ffffff",
+    bg: "linear-gradient(135deg, #065f46 0%, #047857 100%)",
+    border: "#064e3b",
+    text: "#ecfdf5",
   },
   external: {
-    bg: "linear-gradient(135deg, #2563eb 0%, #3b82f6 100%)",
-    border: "#1d4ed8",
-    text: "#ffffff",
+    bg: "linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 100%)",
+    border: "#172554",
+    text: "#eff6ff",
   },
   blocked: {
     bg: "repeating-linear-gradient(135deg, #f1f5f9, #f1f5f9 4px, #e2e8f0 4px, #e2e8f0 8px)",
@@ -1362,7 +1362,7 @@ export default function TherapistCalendar() {
             width: "52px",
             flexShrink: 0,
             background: "white",
-            borderRight: "1px solid #e8ecf0",
+            borderRight: "1px solid #cbd5e1",
             display: "flex",
             flexDirection: "column",
           }}
@@ -1383,23 +1383,25 @@ export default function TherapistCalendar() {
             <div
               style={{ height: `${HOURS.length * HOUR_HEIGHT}px` }}
             >
-              {HOURS.map((h) => (
+              {HOURS.map((h, i) => (
                 <div
                   key={h}
                   style={{
                     height: `${HOUR_HEIGHT}px`,
-                    display: "flex",
-                    alignItems: "flex-start",
-                    justifyContent: "center",
-                    paddingTop: "2px",
+                    position: "relative",
                   }}
                 >
                   <span
                     style={{
-                      fontSize: "11px",
+                      position: "absolute",
+                      top: i === 0 ? "3px" : "-8px",
+                      right: "8px",
+                      fontSize: "10px",
                       color: "#94a3b8",
                       fontWeight: 500,
-                      transform: "translateY(-6px)",
+                      lineHeight: 1,
+                      userSelect: "none",
+                      whiteSpace: "nowrap",
                     }}
                   >
                     {`${pad2(h)}:00`}
@@ -1467,7 +1469,7 @@ export default function TherapistCalendar() {
                     padding: "4px",
                     cursor: view === "week" ? "pointer" : "default",
                     borderRight:
-                      view === "week" ? "1px solid #f1f5f9" : "none",
+                      view === "week" ? "1px solid #dde3ea" : "none",
                     background: today ? "#f0fdf4" : "white",
                     transition: "background 0.15s ease",
                   }}
@@ -1572,7 +1574,7 @@ export default function TherapistCalendar() {
                     style={{
                       position: "relative",
                       borderRight:
-                        view === "week" ? "1px solid #f1f5f9" : "none",
+                        view === "week" ? "1px solid #dde3ea" : "none",
                       background: today
                         ? "rgba(16,185,129,0.02)"
                         : "transparent",
@@ -1591,7 +1593,7 @@ export default function TherapistCalendar() {
                         }
                         style={{
                           height: `${HOUR_HEIGHT}px`,
-                          borderBottom: "1px solid #f1f5f9",
+                          borderTop: "1px solid #dde3ea",
                           cursor: "pointer",
                         }}
                         onMouseEnter={(e) => {
