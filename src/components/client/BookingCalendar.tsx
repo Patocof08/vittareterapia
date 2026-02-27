@@ -92,7 +92,10 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
       // Generate time slots
       const slots: string[] = [];
       const now = new Date();
-      const minimumBookingTime = addMinutes(now, 6 * 60); // 6 hours from now
+      // patocof3@gmail.com puede agendar en cualquier horario (cuenta de pruebas)
+      const minimumBookingTime = user?.email === 'patocof3@gmail.com'
+        ? new Date(0)
+        : addMinutes(now, 6 * 60); // 6 hours from now
 
       if (availability) {
         availability.forEach((block) => {

@@ -85,34 +85,6 @@ export default function TherapistSessions() {
     return diffMin <= 15 && diffMin >= -30;
   };
 
-  const handleCompleteSession = async (sessionId: string) => {
-    try {
-      // Update appointment status
-      const { error } = await supabase
-        .from("appointments")
-        .update({ status: "completed" })
-        .eq("id", sessionId);
-
-      if (error) throw error;
-
-      // Recognize revenue (split between admin and psychologist)
-      const { error: revenueError } = await supabase.rpc("recognize_session_revenue", {
-        _appointment_id: sessionId,
-      });
-
-      if (revenueError) {
-        console.error("Error recognizing revenue:", revenueError);
-        toast.error("Sesión completada pero error al procesar ingresos");
-      } else {
-        toast.success("Sesión completada correctamente");
-      }
-
-      loadSessions();
-    } catch (error) {
-      console.error("Error updating session:", error);
-      toast.error("Error al completar sesión");
-    }
-  };
 
   const filteredSessions = sessions.filter((session) => {
     const name = session.profile?.full_name?.toLowerCase() || "";
@@ -257,14 +229,6 @@ export default function TherapistSessions() {
                       >
                         <Video className="w-4 h-4 mr-2" />
                         Iniciar videollamada
-                      </Button>
-                    )}
-                    {(session.status === "pending" || session.status === "confirmed") && (
-                      <Button
-                        variant="outline"
-                        onClick={() => handleCompleteSession(session.id)}
-                      >
-                        Marcar como completada
                       </Button>
                     )}
                     <Button 
