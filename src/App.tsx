@@ -34,6 +34,7 @@ import TherapistSupport from "./pages/therapist/TherapistSupport";
 import TherapistSettings from "./pages/therapist/TherapistSettings";
 import PendingVerification from "./pages/therapist/PendingVerification";
 import PatientDetail from "./pages/therapist/PatientDetail";
+import SessionDetail from "./pages/therapist/SessionDetail";
 import ClientDashboard from "./pages/client/ClientDashboard";
 import ClientBooking from "./pages/client/ClientBooking";
 import ClientSessions from "./pages/client/ClientSessions";
@@ -92,6 +93,7 @@ const App = () => {
             <Route path="dashboard" element={<TherapistDashboard />} />
             <Route path="calendar" element={<TherapistCalendar />} />
             <Route path="sessions" element={<TherapistSessions />} />
+            <Route path="sessions/:sessionId" element={<SessionDetail />} />
             <Route path="messages" element={<TherapistMessages />} />
             <Route path="patients" element={<TherapistPatients />} />
             <Route path="patients/:patientId" element={<PatientDetail />} />
