@@ -1,331 +1,771 @@
-import { useEffect, useState } from "react";
-import { Calendar as CalendarIcon, Clock, Settings } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useEffect, useState, useRef, useCallback } from "react";
+import { ChevronLeft, ChevronRight, Settings, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 import { AvailabilityEditor } from "@/components/therapist/AvailabilityEditor";
+import { toast } from "sonner";
+import { format, addDays, startOfWeek, isSameDay, isToday } from "date-fns";
+import { es } from "date-fns/locale";
 
-const daysOfWeek = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+// ─── Constants ───────────────────────────────────────────────────────────────
+const HOUR_START = 8;
+const HOUR_END = 20;
+const HOUR_HEIGHT = 72; // px per hour
+const HOURS = Array.from({ length: HOUR_END - HOUR_START }, (_, i) => HOUR_START + i);
+const DAY_SHORT = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
 
+// ─── Types ────────────────────────────────────────────────────────────────────
+type EventType = "vittare" | "external" | "blocked";
+
+interface CalEvent {
+  id: string;
+  type: EventType;
+  title: string;
+  startHour: number;
+  startMin: number;
+  durationMin: number;
+  date: Date;
+  raw?: any;
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function getWeekDates(offset: number): Date[] {
+  const base = addDays(new Date(), offset * 7);
+  const sunday = startOfWeek(base, { weekStartsOn: 0 });
+  return Array.from({ length: 7 }, (_, i) => addDays(sunday, i));
+}
+
+function timeToMins(t: string): number {
+  const [h, m] = t.split(":").map(Number);
+  return h * 60 + m;
+}
+
+function pad2(n: number) {
+  return String(n).padStart(2, "0");
+}
+
+// ─── EventBlock ───────────────────────────────────────────────────────────────
+function eventBg(type: EventType) {
+  if (type === "vittare")
+    return "bg-gradient-to-b from-green-400 to-green-600 text-white border-green-700";
+  if (type === "external")
+    return "bg-gradient-to-b from-blue-400 to-blue-600 text-white border-blue-700";
+  return "bg-gray-100 text-gray-600 border-gray-400";
+}
+
+function EventBlock({
+  event,
+  onClick,
+}: {
+  event: CalEvent;
+  onClick: (e: CalEvent) => void;
+}) {
+  const top =
+    (event.startHour - HOUR_START) * HOUR_HEIGHT +
+    (event.startMin / 60) * HOUR_HEIGHT;
+  const height = Math.max((event.durationMin / 60) * HOUR_HEIGHT, 18);
+
+  return (
+    <div
+      className={`absolute left-0.5 right-0.5 rounded border px-1 py-0.5 cursor-pointer overflow-hidden text-xs select-none ${eventBg(event.type)}`}
+      style={{ top: `${top}px`, height: `${height}px`, zIndex: 10 }}
+      onClick={() => onClick(event)}
+      title={event.title}
+    >
+      {event.type === "blocked" && (
+        <div
+          className="absolute inset-0 rounded opacity-25"
+          style={{
+            backgroundImage:
+              "repeating-linear-gradient(45deg, #6b7280 0, #6b7280 1px, transparent 0, transparent 50%)",
+            backgroundSize: "8px 8px",
+          }}
+        />
+      )}
+      <span className="relative font-semibold leading-tight line-clamp-2 break-words">
+        {event.title}
+      </span>
+    </div>
+  );
+}
+
+// ─── AddBlockModal ────────────────────────────────────────────────────────────
+function AddBlockModal({
+  open,
+  onClose,
+  onSaved,
+  psychologistId,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onSaved: () => void;
+  psychologistId: string;
+}) {
+  const [blockType, setBlockType] = useState<"external" | "blocked">("blocked");
+  const [label, setLabel] = useState("");
+  const [notes, setNotes] = useState("");
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [dayOfWeek, setDayOfWeek] = useState("1");
+  const [specificDate, setSpecificDate] = useState(
+    format(new Date(), "yyyy-MM-dd")
+  );
+  const [startTime, setStartTime] = useState("09:00");
+  const [endTime, setEndTime] = useState("10:00");
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    if (timeToMins(endTime) <= timeToMins(startTime)) {
+      toast.error("La hora de fin debe ser después del inicio");
+      return;
+    }
+    setSaving(true);
+    try {
+      const record: any = {
+        psychologist_id: psychologistId,
+        block_type: blockType,
+        label:
+          label.trim() ||
+          (blockType === "external" ? "Cita externa" : "Tiempo bloqueado"),
+        notes: notes.trim() || null,
+        start_time: startTime,
+        end_time: endTime,
+        is_recurring: isRecurring,
+      };
+      if (isRecurring) {
+        record.day_of_week = parseInt(dayOfWeek);
+      } else {
+        record.specific_date = specificDate;
+      }
+      const { error } = await (supabase as any)
+        .from("therapist_calendar_blocks")
+        .insert(record);
+      if (error) throw error;
+      toast.success("Bloque guardado");
+      onSaved();
+      onClose();
+    } catch (err: any) {
+      toast.error("Error al guardar: " + err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Agregar bloque de tiempo</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-1">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label>Tipo</Label>
+              <Select
+                value={blockType}
+                onValueChange={(v) => setBlockType(v as any)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="external">Cita externa</SelectItem>
+                  <SelectItem value="blocked">Tiempo bloqueado</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label>Frecuencia</Label>
+              <Select
+                value={isRecurring ? "yes" : "no"}
+                onValueChange={(v) => setIsRecurring(v === "yes")}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="no">Una vez</SelectItem>
+                  <SelectItem value="yes">Semanal</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <Label>Descripción</Label>
+            <Input
+              value={label}
+              onChange={(e) => setLabel(e.target.value)}
+              placeholder={
+                blockType === "external"
+                  ? "Ej: Supervisión clínica"
+                  : "Ej: Tiempo personal"
+              }
+            />
+          </div>
+
+          {isRecurring ? (
+            <div className="space-y-1">
+              <Label>Día de la semana</Label>
+              <Select value={dayOfWeek} onValueChange={setDayOfWeek}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {DAY_SHORT.map((d, i) => (
+                    <SelectItem key={i} value={String(i)}>
+                      {d}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : (
+            <div className="space-y-1">
+              <Label>Fecha</Label>
+              <Input
+                type="date"
+                value={specificDate}
+                onChange={(e) => setSpecificDate(e.target.value)}
+              />
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label>Inicio</Label>
+              <Input
+                type="time"
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label>Fin</Label>
+              <Input
+                type="time"
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <Label>Notas (opcional)</Label>
+            <Input
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Notas adicionales..."
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button onClick={handleSave} disabled={saving}>
+            {saving ? "Guardando..." : "Guardar"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ─── EventDetailModal ─────────────────────────────────────────────────────────
+function EventDetailModal({
+  event,
+  onClose,
+  onDelete,
+}: {
+  event: CalEvent | null;
+  onClose: () => void;
+  onDelete: (e: CalEvent) => void;
+}) {
+  if (!event) return null;
+
+  const typeLabel =
+    event.type === "vittare"
+      ? "Sesión Vittare"
+      : event.type === "external"
+      ? "Cita externa"
+      : "Tiempo bloqueado";
+
+  const endMins = event.startHour * 60 + event.startMin + event.durationMin;
+  const startLabel = `${pad2(event.startHour)}:${pad2(event.startMin)}`;
+  const endLabel = `${pad2(Math.floor(endMins / 60))}:${pad2(endMins % 60)}`;
+
+  return (
+    <Dialog open={!!event} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>{event.title}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-1.5 py-1 text-sm">
+          <p>
+            <span className="text-muted-foreground">Tipo: </span>
+            {typeLabel}
+          </p>
+          <p>
+            <span className="text-muted-foreground">Fecha: </span>
+            {format(event.date, "EEEE, d 'de' MMMM yyyy", { locale: es })}
+          </p>
+          <p>
+            <span className="text-muted-foreground">Horario: </span>
+            {startLabel} – {endLabel}
+          </p>
+          {event.raw?.notes && (
+            <p>
+              <span className="text-muted-foreground">Notas: </span>
+              {event.raw.notes}
+            </p>
+          )}
+        </div>
+        <DialogFooter>
+          {(event.type === "external" || event.type === "blocked") && (
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => onDelete(event)}
+            >
+              Eliminar bloque
+            </Button>
+          )}
+          <Button variant="outline" size="sm" onClick={onClose}>
+            Cerrar
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 export default function TherapistCalendar() {
-  const [date, setDate] = useState<Date | undefined>(new Date());
   const { user } = useAuth();
-  const [showEditor, setShowEditor] = useState(false);
   const [psychologistId, setPsychologistId] = useState<string | null>(null);
-
-  type Block = { start: string; end: string };
-  type DayAvailability = { dayOfWeek: number; blocks: Block[] };
-  const [availability, setAvailability] = useState<DayAvailability[]>([]);
-
-  const formatTime = (t: string) => (t ? t.slice(0, 5) : "");
+  const [weekOffset, setWeekOffset] = useState(0);
+  const [weekDates, setWeekDates] = useState<Date[]>(() => getWeekDates(0));
+  const [events, setEvents] = useState<CalEvent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showEditor, setShowEditor] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<CalEvent | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const scrolledRef = useRef(false);
 
   useEffect(() => {
-    const load = async () => {
-      if (!user) return;
-      const { data: profile } = await supabase
-        .from("psychologist_profiles")
-        .select("id")
-        .eq("user_id", user.id)
-        .maybeSingle();
+    setWeekDates(getWeekDates(weekOffset));
+  }, [weekOffset]);
 
-      if (!profile) {
-        setAvailability([]);
-        setPsychologistId(null);
-        return;
-      }
-
-      setPsychologistId(profile.id);
-
-      const { data: rows, error } = await supabase
-        .from("psychologist_availability")
-        .select("day_of_week, start_time, end_time, is_exception")
-        .eq("psychologist_id", profile.id)
-        .eq("is_exception", false);
-
-      if (error) {
-        console.error(error);
-        return;
-      }
-
-      const grouped: Record<number, Block[]> = {};
-      (rows || []).forEach((r: any) => {
-        if (r.day_of_week === null) return;
-        const d = r.day_of_week as number;
-        (grouped[d] ||= []).push({
-          start: formatTime(r.start_time as string),
-          end: formatTime(r.end_time as string),
-        });
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("psychologist_profiles")
+      .select("id")
+      .eq("user_id", user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) setPsychologistId(data.id);
       });
-
-      const result = Object.keys(grouped)
-        .map((k) => ({ dayOfWeek: Number(k), blocks: grouped[Number(k)] }))
-        .sort((a, b) => a.dayOfWeek - b.dayOfWeek);
-      setAvailability(result);
-    };
-
-    load();
   }, [user]);
 
-  const handleConfigureAvailability = () => {
-    setShowEditor(true);
-  };
+  const fetchEvents = useCallback(async () => {
+    if (!psychologistId || weekDates.length === 0) return;
+    setLoading(true);
+    try {
+      const from = new Date(weekDates[0]);
+      from.setHours(0, 0, 0, 0);
+      const to = new Date(weekDates[6]);
+      to.setHours(23, 59, 59, 999);
 
-  const handleBlockTime = () => {
-    toast.info("Horario bloqueado exitosamente");
-  };
-
-  // Sesiones del día seleccionado
-  const [sessionsForDay, setSessionsForDay] = useState<any[]>([]);
-
-  useEffect(() => {
-    const loadSessionsForDay = async () => {
-      if (!date || !psychologistId) return;
-
-      // @ts-ignore - Types will regenerate automatically
-      const startOfDay = new Date(date);
-      startOfDay.setHours(0, 0, 0, 0);
-      const endOfDay = new Date(date);
-      endOfDay.setHours(23, 59, 59, 999);
-
-      // @ts-ignore - Types will regenerate automatically
-      const { data: appts, error: apptError } = await supabase
+      // Vittare appointments
+      const { data: appts } = await supabase
         .from("appointments")
-        .select("*")
+        .select("id, start_time, end_time, patient_id, status")
         .eq("psychologist_id", psychologistId)
-        .gte("start_time", startOfDay.toISOString())
-        .lte("start_time", endOfDay.toISOString())
-        .order("start_time", { ascending: true });
+        .gte("start_time", from.toISOString())
+        .lte("start_time", to.toISOString())
+        .neq("status", "cancelled");
 
-      if (apptError) {
-        console.error("Error loading sessions:", apptError);
-        setSessionsForDay([]);
-        return;
-      }
-
-      const patientIds = Array.from(new Set((appts || []).map((a: any) => a.patient_id))).filter(Boolean);
-      let profilesById: Record<string, any> = {};
+      // Patient names
+      const patientIds = [
+        ...new Set(
+          (appts || []).map((a: any) => a.patient_id).filter(Boolean)
+        ),
+      ];
+      let names: Record<string, string> = {};
       if (patientIds.length > 0) {
-        const { data: profs, error: profErr } = await supabase
+        const { data: profs } = await supabase
           .from("profiles")
           .select("id, full_name")
           .in("id", patientIds);
-        if (profErr) {
-          console.error("Error loading profiles:", profErr);
-        } else {
-          profilesById = Object.fromEntries((profs || []).map((p: any) => [p.id, p]));
+        names = Object.fromEntries(
+          (profs || []).map((p: any) => [p.id, p.full_name])
+        );
+      }
+
+      // Calendar blocks — two queries: recurring + specific dates this week
+      const dateStrings = weekDates.map((d) => format(d, "yyyy-MM-dd"));
+      const [{ data: recurring }, { data: specific }] = await Promise.all([
+        (supabase as any)
+          .from("therapist_calendar_blocks")
+          .select("*")
+          .eq("psychologist_id", psychologistId)
+          .eq("is_recurring", true),
+        (supabase as any)
+          .from("therapist_calendar_blocks")
+          .select("*")
+          .eq("psychologist_id", psychologistId)
+          .eq("is_recurring", false)
+          .in("specific_date", dateStrings),
+      ]);
+
+      const calEvents: CalEvent[] = [];
+
+      // Appointments → vittare events
+      for (const appt of appts || []) {
+        const start = new Date(appt.start_time);
+        const end = new Date(appt.end_time);
+        const durationMin =
+          Math.round((end.getTime() - start.getTime()) / 60000) || 50;
+        calEvents.push({
+          id: appt.id,
+          type: "vittare",
+          title: names[appt.patient_id] || "Paciente",
+          startHour: start.getHours(),
+          startMin: start.getMinutes(),
+          durationMin,
+          date: start,
+          raw: appt,
+        });
+      }
+
+      // Recurring blocks — one entry per matching weekday
+      for (const block of recurring || []) {
+        for (const date of weekDates) {
+          if (date.getDay() === block.day_of_week) {
+            const sm = timeToMins(block.start_time);
+            const em = timeToMins(block.end_time);
+            calEvents.push({
+              id: `rblock-${block.id}-${format(date, "yyyy-MM-dd")}`,
+              type: block.block_type as EventType,
+              title:
+                block.label ||
+                (block.block_type === "external" ? "Cita externa" : "Bloqueado"),
+              startHour: Math.floor(sm / 60),
+              startMin: sm % 60,
+              durationMin: em - sm,
+              date,
+              raw: block,
+            });
+          }
         }
       }
 
-      const formatted = (appts || []).map((appt: any) => ({
-        id: appt.id,
-        time: new Date(appt.start_time).toLocaleTimeString("es-MX", {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-        patientName: profilesById[appt.patient_id]?.full_name || "Paciente",
-        status: appt.status === "pending" ? "pendiente" : appt.status === "confirmed" ? "confirmada" : appt.status,
-        duration: 50,
-      }));
-      setSessionsForDay(formatted);
-    };
+      // Specific-date blocks
+      for (const block of specific || []) {
+        const matchDate = weekDates.find(
+          (d) => format(d, "yyyy-MM-dd") === block.specific_date
+        );
+        if (!matchDate) continue;
+        const sm = timeToMins(block.start_time);
+        const em = timeToMins(block.end_time);
+        calEvents.push({
+          id: `sblock-${block.id}`,
+          type: block.block_type as EventType,
+          title:
+            block.label ||
+            (block.block_type === "external" ? "Cita externa" : "Bloqueado"),
+          startHour: Math.floor(sm / 60),
+          startMin: sm % 60,
+          durationMin: em - sm,
+          date: matchDate,
+          raw: block,
+        });
+      }
 
-    loadSessionsForDay();
-  }, [date, psychologistId]);
+      setEvents(calEvents);
+    } catch (err) {
+      console.error("Error loading calendar:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [psychologistId, weekDates]);
 
-  // Show editor if requested
+  useEffect(() => {
+    if (psychologistId && weekDates.length > 0) fetchEvents();
+  }, [psychologistId, weekDates, fetchEvents]);
+
+  // Scroll to current hour on first load only
+  useEffect(() => {
+    if (!loading && !scrolledRef.current && scrollRef.current) {
+      const now = new Date();
+      const scrollTo = Math.max(0, (now.getHours() - HOUR_START - 1) * HOUR_HEIGHT);
+      scrollRef.current.scrollTop = scrollTo;
+      scrolledRef.current = true;
+    }
+  }, [loading]);
+
+  const handleDeleteBlock = async (event: CalEvent) => {
+    if (!event.raw?.id) return;
+    try {
+      const { error } = await (supabase as any)
+        .from("therapist_calendar_blocks")
+        .delete()
+        .eq("id", event.raw.id);
+      if (error) throw error;
+      toast.success("Bloque eliminado");
+      setSelectedEvent(null);
+      fetchEvents();
+    } catch (err: any) {
+      toast.error("Error al eliminar: " + err.message);
+    }
+  };
+
+  const eventsForDay = (date: Date) =>
+    events.filter((e) => isSameDay(e.date, date));
+
+  const weekLabel =
+    weekDates.length === 7
+      ? `${format(weekDates[0], "d MMM", { locale: es })} – ${format(
+          weekDates[6],
+          "d MMM yyyy",
+          { locale: es }
+        )}`
+      : "";
+
+  // ── Availability editor view ─────────────────────────────────────────────
   if (showEditor && psychologistId) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <Button variant="outline" onClick={() => setShowEditor(false)}>
-            ← Volver al calendario
-          </Button>
-        </div>
-        <AvailabilityEditor 
+      <div className="space-y-4">
+        <Button variant="outline" size="sm" onClick={() => setShowEditor(false)}>
+          ← Volver al calendario
+        </Button>
+        <AvailabilityEditor
           psychologistId={psychologistId}
-          onClose={() => {
-            setShowEditor(false);
-            // Reload availability after editing
-            const load = async () => {
-              if (!user) return;
-              const { data: profile } = await supabase
-                .from("psychologist_profiles")
-                .select("id")
-                .eq("user_id", user.id)
-                .maybeSingle();
-
-              if (!profile) return;
-
-              const { data: rows } = await supabase
-                .from("psychologist_availability")
-                .select("day_of_week, start_time, end_time, is_exception")
-                .eq("psychologist_id", profile.id)
-                .eq("is_exception", false);
-
-              const grouped: Record<number, Block[]> = {};
-              (rows || []).forEach((r: any) => {
-                if (r.day_of_week === null) return;
-                const d = r.day_of_week as number;
-                (grouped[d] ||= []).push({
-                  start: formatTime(r.start_time as string),
-                  end: formatTime(r.end_time as string),
-                });
-              });
-
-              const result = Object.keys(grouped)
-                .map((k) => ({ dayOfWeek: Number(k), blocks: grouped[Number(k)] }))
-                .sort((a, b) => a.dayOfWeek - b.dayOfWeek);
-              setAvailability(result);
-            };
-            load();
-          }}
+          onClose={() => setShowEditor(false)}
         />
       </div>
     );
   }
 
+  // ── Calendar view ─────────────────────────────────────────────────────────
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="flex flex-col gap-3" style={{ height: "calc(100vh - 120px)" }}>
+      {/* Header */}
+      <div className="flex items-center justify-between flex-wrap gap-2 flex-shrink-0">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Calendario</h1>
-          <p className="text-muted-foreground mt-1">
-            Gestiona tu disponibilidad y sesiones
-          </p>
+          <h1 className="text-2xl font-bold text-foreground">Calendario</h1>
+          <p className="text-sm text-muted-foreground">{weekLabel}</p>
         </div>
-        <Button onClick={handleConfigureAvailability}>
-          <Settings className="w-4 h-4 mr-2" />
-          Configurar disponibilidad
-        </Button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center border rounded-md overflow-hidden">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="rounded-none h-8 w-8"
+              onClick={() => setWeekOffset((w) => w - 1)}
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="rounded-none h-8 px-3 text-xs"
+              onClick={() => setWeekOffset(0)}
+            >
+              Hoy
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="rounded-none h-8 w-8"
+              onClick={() => setWeekOffset((w) => w + 1)}
+            >
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          </div>
+          {psychologistId && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowAddModal(true)}
+            >
+              <Plus className="w-4 h-4 mr-1" />
+              Agregar bloque
+            </Button>
+          )}
+          <Button variant="outline" size="sm" onClick={() => setShowEditor(true)}>
+            <Settings className="w-4 h-4 mr-1" />
+            Configurar horario
+          </Button>
+        </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Calendario */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CalendarIcon className="w-5 h-5" />
-              Calendario mensual
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex justify-center">
-            <Calendar
-              mode="single"
-              selected={date}
-              onSelect={setDate}
-              className="rounded-md border"
-            />
-          </CardContent>
-        </Card>
+      {/* Grid */}
+      <div className="border rounded-lg overflow-hidden flex flex-col flex-1 min-h-0 bg-background">
+        {/* Day header row */}
+        <div
+          className="grid border-b bg-muted/30 flex-shrink-0"
+          style={{ gridTemplateColumns: "48px repeat(7, 1fr)" }}
+        >
+          <div />
+          {weekDates.map((date, i) => (
+            <div
+              key={i}
+              className={`flex flex-col items-center justify-center py-2 border-l text-xs font-medium ${
+                isToday(date) ? "bg-primary/10" : ""
+              }`}
+            >
+              <span className="text-muted-foreground">{DAY_SHORT[date.getDay()]}</span>
+              <span
+                className={`mt-0.5 w-6 h-6 flex items-center justify-center rounded-full text-sm font-bold ${
+                  isToday(date)
+                    ? "bg-primary text-primary-foreground"
+                    : "text-foreground"
+                }`}
+              >
+                {format(date, "d")}
+              </span>
+            </div>
+          ))}
+        </div>
 
-        {/* Sesiones del día */}
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              {date ? date.toLocaleDateString("es-MX", {
-                weekday: "long",
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              }) : "Selecciona una fecha"}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {sessionsForDay.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground mb-4">
-                  No hay sesiones programadas
-                </p>
-                <Button size="sm" variant="outline" onClick={handleBlockTime}>
-                  Bloquear horario
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {sessionsForDay.map((session) => (
-                  <div
-                    key={session.id}
-                    className="p-3 border border-border rounded-lg hover:bg-accent/50 transition-colors"
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="font-medium text-foreground">
-                        {session.time}
-                      </p>
-                      <span
-                        className={`text-xs px-2 py-1 rounded ${
-                          session.status === "confirmada"
-                            ? "bg-primary/10 text-primary"
-                            : session.status === "pendiente"
-                            ? "bg-secondary/10 text-secondary"
-                            : "bg-muted text-muted-foreground"
-                        }`}
-                      >
-                        {session.status}
-                      </span>
-                    </div>
-                    <p className="text-sm text-foreground">
-                      {session.patientName}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {session.duration} minutos
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Disponibilidad recurrente */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Clock className="w-5 h-5" />
-            Disponibilidad recurrente
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {availability.length === 0 ? (
-            <p className="text-muted-foreground">Aún no has configurado tu disponibilidad.</p>
-          ) : (
-            <div className="space-y-4">
-              {availability.map((avail) => (
+        {/* Scrollable time grid */}
+        <div ref={scrollRef} className="overflow-y-auto flex-1">
+          <div
+            className="grid relative"
+            style={{
+              gridTemplateColumns: "48px repeat(7, 1fr)",
+              height: `${(HOUR_END - HOUR_START) * HOUR_HEIGHT}px`,
+            }}
+          >
+            {/* Time labels */}
+            <div className="relative select-none">
+              {HOURS.map((h) => (
                 <div
-                  key={avail.dayOfWeek}
-                  className="flex items-center justify-between p-4 border border-border rounded-lg"
+                  key={h}
+                  className="absolute right-2 text-xs text-muted-foreground leading-none"
+                  style={{ top: `${(h - HOUR_START) * HOUR_HEIGHT - 6}px` }}
                 >
-                  <div>
-                    <p className="font-medium text-foreground">
-                      {daysOfWeek[avail.dayOfWeek]}
-                    </p>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {avail.blocks.map((block, idx) => (
-                        <span
-                          key={idx}
-                          className="text-sm bg-primary/10 text-primary px-3 py-1 rounded"
-                        >
-                          {block.start} - {block.end}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                  <Button 
-                    size="sm" 
-                    variant="ghost"
-                    onClick={handleConfigureAvailability}
-                  >
-                    Editar
-                  </Button>
+                  {`${pad2(h)}:00`}
                 </div>
               ))}
             </div>
-          )}
-        </CardContent>
-      </Card>
+
+            {/* Day columns */}
+            {weekDates.map((date, i) => (
+              <div
+                key={i}
+                className={`relative border-l ${
+                  isToday(date) ? "bg-primary/[0.03]" : ""
+                }`}
+              >
+                {/* Hour lines */}
+                {HOURS.map((h) => (
+                  <div
+                    key={h}
+                    className="absolute w-full border-t border-border/40"
+                    style={{ top: `${(h - HOUR_START) * HOUR_HEIGHT}px` }}
+                  />
+                ))}
+                {/* Half-hour dashed lines */}
+                {HOURS.map((h) => (
+                  <div
+                    key={`${h}h`}
+                    className="absolute w-full border-t border-border/20 border-dashed"
+                    style={{
+                      top: `${(h - HOUR_START) * HOUR_HEIGHT + HOUR_HEIGHT / 2}px`,
+                    }}
+                  />
+                ))}
+                {/* Events */}
+                {eventsForDay(date).map((ev) => (
+                  <EventBlock key={ev.id} event={ev} onClick={setSelectedEvent} />
+                ))}
+              </div>
+            ))}
+
+            {/* Now line */}
+            {(() => {
+              const now = new Date();
+              const idx = weekDates.findIndex((d) => isSameDay(d, now));
+              if (idx === -1) return null;
+              const frac = now.getHours() + now.getMinutes() / 60;
+              if (frac < HOUR_START || frac >= HOUR_END) return null;
+              const top = (frac - HOUR_START) * HOUR_HEIGHT;
+              return (
+                <div
+                  className="absolute z-20 pointer-events-none flex items-center"
+                  style={{
+                    top: `${top}px`,
+                    left: `calc(48px + ${idx} * ((100% - 48px) / 7))`,
+                    width: `calc((100% - 48px) / 7)`,
+                  }}
+                >
+                  <div className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0 -ml-1" />
+                  <div className="flex-1 h-px bg-red-500" />
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+      </div>
+
+      {/* Legend */}
+      <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap flex-shrink-0">
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 rounded bg-gradient-to-b from-green-400 to-green-600" />
+          <span>Sesión Vittare</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 rounded bg-gradient-to-b from-blue-400 to-blue-600" />
+          <span>Cita externa</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div
+            className="w-3 h-3 rounded border border-gray-400"
+            style={{
+              backgroundImage:
+                "repeating-linear-gradient(45deg, #9ca3af 0, #9ca3af 1px, transparent 0, transparent 50%)",
+              backgroundSize: "6px 6px",
+            }}
+          />
+          <span>Tiempo bloqueado</span>
+        </div>
+      </div>
+
+      {/* Modals */}
+      {psychologistId && (
+        <AddBlockModal
+          open={showAddModal}
+          onClose={() => setShowAddModal(false)}
+          onSaved={fetchEvents}
+          psychologistId={psychologistId}
+        />
+      )}
+      <EventDetailModal
+        event={selectedEvent}
+        onClose={() => setSelectedEvent(null)}
+        onDelete={handleDeleteBlock}
+      />
     </div>
   );
 }

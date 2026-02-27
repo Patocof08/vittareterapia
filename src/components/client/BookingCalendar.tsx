@@ -89,6 +89,24 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
 
       if (apptError) throw apptError;
 
+      // Get therapist calendar blocks for this date (external/blocked times)
+      const dateString = format(date, "yyyy-MM-dd");
+      const [{ data: recurringBlocks }, { data: specificBlocks }] = await Promise.all([
+        (supabase as any)
+          .from("therapist_calendar_blocks")
+          .select("start_time, end_time")
+          .eq("psychologist_id", psychologistId)
+          .eq("is_recurring", true)
+          .eq("day_of_week", dayOfWeek),
+        (supabase as any)
+          .from("therapist_calendar_blocks")
+          .select("start_time, end_time")
+          .eq("psychologist_id", psychologistId)
+          .eq("is_recurring", false)
+          .eq("specific_date", dateString),
+      ]);
+      const calendarBlocks = [...(recurringBlocks || []), ...(specificBlocks || [])];
+
       // Generate time slots
       const slots: string[] = [];
       const now = new Date();
@@ -132,7 +150,22 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
               );
             });
 
-            if (!isBooked && slotEnd <= end) {
+            // Check if slot overlaps any calendar block (external/blocked time)
+            const isBlocked = calendarBlocks.some((block: any) => {
+              const [bStartH, bStartM] = block.start_time.split(":").map(Number);
+              const [bEndH, bEndM] = block.end_time.split(":").map(Number);
+              const blockStart = new Date(date);
+              blockStart.setHours(bStartH, bStartM, 0, 0);
+              const blockEnd = new Date(date);
+              blockEnd.setHours(bEndH, bEndM, 0, 0);
+              return (
+                (slotStart >= blockStart && slotStart < blockEnd) ||
+                (slotEnd > blockStart && slotEnd <= blockEnd) ||
+                (slotStart <= blockStart && slotEnd >= blockEnd)
+              );
+            });
+
+            if (!isBooked && !isBlocked && slotEnd <= end) {
               slots.push(format(slotStart, "HH:mm"));
             }
 
