@@ -1043,9 +1043,16 @@ export default function TherapistCalendar() {
       const now = new Date();
       const scrollTo = Math.max(0, (now.getHours() - HOUR_START - 1) * HOUR_HEIGHT);
       scrollRef.current.scrollTop = scrollTo;
+      if (gutterRef.current) gutterRef.current.scrollTop = scrollTo;
       scrolledRef.current = true;
     }
   }, [loading]);
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    if (gutterRef.current) {
+      gutterRef.current.scrollTop = e.currentTarget.scrollTop;
+    }
+  };
 
   const handleDeleteBlock = async (event: CalEvent) => {
     if (!event.raw?.id) return;
@@ -1347,35 +1354,30 @@ export default function TherapistCalendar() {
 
       {/* ─── Grid ──────────────────────────────────────────────────────── */}
       <div
-        style={{ flex: 1, minHeight: 0, overflow: "hidden" }}
+        style={{ display: "flex", flex: 1, minHeight: 0, overflow: "hidden" }}
       >
-        {/* Single scroll container — gutter + grid scroll together, no JS sync needed */}
+        {/* Time gutter — fixed, synced via JS on scroll */}
         <div
-          ref={scrollRef}
-          style={{ height: "100%", overflowY: "auto", overflowX: "hidden" }}
+          style={{
+            width: "52px",
+            flexShrink: 0,
+            background: "white",
+            borderRight: "1px solid #cbd5e1",
+            display: "flex",
+            flexDirection: "column",
+          }}
         >
-          <div style={{ display: "flex" }}>
-            {/* Time gutter column */}
-            <div
-              style={{
-                width: "52px",
-                flexShrink: 0,
-                borderRight: "1px solid #cbd5e1",
-                background: "white",
-              }}
-            >
-              {/* Corner cell — sticky to stay aligned with day headers */}
-              <div
-                style={{
-                  position: "sticky",
-                  top: 0,
-                  zIndex: 20,
-                  height: "52px",
-                  background: "white",
-                  borderBottom: "1px solid #e8ecf0",
-                }}
-              />
-              {/* Hour labels — scroll naturally with the grid */}
+          {/* Corner spacer — same height as day header row */}
+          <div
+            style={{
+              height: "52px",
+              borderBottom: "1px solid #e8ecf0",
+              flexShrink: 0,
+            }}
+          />
+          {/* Labels — overflow hidden, scrollTop synced by handleScroll */}
+          <div ref={gutterRef} style={{ flex: 1, overflow: "hidden" }}>
+            <div style={{ height: `${HOURS.length * HOUR_HEIGHT}px` }}>
               {HOURS.map((h, i) => (
                 <div
                   key={h}
@@ -1402,15 +1404,22 @@ export default function TherapistCalendar() {
                 </div>
               ))}
             </div>
+          </div>
+        </div>
 
-            {/* Day columns */}
-            <div style={{ flex: 1, minWidth: 0 }}>
-          {/* Day headers — sticky so they stay visible while scrolling */}
+        {/* Day columns area */}
+        <div
+          style={{
+            flex: 1,
+            minWidth: 0,
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          {/* Day headers — outside the scroll container so scrollbar width never shifts them */}
           <div
             style={{
-              position: "sticky",
-              top: 0,
-              zIndex: 10,
+              flexShrink: 0,
               display: "grid",
               gridTemplateColumns:
                 view === "week" ? "repeat(7, 1fr)" : "1fr",
@@ -1531,6 +1540,12 @@ export default function TherapistCalendar() {
             })}
           </div>
 
+          {/* Event grid scroll container */}
+          <div
+            ref={scrollRef}
+            onScroll={handleScroll}
+            style={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}
+          >
           {/* Event grid */}
             <div
               style={{
@@ -1597,7 +1612,6 @@ export default function TherapistCalendar() {
                   </div>
                 );
               })}
-            </div>
             </div>
           </div>
         </div>
