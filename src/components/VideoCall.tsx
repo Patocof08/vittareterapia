@@ -49,7 +49,7 @@ export default function VideoCall({ appointmentId, onLeave, onRoleDetected }: Vi
         setLoading(false)
         return
       }
-      if (diffMin < -30) {
+      if (diffMin < -120) {
         setError('El tiempo de la sesión ha expirado')
         setLoading(false)
         return

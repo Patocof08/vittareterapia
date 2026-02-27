@@ -94,7 +94,10 @@ Deno.serve(async (req) => {
     const endTime = appointment.end_time
       ? new Date(appointment.end_time)
       : new Date(startTime.getTime() + 60 * 60 * 1000)
-    const expiry = Math.floor(endTime.getTime() / 1000) + (30 * 60)
+    // Ensure expiry is always in the future (at least 2 hours from now)
+    const minExpiry = Math.floor(Date.now() / 1000) + (2 * 60 * 60)
+    const calcExpiry = Math.floor(endTime.getTime() / 1000) + (30 * 60)
+    const expiry = Math.max(calcExpiry, minExpiry)
     const nbf = Math.floor(startTime.getTime() / 1000) - (15 * 60)
 
     const roomRes = await fetch('https://api.daily.co/v1/rooms', {

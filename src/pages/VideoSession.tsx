@@ -14,8 +14,17 @@ export default function VideoSession() {
   const [isPsychologist, setIsPsychologist] = useState(false)
   const [patientName, setPatientName] = useState('')
 
+  // Show loading spinner while auth initializes (prevents calling edge function without JWT)
+  if (authLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-gray-900">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500" />
+      </div>
+    )
+  }
+
   // Redirect if not authenticated
-  if (!authLoading && !user) {
+  if (!user) {
     navigate('/')
     return null
   }
