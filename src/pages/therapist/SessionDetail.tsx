@@ -60,7 +60,9 @@ function formatVttTime(time: string): string {
 function parseTranscript(vtt: string): TranscriptBlock[] {
   if (!vtt) return [];
   const cues: { time: string; speaker: string; text: string }[] = [];
-  const blocks = vtt.split(/\n\n+/);
+  // Normalize line endings (\r\n → \n)
+  const normalized = vtt.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  const blocks = normalized.split(/\n\n+/);
 
   for (const block of blocks) {
     const lines = block.trim().split("\n").map((l) => l.trim()).filter(Boolean);
