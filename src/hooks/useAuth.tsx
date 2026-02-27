@@ -72,22 +72,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (!isMounted) return;
-        
+
         // Only synchronous state updates here
         setSession(session);
         setUser(session?.user ?? null);
-        
+
         // Defer async Supabase calls with setTimeout to prevent deadlocks
         if (session?.user) {
           setTimeout(() => {
             fetchUserRole(session.user.id, session.user.user_metadata).then((userRole) => {
               if (isMounted) {
                 setRole(userRole);
+                setLoading(false);
               }
             });
           }, 0);
         } else {
           setRole(null);
+          setLoading(false);
         }
       }
     );
@@ -124,10 +126,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     if (error) throw error;
-    
+
     if (data.user) {
-      const userRole = await fetchUserRole(data.user.id);
-      
+      const userRole = await fetchUserRole(data.user.id, data.user.user_metadata);
+
+      // Set role in context BEFORE navigating so ProtectedRoute sees it immediately
+      setRole(userRole);
+
       // Redirect based on role
       if (userRole === "admin") {
         navigate("/admin/dashboard");
