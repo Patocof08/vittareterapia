@@ -216,10 +216,17 @@ export default function SessionDetail() {
         },
         body: JSON.stringify({ appointment_id: sessionId }),
       });
-      await res.json();
+      if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        console.error('fetch-session-transcript error:', res.status, text);
+        toast.error(`Error al obtener transcripción (${res.status})`);
+        return;
+      }
+      await res.json().catch(() => null);
       await fetchData();
     } catch (err) {
       console.error('Error fetching transcript:', err);
+      toast.error('Error al obtener la transcripción');
     } finally {
       setFetchingTranscript(false);
     }
@@ -230,7 +237,10 @@ export default function SessionDetail() {
     setAnalyzing(true);
     try {
       const { data: { session: authSession } } = await supabase.auth.getSession();
-      const token = authSession?.access_token;
+      if (!authSession?.access_token) {
+        toast.error('No hay sesión activa');
+        return;
+      }
 
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-transcript`,
@@ -238,13 +248,29 @@ export default function SessionDetail() {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
+            'Authorization': `Bearer ${authSession.access_token}`,
           },
           body: JSON.stringify({ appointment_id: sessionId, force }),
         }
       );
 
-      const data = await response.json();
+      if (!response.ok) {
+        const text = await response.text().catch(() => '');
+        console.error('analyze-transcript error:', response.status, text);
+        toast.error(`Error del servidor (${response.status})`);
+        return;
+      }
+
+      let data: any = {};
+      try {
+        data = await response.json();
+      } catch {
+        // response was ok but body is empty or non-JSON — treat as success
+        toast.success('Análisis completado');
+        await fetchData();
+        setActiveTab('notes');
+        return;
+      }
 
       if (data.error) {
         toast.error(data.error);
