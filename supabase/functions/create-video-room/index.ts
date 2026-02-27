@@ -34,7 +34,8 @@ Deno.serve(async (req) => {
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 })
     }
 
-    // Get appointment + psychologist profile with user_id for role detection
+    // Get appointment + psychologist profile (user_id needed for role detection)
+    // NOTE: psychologist_id in appointments = psychologist_profiles.id, NOT auth.users.id
     const { data: appointment } = await supabase
       .from('appointments')
       .select('*, psychologist:psychologist_profiles(first_name, last_name, user_id)')
@@ -46,7 +47,8 @@ Deno.serve(async (req) => {
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 404 })
     }
 
-    // patient_id == auth.users.id; psychologist_id == psychologist_profiles.id (NOT auth.users.id)
+    // patient_id == auth.users.id directly
+    // isPsychologist must check psychologist_profiles.user_id, not appointment.psychologist_id
     const isPatient = appointment.patient_id === user.id
     const isPsychologist = appointment.psychologist?.user_id === user.id
 
@@ -55,7 +57,7 @@ Deno.serve(async (req) => {
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 })
     }
 
-    // Fetch patient name via separate query (patient_id = profiles.id)
+    // Fetch patient name via separate query (broken FK if joined directly)
     const { data: patientProfile } = await supabase
       .from('profiles')
       .select('full_name')
@@ -85,6 +87,9 @@ Deno.serve(async (req) => {
     }
 
     // Create new Daily room
+    // Use timestamp suffix to avoid name conflicts with expired/deleted rooms
+    const roomName = 'vit-' + appointment_id.replace(/-/g, '').slice(0, 12) + '-' + Date.now().toString(36).slice(-5)
+
     const startTime = new Date(appointment.start_time)
     const endTime = appointment.end_time
       ? new Date(appointment.end_time)
@@ -92,7 +97,6 @@ Deno.serve(async (req) => {
     const expiry = Math.floor(endTime.getTime() / 1000) + (30 * 60)
     const nbf = Math.floor(startTime.getTime() / 1000) - (15 * 60)
 
-    const roomName = 'vittare-' + appointment_id.replace(/-/g, '').slice(0, 16)
     const roomRes = await fetch('https://api.daily.co/v1/rooms', {
       method: 'POST',
       headers: {
@@ -110,16 +114,6 @@ Deno.serve(async (req) => {
           enable_screenshare: true,
           enable_recording: 'cloud',
           start_cloud_recording_on_join: false,
-          // Transcription starts automatically when both participants join
-          enable_transcription_storage: true,
-          auto_start_transcription: true,
-          auto_transcription_settings: {
-            model: 'general',
-            language: 'es',
-            profanity_filter: false,
-            redact: false,
-            extra: { punctuate: true, diarize: true },
-          },
           start_audio_off: false,
           start_video_off: false,
           lang: 'es',
@@ -127,7 +121,7 @@ Deno.serve(async (req) => {
       }),
     })
     const room = await roomRes.json()
-    if (room.error) throw new Error(JSON.stringify(room.error))
+    if (room.error) throw new Error('Daily room error: ' + JSON.stringify(room.error))
 
     // Persist room info on appointment
     await supabase.from('appointments').update({
@@ -152,7 +146,7 @@ Deno.serve(async (req) => {
     }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 })
 
   } catch (error) {
-    console.error('Error:', error)
+    console.error('create-video-room error:', error)
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : 'Error desconocido' }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
@@ -178,13 +172,12 @@ async function createMeetingToken(
         is_owner: isOwner,
         user_name: userName,
         enable_recording: isOwner ? 'cloud' : undefined,
-        enable_transcription: true,
         start_audio_off: false,
         start_video_off: false,
       },
     }),
   })
   const tokenData = await tokenRes.json()
-  if (tokenData.error) throw new Error(JSON.stringify(tokenData.error))
+  if (tokenData.error) throw new Error('Token error: ' + JSON.stringify(tokenData.error))
   return tokenData.token
 }
