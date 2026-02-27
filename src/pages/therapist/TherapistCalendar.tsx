@@ -895,7 +895,6 @@ export default function TherapistCalendar() {
   const [selectedDayIdx, setSelectedDayIdx] = useState(() => new Date().getDay());
 
   const scrollRef = useRef<HTMLDivElement>(null);
-  const gutterRef = useRef<HTMLDivElement>(null);
   const scrolledRef = useRef(false);
 
   const todayDayIdx = new Date().getDay();
@@ -1043,16 +1042,9 @@ export default function TherapistCalendar() {
       const now = new Date();
       const scrollTo = Math.max(0, (now.getHours() - HOUR_START - 1) * HOUR_HEIGHT);
       scrollRef.current.scrollTop = scrollTo;
-      if (gutterRef.current) gutterRef.current.scrollTop = scrollTo;
       scrolledRef.current = true;
     }
   }, [loading]);
-
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    if (gutterRef.current) {
-      gutterRef.current.scrollTop = e.currentTarget.scrollTop;
-    }
-  };
 
   const handleDeleteBlock = async (event: CalEvent) => {
     if (!event.raw?.id) return;
@@ -1354,77 +1346,35 @@ export default function TherapistCalendar() {
 
       {/* ─── Grid ──────────────────────────────────────────────────────── */}
       <div
-        style={{ display: "flex", flex: 1, minHeight: 0, overflow: "hidden" }}
+        style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, overflow: "hidden" }}
       >
-        {/* Time gutter — fixed, synced via JS on scroll */}
+        {/* Fixed header row: corner + day headers — never scrolls */}
         <div
           style={{
-            width: "52px",
+            display: "flex",
             flexShrink: 0,
             background: "white",
-            borderRight: "1px solid #cbd5e1",
-            display: "flex",
-            flexDirection: "column",
+            borderBottom: "1px solid #e8ecf0",
+            position: "relative",
+            zIndex: 10,
           }}
         >
-          {/* Corner spacer — same height as day header row */}
+          {/* Corner — matches gutter width exactly */}
           <div
             style={{
-              height: "52px",
-              borderBottom: "1px solid #e8ecf0",
+              width: "52px",
               flexShrink: 0,
+              height: "52px",
+              borderRight: "1px solid #cbd5e1",
             }}
           />
-          {/* Labels — overflow hidden, scrollTop synced by handleScroll */}
-          <div ref={gutterRef} style={{ flex: 1, overflow: "hidden" }}>
-            <div style={{ height: `${HOURS.length * HOUR_HEIGHT}px` }}>
-              {HOURS.map((h, i) => (
-                <div
-                  key={h}
-                  style={{
-                    height: `${HOUR_HEIGHT}px`,
-                    position: "relative",
-                  }}
-                >
-                  <span
-                    style={{
-                      position: "absolute",
-                      top: i === 0 ? "3px" : "-8px",
-                      right: "8px",
-                      fontSize: "10px",
-                      color: "#94a3b8",
-                      fontWeight: 500,
-                      lineHeight: 1,
-                      userSelect: "none",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {`${pad2(h)}:00`}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Day columns area */}
-        <div
-          style={{
-            flex: 1,
-            minWidth: 0,
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
-          {/* Day headers — outside the scroll container so scrollbar width never shifts them */}
+          {/* Day header cells */}
           <div
             style={{
-              flexShrink: 0,
+              flex: 1,
               display: "grid",
               gridTemplateColumns:
                 view === "week" ? "repeat(7, 1fr)" : "1fr",
-              borderBottom: "1px solid #e8ecf0",
-              background: "white",
               height: "52px",
             }}
           >
@@ -1539,16 +1489,53 @@ export default function TherapistCalendar() {
               );
             })}
           </div>
+        </div>
 
-          {/* Event grid scroll container */}
-          <div
-            ref={scrollRef}
-            onScroll={handleScroll}
-            style={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}
-          >
-          {/* Event grid */}
+        {/* Unified scroll area — gutter labels + event grid scroll together */}
+        <div
+          ref={scrollRef}
+          style={{ flex: 1, overflow: "auto" }}
+        >
+          <div style={{ display: "flex" }}>
+            {/* Time gutter — scrolls with the grid, always aligned */}
             <div
               style={{
+                width: "52px",
+                flexShrink: 0,
+                borderRight: "1px solid #cbd5e1",
+                background: "white",
+              }}
+            >
+              {HOURS.map((h, i) => (
+                <div
+                  key={h}
+                  style={{
+                    height: `${HOUR_HEIGHT}px`,
+                    position: "relative",
+                  }}
+                >
+                  <span
+                    style={{
+                      position: "absolute",
+                      top: i === 0 ? "3px" : "-8px",
+                      right: "8px",
+                      fontSize: "10px",
+                      color: "#94a3b8",
+                      fontWeight: 500,
+                      lineHeight: 1,
+                      userSelect: "none",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {`${pad2(h)}:00`}
+                  </span>
+                </div>
+              ))}
+            </div>
+            {/* Event grid */}
+            <div
+              style={{
+                flex: 1,
                 display: "grid",
                 gridTemplateColumns:
                   view === "week" ? "repeat(7, 1fr)" : "1fr",
