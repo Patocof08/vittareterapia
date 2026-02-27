@@ -115,7 +115,6 @@ Deno.serve(async (req) => {
           max_participants: 2,
           enable_chat: true,
           enable_screenshare: true,
-          enable_recording: 'cloud',
           enable_transcription_storage: true,
           auto_start_transcription: true,
           auto_transcription_settings: {
