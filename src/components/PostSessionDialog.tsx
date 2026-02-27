@@ -29,6 +29,22 @@ export default function PostSessionDialog({ appointmentId, patientName, onComple
         _appointment_id: appointmentId,
       })
 
+      // Fetch transcript from Daily.co in background (fire and forget)
+      if (attended) {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session) {
+          fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/fetch-session-transcript`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session.access_token}`,
+              'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            },
+            body: JSON.stringify({ appointment_id: appointmentId }),
+          }).catch(() => { /* silent — transcript can be fetched later from SessionDetail */ })
+        }
+      }
+
       setStep('done')
     } catch (err) {
       console.error('Error registering session:', err)

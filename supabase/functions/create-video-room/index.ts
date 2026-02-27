@@ -116,7 +116,6 @@ Deno.serve(async (req) => {
           enable_chat: true,
           enable_screenshare: true,
           enable_transcription_storage: true,
-          auto_start_transcription: true,
           auto_transcription_settings: {
             model: 'nova-2-general',
             language: 'es',
@@ -181,7 +180,8 @@ async function createMeetingToken(
         room_name: roomName,
         is_owner: isOwner,
         user_name: userName,
-        enable_recording: isOwner ? 'cloud' : undefined,
+        // auto_start_transcription must be on the TOKEN (owner only), not the room
+        ...(isOwner ? { auto_start_transcription: true } : {}),
         start_audio_off: false,
         start_video_off: false,
       },

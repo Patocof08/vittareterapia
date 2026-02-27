@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { ArrowLeft, FileText, Sparkles, AlignLeft, Brain, Clock, Hash } from "lucide-react";
+import { ArrowLeft, FileText, Sparkles, AlignLeft, Brain, Clock, Hash, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -55,6 +55,7 @@ export default function SessionDetail() {
   const [appointment, setAppointment] = useState<AppointmentData | null>(null);
   const [transcript, setTranscript] = useState<TranscriptData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [fetchingTranscript, setFetchingTranscript] = useState(false);
   const [backPath, setBackPath] = useState<string>("/therapist/patients");
 
   useEffect(() => {
@@ -98,6 +99,30 @@ export default function SessionDetail() {
     }
   };
 
+  const handleFetchTranscript = async () => {
+    if (!sessionId) return;
+    setFetchingTranscript(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/fetch-session-transcript`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+        body: JSON.stringify({ appointment_id: sessionId }),
+      });
+      await res.json();
+      await fetchData();
+    } catch (err) {
+      console.error('Error fetching transcript:', err);
+    } finally {
+      setFetchingTranscript(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -124,6 +149,20 @@ export default function SessionDetail() {
           <p className="text-sm text-muted-foreground">{dateLabel}</p>
         </div>
       </div>
+
+      {/* Fetch transcript button when not yet available */}
+      {(!transcript || transcript.status !== 'completed') && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleFetchTranscript}
+          disabled={fetchingTranscript}
+          className="gap-2 w-fit"
+        >
+          <RefreshCw className={`w-4 h-4 ${fetchingTranscript ? 'animate-spin' : ''}`} />
+          {fetchingTranscript ? 'Buscando transcripción...' : 'Obtener transcripción'}
+        </Button>
+      )}
 
       {/* Meta info strip */}
       {transcript && (

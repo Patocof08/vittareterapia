@@ -23,9 +23,9 @@ Deno.serve(async (req) => {
     )
 
     // ============================================================
-    // TRANSCRIPTION READY
+    // TRANSCRIPT READY (Daily.co uses 'transcript.' prefix, not 'transcription.')
     // ============================================================
-    if (eventType === 'transcription.stopped' || eventType === 'transcription.ready-to-download') {
+    if (eventType === 'transcript.ready-to-download' || eventType === 'transcript.stopped') {
       const roomName = body.room_name || body.payload?.room_name
       const transcriptId = body.transcript_id || body.payload?.transcript_id
 

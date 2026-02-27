@@ -23,7 +23,10 @@
       "mcp__claude_ai_Supabase__list_tables",
       "mcp__claude_ai_Supabase__list_migrations",
       "WebSearch",
-      "WebFetch(domain:docs.daily.co)"
+      "WebFetch(domain:docs.daily.co)",
+      "WebFetch(domain:www.daily.co)",
+      "mcp__claude_ai_Supabase__get_project_url",
+      "Bash(curl:*)"
     ]
   }
 }
