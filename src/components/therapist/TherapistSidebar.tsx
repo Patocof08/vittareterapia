@@ -7,8 +7,6 @@ import {
   Users,
   DollarSign,
   BookOpen,
-  CheckSquare,
-  BarChart3,
   HelpCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -24,8 +22,6 @@ const menuItems = [
   { icon: Users, label: "Pacientes", path: "/therapist/patients" },
   { icon: DollarSign, label: "Pagos", path: "/therapist/payments" },
   { icon: BookOpen, label: "Biblioteca", path: "/therapist/library" },
-  { icon: CheckSquare, label: "Tareas", path: "/therapist/tasks" },
-  { icon: BarChart3, label: "Reportes", path: "/therapist/reports" },
 ];
 
 export const TherapistSidebar = () => {

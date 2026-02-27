@@ -56,6 +56,26 @@ export default function TherapistPatients() {
           lastSession: row.last_session,
         }));
 
+        // Fetch transcript counts per patient
+        const patientIds = mappedPatients.map(p => p.id);
+        if (patientIds.length > 0) {
+          const { data: transcriptCounts } = await (supabase as any)
+            .from("session_transcripts")
+            .select("patient_id, id")
+            .in("patient_id", patientIds)
+            .eq("status", "completed");
+
+          if (transcriptCounts) {
+            const countByPatient: Record<string, number> = {};
+            transcriptCounts.forEach((t: any) => {
+              countByPatient[t.patient_id] = (countByPatient[t.patient_id] || 0) + 1;
+            });
+            mappedPatients.forEach(p => {
+              (p as any).transcriptCount = countByPatient[p.id] || 0;
+            });
+          }
+        }
+
         console.log("Mapped patients:", mappedPatients);
         setPatients(mappedPatients);
       } catch (err) {
@@ -134,6 +154,11 @@ export default function TherapistPatients() {
                     <p className="text-sm font-medium text-foreground">
                       {patient.sessionCount} sesión{patient.sessionCount !== 1 ? "es" : ""}
                     </p>
+                    {(patient as any).transcriptCount > 0 && (
+                      <p className="text-xs text-emerald-600">
+                        {(patient as any).transcriptCount} transcripción{(patient as any).transcriptCount !== 1 ? "es" : ""}
+                      </p>
+                    )}
                     {patient.lastSession && (
                       <p className="text-xs text-muted-foreground">
                         Última: {new Date(patient.lastSession).toLocaleDateString("es-MX")}

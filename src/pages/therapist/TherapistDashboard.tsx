@@ -127,9 +127,7 @@ export default function TherapistDashboard() {
     fetchData();
   }, [user]);
 
-  // Placeholder for future features
   const unreadMessages: any[] = [];
-  const pendingTasks: any[] = [];
 
   return (
     <div className="space-y-6">
@@ -330,44 +328,6 @@ export default function TherapistDashboard() {
           </CardContent>
         </Card>
 
-        {/* Tareas pendientes */}
-        <Card className="md:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="w-5 h-5" />
-              Tareas pendientes para pacientes
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {pendingTasks.length === 0 ? (
-              <p className="text-muted-foreground text-center py-8">
-                No hay tareas pendientes
-              </p>
-            ) : (
-              <div className="space-y-4">
-                {pendingTasks.map((task) => (
-                  <div
-                    key={task.id}
-                    className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors"
-                  >
-                    <div className="flex-1">
-                      <p className="font-medium text-foreground">{task.title}</p>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Paciente: {task.patientName}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Vence: {new Date(task.dueDate).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <Button size="sm" variant="outline">
-                      Ver detalles
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
