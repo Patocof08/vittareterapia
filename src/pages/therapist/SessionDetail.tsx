@@ -255,9 +255,15 @@ export default function SessionDetail() {
       );
 
       if (!response.ok) {
-        const text = await response.text().catch(() => '');
-        console.error('analyze-transcript error:', response.status, text);
-        toast.error(`Error del servidor (${response.status})`);
+        let serverMessage = '';
+        try {
+          const errData = await response.json();
+          serverMessage = errData.error || '';
+        } catch {
+          serverMessage = await response.text().catch(() => '');
+        }
+        console.error('analyze-transcript error:', response.status, serverMessage);
+        toast.error(serverMessage || `Error del servidor (${response.status})`);
         return;
       }
 
