@@ -1043,16 +1043,9 @@ export default function TherapistCalendar() {
       const now = new Date();
       const scrollTo = Math.max(0, (now.getHours() - HOUR_START - 1) * HOUR_HEIGHT);
       scrollRef.current.scrollTop = scrollTo;
-      if (gutterRef.current) gutterRef.current.scrollTop = scrollTo;
       scrolledRef.current = true;
     }
   }, [loading]);
-
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    if (gutterRef.current) {
-      gutterRef.current.scrollTop = e.currentTarget.scrollTop;
-    }
-  };
 
   const handleDeleteBlock = async (event: CalEvent) => {
     if (!event.raw?.id) return;
@@ -1354,35 +1347,35 @@ export default function TherapistCalendar() {
 
       {/* ─── Grid ──────────────────────────────────────────────────────── */}
       <div
-        style={{ display: "flex", flex: 1, minHeight: 0, overflow: "hidden" }}
+        style={{ flex: 1, minHeight: 0, overflow: "hidden" }}
       >
-        {/* Time gutter */}
+        {/* Single scroll container — gutter + grid scroll together, no JS sync needed */}
         <div
-          style={{
-            width: "52px",
-            flexShrink: 0,
-            background: "white",
-            borderRight: "1px solid #cbd5e1",
-            display: "flex",
-            flexDirection: "column",
-          }}
+          ref={scrollRef}
+          style={{ height: "100%", overflowY: "auto", overflowX: "hidden" }}
         >
-          {/* Spacer aligns with day header row */}
-          <div
-            style={{
-              height: "52px",
-              borderBottom: "1px solid #e8ecf0",
-              flexShrink: 0,
-            }}
-          />
-          {/* Synced scroll */}
-          <div
-            ref={gutterRef}
-            style={{ flex: 1, overflow: "hidden" }}
-          >
+          <div style={{ display: "flex" }}>
+            {/* Time gutter column */}
             <div
-              style={{ height: `${HOURS.length * HOUR_HEIGHT}px` }}
+              style={{
+                width: "52px",
+                flexShrink: 0,
+                borderRight: "1px solid #cbd5e1",
+                background: "white",
+              }}
             >
+              {/* Corner cell — sticky to stay aligned with day headers */}
+              <div
+                style={{
+                  position: "sticky",
+                  top: 0,
+                  zIndex: 20,
+                  height: "52px",
+                  background: "white",
+                  borderBottom: "1px solid #e8ecf0",
+                }}
+              />
+              {/* Hour labels — scroll naturally with the grid */}
               {HOURS.map((h, i) => (
                 <div
                   key={h}
@@ -1409,23 +1402,9 @@ export default function TherapistCalendar() {
                 </div>
               ))}
             </div>
-          </div>
-        </div>
 
-        {/* Day columns area */}
-        <div
-          style={{
-            flex: 1,
-            minWidth: 0,
-            overflow: "hidden",
-          }}
-        >
-          {/* Scrollable container — headers are sticky inside so they share the same width */}
-          <div
-            ref={scrollRef}
-            onScroll={handleScroll}
-            style={{ height: "100%", overflowY: "auto", overflowX: "hidden" }}
-          >
+            {/* Day columns */}
+            <div style={{ flex: 1, minWidth: 0 }}>
           {/* Day headers — sticky so they stay visible while scrolling */}
           <div
             style={{
@@ -1618,6 +1597,7 @@ export default function TherapistCalendar() {
                   </div>
                 );
               })}
+            </div>
             </div>
           </div>
         </div>
