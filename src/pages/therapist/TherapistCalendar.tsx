@@ -1414,21 +1414,28 @@ export default function TherapistCalendar() {
         <div
           style={{
             flex: 1,
-            display: "flex",
-            flexDirection: "column",
             minWidth: 0,
+            overflow: "hidden",
           }}
         >
-          {/* Day headers */}
+          {/* Scrollable container — headers are sticky inside so they share the same width */}
+          <div
+            ref={scrollRef}
+            onScroll={handleScroll}
+            style={{ height: "100%", overflowY: "auto", overflowX: "hidden" }}
+          >
+          {/* Day headers — sticky so they stay visible while scrolling */}
           <div
             style={{
+              position: "sticky",
+              top: 0,
+              zIndex: 10,
               display: "grid",
               gridTemplateColumns:
                 view === "week" ? "repeat(7, 1fr)" : "1fr",
               borderBottom: "1px solid #e8ecf0",
               background: "white",
               height: "52px",
-              flexShrink: 0,
             }}
           >
             {visibleDayIndices.map((dayIdx) => {
@@ -1543,12 +1550,7 @@ export default function TherapistCalendar() {
             })}
           </div>
 
-          {/* Scrollable event grid */}
-          <div
-            ref={scrollRef}
-            onScroll={handleScroll}
-            style={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}
-          >
+          {/* Event grid */}
             <div
               style={{
                 display: "grid",
