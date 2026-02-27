@@ -50,24 +50,28 @@ export default function TherapistPayments() {
   const [sessionPriceFallback, setSessionPriceFallback] = useState<number>(0);
 
   // Ganancia neta del psicólogo: siempre 85% de su precio de sesión establecido.
-  // El descuento de paquete (5% o 15%) se descuenta únicamente del porcentaje admin.
   const getDisplayAmount = (payment: Payment) => {
     const appointment = payment.appointment;
     const cancelReason = appointment?.cancellation_reason || "";
-    // Cancelación a tiempo = sin cobro
-    if (
-      payment.payment_status === "cancelled" ||
-      (appointment?.status === "cancelled" && !cancelReason.includes("menos de 24h"))
-    ) {
-      return 0;
+    const isLateCancellation =
+      appointment?.status === "cancelled" && cancelReason.includes("menos de 24h");
+
+    // Cancelación tardía: el psicólogo cobra igual
+    if (!isLateCancellation) {
+      if (
+        payment.payment_status === "cancelled" ||
+        appointment?.status === "cancelled"
+      ) {
+        return 0;
+      }
     }
-    // Usar base_amount (precio sin platform fee) para calcular el 85% del psicólogo
-    // amount incluye el 5% de platform fee que va al admin, no al psicólogo
+
+    // Usar base_amount (precio sin platform fee) para el 85% del psicólogo
     if (payment.payment_type === "single_session") {
       const base = Number(payment.base_amount || payment.amount || 0);
       if (base > 0) return base * 0.85;
     }
-    // Para paquetes, usamos session_price × 85% del perfil del psicólogo
+    // Para paquetes, usar session_price × 85% del perfil
     return Number(sessionPriceFallback || 0);
   };
   useEffect(() => {
