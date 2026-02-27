@@ -55,9 +55,14 @@ export default function VideoCall({ appointmentId, onLeave, onRoleDetected }: Vi
         return
       }
 
+      // Get session token explicitly to avoid race condition with publishable key
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) throw new Error('Sesión no encontrada, por favor inicia sesión de nuevo')
+
       // Call edge function
       const { data, error: fnError } = await supabase.functions.invoke('create-video-room', {
         body: { appointment_id: appointmentId },
+        headers: { Authorization: `Bearer ${session.access_token}` },
       })
       if (fnError) throw fnError
 
