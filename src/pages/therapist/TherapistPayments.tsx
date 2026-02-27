@@ -54,7 +54,7 @@ export default function TherapistPayments() {
     const appointment = payment.appointment;
     const cancelReason = appointment?.cancellation_reason || "";
     const isLateCancellation =
-      appointment?.status === "cancelled" && cancelReason.includes("menos de 24h");
+      appointment?.status === "cancelled" && cancelReason.includes("Cancelación tardía");
 
     // Cancelación tardía: el psicólogo cobra igual
     if (!isLateCancellation) {
@@ -185,7 +185,7 @@ export default function TherapistPayments() {
         // Completadas: sesiones tomadas O canceladas tarde (se cobran)
         filtered = paymentsToFilter.filter(p => 
           (p.appointment?.status === "completed") ||
-          (p.appointment?.status === "cancelled" && p.appointment?.cancellation_reason?.includes("menos de 24h"))
+          (p.appointment?.status === "cancelled" && p.appointment?.cancellation_reason?.includes("Cancelación tardía"))
         );
         break;
       case "pending":
@@ -200,7 +200,7 @@ export default function TherapistPayments() {
         // Canceladas a tiempo (sin cargo)
         filtered = paymentsToFilter.filter(p => 
           p.payment_status === "cancelled" ||
-          (p.appointment?.status === "cancelled" && !p.appointment?.cancellation_reason?.includes("menos de 24h"))
+          (p.appointment?.status === "cancelled" && !p.appointment?.cancellation_reason?.includes("Cancelación tardía"))
         );
         break;
       case "all":
@@ -226,7 +226,7 @@ export default function TherapistPayments() {
     const cancelReason = appointment?.cancellation_reason || "";
     
     // Cancelado tarde (se cobra) - mostrar como completado
-    if (appointment?.status === "cancelled" && cancelReason.includes("menos de 24h")) {
+    if (appointment?.status === "cancelled" && cancelReason.includes("Cancelación tardía")) {
       return {
         label: "Completado (Cancelado tarde)",
         className: "bg-green-50 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-400 dark:border-green-800"
@@ -234,7 +234,7 @@ export default function TherapistPayments() {
     }
     
     // Cancelado a tiempo (sin cargo)
-    if (payment.payment_status === "cancelled" || (appointment?.status === "cancelled" && !cancelReason.includes("menos de 24h"))) {
+    if (payment.payment_status === "cancelled" || (appointment?.status === "cancelled" && !cancelReason.includes("Cancelación tardía"))) {
       return {
         label: "Cancelado",
         className: "bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-950 dark:text-gray-400 dark:border-gray-800"
