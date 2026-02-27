@@ -42,6 +42,103 @@ function EmptyState({ message }: { message: string }) {
   );
 }
 
+interface TranscriptBlock {
+  speaker: string;
+  time: string;
+  lines: string[];
+}
+
+function formatVttTime(time: string): string {
+  const parts = time.split(":");
+  if (parts.length < 2) return time;
+  const h = parseInt(parts[0]);
+  const m = parts[1];
+  const s = parts[2]?.split(".")[0] ?? "00";
+  return h > 0 ? `${h}:${m}:${s}` : `${m}:${s}`;
+}
+
+function parseTranscript(vtt: string): TranscriptBlock[] {
+  if (!vtt) return [];
+  const cues: { time: string; speaker: string; text: string }[] = [];
+  const blocks = vtt.split(/\n\n+/);
+
+  for (const block of blocks) {
+    const lines = block.trim().split("\n").map((l) => l.trim()).filter(Boolean);
+    if (lines.length === 0) continue;
+
+    const timeIdx = lines.findIndex((l) => l.includes("-->"));
+    if (timeIdx === -1) continue;
+
+    const startTime = lines[timeIdx].split("-->")[0].trim();
+    const formatted = formatVttTime(startTime);
+    const textRaw = lines.slice(timeIdx + 1).join(" ").trim();
+    if (!textRaw) continue;
+
+    // Match <v>SPEAKER:</v>TEXT  or  <v SPEAKER>TEXT
+    const m =
+      textRaw.match(/^<v>([^<]*)<\/v>(.*)$/) ||
+      textRaw.match(/^<v\s+([^>]+)>(.*)$/);
+
+    if (m) {
+      const speaker = m[1].replace(/:$/, "").trim();
+      const text = m[2].replace(/<\/v>/g, "").trim();
+      if (text) cues.push({ time: formatted, speaker, text });
+    } else if (!textRaw.startsWith("<")) {
+      cues.push({ time: formatted, speaker: "", text: textRaw });
+    }
+  }
+
+  // Merge consecutive cues from the same speaker
+  const merged: TranscriptBlock[] = [];
+  for (const cue of cues) {
+    const last = merged[merged.length - 1];
+    if (last && last.speaker === cue.speaker) {
+      last.lines.push(cue.text);
+    } else {
+      merged.push({ speaker: cue.speaker, time: cue.time, lines: [cue.text] });
+    }
+  }
+  return merged;
+}
+
+function TranscriptView({ raw }: { raw: string }) {
+  const blocks = parseTranscript(raw);
+  if (blocks.length === 0) {
+    return <EmptyState message="Transcripción no disponible para esta sesión." />;
+  }
+
+  // Assign a consistent color per speaker name
+  const speakers = Array.from(new Set(blocks.map((b) => b.speaker)));
+  const speakerColors: Record<string, string> = {};
+  const palette = [
+    "bg-blue-50 border-blue-200 text-blue-900",
+    "bg-emerald-50 border-emerald-200 text-emerald-900",
+    "bg-violet-50 border-violet-200 text-violet-900",
+    "bg-amber-50 border-amber-200 text-amber-900",
+  ];
+  speakers.forEach((s, i) => {
+    speakerColors[s] = palette[i % palette.length];
+  });
+
+  return (
+    <div className="space-y-3">
+      {blocks.map((block, i) => (
+        <div key={i} className={`rounded-lg border px-4 py-3 ${speakerColors[block.speaker] ?? "bg-muted border-border"}`}>
+          <div className="flex items-baseline gap-2 mb-1">
+            <span className="text-xs font-semibold uppercase tracking-wide opacity-70">
+              {block.speaker || "Participante"}
+            </span>
+            <span className="text-xs opacity-50">{block.time}</span>
+          </div>
+          <p className="text-sm leading-relaxed">
+            {block.lines.join(" ")}
+          </p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function SessionDetail() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const { user } = useAuth();
@@ -213,9 +310,7 @@ export default function SessionDetail() {
               {!transcript?.transcript_raw ? (
                 <EmptyState message="Transcripción no disponible para esta sesión." />
               ) : (
-                <pre className="whitespace-pre-wrap text-sm leading-relaxed font-sans text-foreground">
-                  {transcript.transcript_raw}
-                </pre>
+                <TranscriptView raw={transcript.transcript_raw} />
               )}
             </CardContent>
           </Card>

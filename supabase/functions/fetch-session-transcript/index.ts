@@ -60,38 +60,64 @@ Deno.serve(async (req) => {
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 })
     }
 
-    // Query Daily.co for transcripts associated with this room
+    // Query Daily.co — list all transcripts and filter by room name in code
+    // (roomName query filter may not be supported by all Daily.co plans)
     const listRes = await fetch(
-      `https://api.daily.co/v1/transcript?roomName=${encodeURIComponent(roomName)}&limit=5`,
+      `https://api.daily.co/v1/transcript?limit=50`,
       { headers: { Authorization: 'Bearer ' + DAILY_API_KEY } }
     )
     const listData = await listRes.json()
-    console.log('Daily transcript list:', JSON.stringify(listData))
+    console.log('Daily transcript list status:', listRes.status, 'total:', (listData.data || []).length)
 
-    const transcripts = listData.data || listData.transcripts || []
+    if (!listRes.ok) {
+      console.error('Daily.co list error:', JSON.stringify(listData))
+      // Still save a pending record so the UI shows something
+      await supabase.from('session_transcripts').upsert({
+        appointment_id: appointment.id,
+        psychologist_id: appointment.psychologist_id,
+        patient_id: appointment.patient_id,
+        status: 'pending',
+        language: 'es',
+        error_message: 'Error al consultar Daily.co: ' + (listData.error || listRes.status),
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'appointment_id' })
 
-    if (transcripts.length === 0) {
-      // No transcript found yet — mark as pending in our DB
-      await supabase
-        .from('session_transcripts')
-        .upsert({
-          appointment_id: appointment.id,
-          psychologist_id: appointment.psychologist_id,
-          patient_id: appointment.patient_id,
-          status: 'pending',
-          language: 'es',
-          error_message: 'Transcripción aún no disponible en Daily.co',
-          updated_at: new Date().toISOString(),
-        }, { onConflict: 'appointment_id' })
-
-      return new Response(JSON.stringify({ status: 'pending', message: 'Transcripción aún no lista' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 })
+      return new Response(
+        JSON.stringify({ status: 'pending', message: 'Error al consultar Daily.co', daily_status: listRes.status }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      )
     }
 
-    // Take the most recent transcript
-    const latest = transcripts[0]
-    const transcriptId = latest.id || latest.transcriptId
+    const allTranscripts = listData.data || []
 
+    // Find transcript for this room (Daily.co may use different field names)
+    const match = allTranscripts.find((t: any) =>
+      t.roomName === roomName ||
+      t.room_name === roomName ||
+      t.mtgRoomName === roomName
+    )
+
+    console.log('Room searched:', roomName, 'match found:', !!match, 'total transcripts:', allTranscripts.length)
+
+    if (!match) {
+      // No transcript yet — save pending record
+      await supabase.from('session_transcripts').upsert({
+        appointment_id: appointment.id,
+        psychologist_id: appointment.psychologist_id,
+        patient_id: appointment.patient_id,
+        status: 'pending',
+        language: 'es',
+        error_message: 'Transcripción aún no disponible en Daily.co',
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'appointment_id' })
+
+      return new Response(
+        JSON.stringify({ status: 'pending', message: 'Transcripción aún no lista', total_in_daily: allTranscripts.length }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      )
+    }
+
+    const transcriptId = match.id || match.transcriptId
     console.log('Found transcript:', transcriptId)
 
     // Get access link
@@ -100,11 +126,21 @@ Deno.serve(async (req) => {
       { headers: { Authorization: 'Bearer ' + DAILY_API_KEY } }
     )
     const linkData = await linkRes.json()
-    console.log('Access link response:', JSON.stringify(linkData))
+    console.log('Access link status:', linkRes.status)
 
     if (!linkData.link) {
+      await supabase.from('session_transcripts').upsert({
+        appointment_id: appointment.id,
+        psychologist_id: appointment.psychologist_id,
+        patient_id: appointment.patient_id,
+        status: 'pending',
+        language: 'es',
+        error_message: 'Enlace de transcripción no disponible aún',
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'appointment_id' })
+
       return new Response(
-        JSON.stringify({ status: 'pending', message: 'Enlace de transcripción no disponible aún', detail: linkData }),
+        JSON.stringify({ status: 'pending', message: 'Enlace no disponible aún' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
       )
     }
@@ -133,7 +169,7 @@ Deno.serve(async (req) => {
 
     if (upsertErr) throw upsertErr
 
-    // Also save transcript_id on appointment
+    // Save transcript_id on appointment
     await supabase
       .from('appointments')
       .update({ daily_transcript_id: transcriptId })
