@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Video, Calendar, Clock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,8 +20,14 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+const canJoinCall = (startTime: string) => {
+  const diffMin = (new Date(startTime).getTime() - Date.now()) / (1000 * 60);
+  return diffMin <= 15 && diffMin >= -30;
+};
+
 export default function ClientSessions() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [upcomingSessions, setUpcomingSessions] = useState<any[]>([]);
   const [pastSessions, setPastSessions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -295,6 +302,15 @@ export default function ClientSessions() {
                     </div>
                     <div className="flex flex-col items-end gap-2">
                       {getStatusBadge(session.status)}
+                      {(session.status === "pending" || session.status === "confirmed") && canJoinCall(session.start_time) && (
+                        <Button
+                          size="sm"
+                          onClick={() => navigate(`/session/${session.id}`)}
+                        >
+                          <Video className="w-4 h-4 mr-2" />
+                          Unirse
+                        </Button>
+                      )}
                       {(session.status === "pending" || session.status === "confirmed") && (
                         <Button
                           variant="ghost"

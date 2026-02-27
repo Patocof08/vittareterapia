@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Video, Search, Filter, ExternalLink } from "lucide-react";
+import { Video, Search, Filter } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -80,13 +80,9 @@ export default function TherapistSessions() {
     }
   };
 
-  const handleStartSession = (sessionId: string, videoLink?: string) => {
-    if (videoLink) {
-      toast.success("Abriendo videollamada...");
-      window.open(videoLink, "_blank");
-    } else {
-      toast.error("No hay enlace de videollamada disponible");
-    }
+  const canJoinCall = (startTime: string) => {
+    const diffMin = (new Date(startTime).getTime() - Date.now()) / (1000 * 60);
+    return diffMin <= 15 && diffMin >= -30;
   };
 
   const handleCompleteSession = async (sessionId: string) => {
@@ -255,13 +251,11 @@ export default function TherapistSessions() {
                   )}
 
                   <div className="flex flex-wrap gap-2">
-                    {session.video_link && (session.status === "pending" || session.status === "confirmed") && (
+                    {(session.status === "pending" || session.status === "confirmed") && canJoinCall(session.start_time) && (
                       <Button
-                        onClick={() =>
-                          handleStartSession(session.id, session.video_link)
-                        }
+                        onClick={() => navigate(`/session/${session.id}`)}
                       >
-                        <ExternalLink className="w-4 h-4 mr-2" />
+                        <Video className="w-4 h-4 mr-2" />
                         Iniciar videollamada
                       </Button>
                     )}

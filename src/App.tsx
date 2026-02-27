@@ -51,6 +51,7 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminVerifications from "./pages/admin/AdminVerifications";
 import AdminPsychologistDetail from "./pages/admin/AdminPsychologistDetail";
 import AdminFinancials from "./pages/admin/AdminFinancials";
+import VideoSession from "./pages/VideoSession";
 
 const App = () => {
   return (
@@ -137,6 +138,9 @@ const App = () => {
             <Route path="financials" element={<AdminFinancials />} />
           </Route>
           
+          {/* Video session — accessible to any authenticated user */}
+          <Route path="/session/:appointmentId" element={<VideoSession />} />
+
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
