@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { ArrowLeft, FileText, Sparkles, AlignLeft, Brain, Clock, Hash, RefreshCw } from "lucide-react";
+import { ArrowLeft, FileText, Sparkles, AlignLeft, Brain, Clock, Hash, RefreshCw, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { toast } from "sonner";
 
 interface TranscriptData {
   id: string;
@@ -155,6 +156,8 @@ export default function SessionDetail() {
   const [transcript, setTranscript] = useState<TranscriptData | null>(null);
   const [loading, setLoading] = useState(true);
   const [fetchingTranscript, setFetchingTranscript] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [backPath, setBackPath] = useState<string>("/therapist/patients");
 
   useEffect(() => {
@@ -222,6 +225,44 @@ export default function SessionDetail() {
     }
   };
 
+  const triggerAiAnalysis = async (force = false) => {
+    if (!sessionId) return;
+    setAnalyzing(true);
+    try {
+      const { data: { session: authSession } } = await supabase.auth.getSession();
+      const token = authSession?.access_token;
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-transcript`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({ appointment_id: sessionId, force }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.error) {
+        toast.error(data.error);
+      } else if (data.status === 'already_analyzed' && !force) {
+        toast.info('Esta transcripción ya fue analizada');
+      } else {
+        toast.success('Análisis completado');
+        await fetchData();
+        setActiveTab('notes');
+      }
+    } catch (error) {
+      console.error('Error triggering analysis:', error);
+      toast.error('Error al analizar la transcripción');
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -233,6 +274,8 @@ export default function SessionDetail() {
   const dateLabel = appointment
     ? format(new Date(appointment.start_time), "d 'de' MMMM, yyyy • HH:mm", { locale: es })
     : "";
+
+  const hasAiNotes = !!(transcript?.ai_clinical_notes || transcript?.ai_progress_notes);
 
   return (
     <div className="space-y-6">
@@ -282,7 +325,7 @@ export default function SessionDetail() {
       )}
 
       {/* Tabs */}
-      <Tabs defaultValue={initialTab}>
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="complete" className="gap-1.5">
             <FileText className="w-3.5 h-3.5" />
@@ -312,7 +355,46 @@ export default function SessionDetail() {
               {!transcript?.transcript_raw ? (
                 <EmptyState message="Transcripción no disponible para esta sesión." />
               ) : (
-                <TranscriptView raw={transcript.transcript_raw} />
+                <>
+                  <TranscriptView raw={transcript.transcript_raw} />
+
+                  {/* Botón para generar notas IA */}
+                  {transcript.status === "completed" && !transcript.ai_summary && (
+                    <div className="mt-6 p-4 bg-gradient-to-r from-emerald-50 to-cyan-50 rounded-lg border border-emerald-200">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-emerald-100 rounded-lg">
+                          <Sparkles className="w-5 h-5 text-emerald-600" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-medium text-sm text-foreground">
+                            Generar notas clínicas con IA
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            Claude analizará la transcripción y generará resumen, notas SOAP, temas clave y más.
+                          </p>
+                        </div>
+                        <Button
+                          onClick={() => triggerAiAnalysis()}
+                          disabled={analyzing}
+                          className="bg-emerald-600 hover:bg-emerald-700"
+                          size="sm"
+                        >
+                          {analyzing ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Analizando...
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles className="w-4 h-4 mr-2" />
+                              Analizar
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </CardContent>
           </Card>
@@ -401,11 +483,9 @@ export default function SessionDetail() {
           </Card>
         </TabsContent>
 
-        {/* NOTAS RESUMIDAS */}
+        {/* NOTAS IA */}
         <TabsContent value="notes" className="space-y-4">
-          {(!transcript?.ai_clinical_notes && !transcript?.ai_progress_notes) ? (
-            <Card><CardContent className="py-8"><EmptyState message="Notas resumidas no disponibles aún." /></CardContent></Card>
-          ) : (
+          {hasAiNotes ? (
             <>
               {transcript?.ai_progress_notes && (
                 <Card>
@@ -427,7 +507,64 @@ export default function SessionDetail() {
                   </CardContent>
                 </Card>
               )}
+
+              {/* Re-analyze button */}
+              <div className="flex justify-end mt-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => triggerAiAnalysis(true)}
+                  disabled={analyzing}
+                  className="text-xs text-muted-foreground"
+                >
+                  {analyzing ? (
+                    <>
+                      <Loader2 className="w-3 h-3 mr-1.5 animate-spin" />
+                      Re-analizando...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-3 h-3 mr-1.5" />
+                      Re-analizar con IA
+                    </>
+                  )}
+                </Button>
+              </div>
             </>
+          ) : analyzing ? (
+            <div className="flex flex-col items-center justify-center py-16 text-emerald-600">
+              <Loader2 className="w-10 h-10 mb-3 animate-spin" />
+              <p className="font-medium">Analizando transcripción...</p>
+              <p className="text-sm mt-2 text-center max-w-sm text-muted-foreground">
+                Claude está generando las notas clínicas. Esto puede tardar 15-30 segundos.
+              </p>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+              <Brain className="w-10 h-10 mb-3 opacity-40" />
+              {transcript?.status === "completed" ? (
+                <>
+                  <p className="font-medium">Notas de IA disponibles</p>
+                  <p className="text-sm mt-2 text-center max-w-sm">
+                    La transcripción está lista. Haz clic para generar las notas clínicas automáticas.
+                  </p>
+                  <Button
+                    onClick={() => triggerAiAnalysis()}
+                    className="mt-4 bg-emerald-600 hover:bg-emerald-700"
+                  >
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Generar notas IA
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <p className="font-medium">Notas de IA — Próximamente</p>
+                  <p className="text-sm mt-2 text-center max-w-sm">
+                    Las notas se generarán automáticamente cuando la transcripción esté completa.
+                  </p>
+                </>
+              )}
+            </div>
           )}
         </TabsContent>
       </Tabs>

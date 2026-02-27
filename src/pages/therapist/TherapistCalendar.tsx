@@ -1110,6 +1110,11 @@ export default function TherapistCalendar() {
 
   // ── Calendar ──────────────────────────────────────────────────────────────
   return (
+    <>
+    <style>{`
+      .cal-scroll::-webkit-scrollbar { display: none; }
+      .cal-scroll { scrollbar-width: none; -ms-overflow-style: none; }
+    `}</style>
     <div
       style={{
         fontFamily: "'DM Sans', -apple-system, sans-serif",
@@ -1347,6 +1352,7 @@ export default function TherapistCalendar() {
       {/* ─── Grid ──────────────────────────────────────────────────────── */}
       <div
         ref={scrollRef}
+        className="cal-scroll"
         style={{ flex: 1, minHeight: 0, overflowY: "auto" }}
       >
         {/* Sticky header row — position:sticky inside the scroll container,
@@ -1677,5 +1683,6 @@ export default function TherapistCalendar() {
         }
       />
     </div>
+    </>
   );
 }
