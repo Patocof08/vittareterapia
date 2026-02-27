@@ -47,8 +47,8 @@ export default function ClientSessions() {
     if (!user) return;
     setLoading(true);
     try {
-      // A session moves to history 1 hour after its start_time
-      const historyThreshold = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+      // A session moves to history 30 minutes after its start_time, or immediately if completed/cancelled
+      const historyThreshold = new Date(Date.now() - 30 * 60 * 1000).toISOString();
 
       // @ts-ignore - Types will regenerate automatically
       const { data, error } = await supabase
