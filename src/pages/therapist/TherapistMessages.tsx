@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { validateMessageContent } from "@/lib/messageValidation";
 
 interface Conversation {
   id: string;
@@ -39,6 +40,7 @@ export default function TherapistMessages() {
   const [messageText, setMessageText] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
   const [psychologistId, setPsychologistId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -330,6 +332,13 @@ export default function TherapistMessages() {
       return;
     }
 
+    const validation = validateMessageContent(messageText);
+    if (!validation.valid) {
+      setValidationError(validation.reason || "Mensaje no permitido");
+      return;
+    }
+    setValidationError(null);
+
     setSending(true);
     try {
       const { error } = await supabase
@@ -341,9 +350,17 @@ export default function TherapistMessages() {
           is_read: false
         });
 
-      if (error) throw error;
+      if (error) {
+        if (error.code === 'P0001' || error.message?.includes('contacto')) {
+          setValidationError("No se permite compartir información de contacto por este medio.");
+        } else {
+          throw error;
+        }
+        return;
+      }
 
       setMessageText("");
+      setValidationError(null);
       // No need to reload conversations - realtime subscription will handle it
     } catch (error) {
       console.error("Error sending message:", error);
@@ -524,11 +541,20 @@ export default function TherapistMessages() {
 
                 {/* Message input */}
                 <div className="border-t p-4 flex-shrink-0">
+                  {validationError && (
+                    <div className="flex items-center gap-2 text-destructive text-sm mb-2">
+                      <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                      <span>{validationError}</span>
+                    </div>
+                  )}
                   <div className="flex gap-2">
                     <Input
                       placeholder="Escribe un mensaje..."
                       value={messageText}
-                      onChange={(e) => setMessageText(e.target.value)}
+                      onChange={(e) => {
+                        setMessageText(e.target.value);
+                        if (validationError) setValidationError(null);
+                      }}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" && !e.shiftKey) {
                           e.preventDefault();
