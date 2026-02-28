@@ -1,7 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { ArrowLeft, FileText, Sparkles, AlignLeft, Brain, Clock, Hash, RefreshCw, Loader2 } from "lucide-react";
+import {
+  ArrowLeft, FileText, Sparkles, AlignLeft, Brain,
+  Clock, Hash, RefreshCw, Loader2, ListChecks, ChevronDown, ChevronUp,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
@@ -35,6 +39,44 @@ interface AppointmentData {
 
 const TAB_VALUES = ["complete", "highlights", "summary", "notes"] as const;
 
+// ─── CollapsibleSection ────────────────────────────────────────────────────────
+function CollapsibleSection({
+  title,
+  icon,
+  expanded,
+  onToggle,
+  children,
+}: {
+  title: string;
+  icon: React.ReactNode;
+  expanded: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="border border-border rounded-lg overflow-hidden">
+      <button
+        className="w-full flex items-center justify-between px-4 py-3 bg-muted/50 hover:bg-muted transition-colors text-left"
+        onClick={onToggle}
+      >
+        <div className="flex items-center gap-2">
+          {icon}
+          <span className="font-medium text-sm">{title}</span>
+        </div>
+        {expanded
+          ? <ChevronUp className="w-4 h-4 text-muted-foreground" />
+          : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+      </button>
+      {expanded && (
+        <div className="px-4 py-3">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── EmptyState ────────────────────────────────────────────────────────────────
 function EmptyState({ message }: { message: string }) {
   return (
     <div className="text-center py-16 text-muted-foreground">
@@ -43,6 +85,7 @@ function EmptyState({ message }: { message: string }) {
   );
 }
 
+// ─── VTT parsing ──────────────────────────────────────────────────────────────
 interface TranscriptBlock {
   speaker: string;
   time: string;
@@ -61,27 +104,21 @@ function formatVttTime(time: string): string {
 function parseTranscript(vtt: string): TranscriptBlock[] {
   if (!vtt) return [];
   const cues: { time: string; speaker: string; text: string }[] = [];
-  // Normalize line endings (\r\n → \n)
   const normalized = vtt.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
   const blocks = normalized.split(/\n\n+/);
 
   for (const block of blocks) {
     const lines = block.trim().split("\n").map((l) => l.trim()).filter(Boolean);
     if (lines.length === 0) continue;
-
     const timeIdx = lines.findIndex((l) => l.includes("-->"));
     if (timeIdx === -1) continue;
-
     const startTime = lines[timeIdx].split("-->")[0].trim();
     const formatted = formatVttTime(startTime);
     const textRaw = lines.slice(timeIdx + 1).join(" ").trim();
     if (!textRaw) continue;
-
-    // Match <v>SPEAKER:</v>TEXT  or  <v SPEAKER>TEXT
     const m =
       textRaw.match(/^<v>([^<]*)<\/v>(.*)$/) ||
       textRaw.match(/^<v\s+([^>]+)>(.*)$/);
-
     if (m) {
       const speaker = m[1].replace(/:$/, "").trim();
       const text = m[2].replace(/<\/v>/g, "").trim();
@@ -91,7 +128,6 @@ function parseTranscript(vtt: string): TranscriptBlock[] {
     }
   }
 
-  // Merge consecutive cues from the same speaker
   const merged: TranscriptBlock[] = [];
   for (const cue of cues) {
     const last = merged[merged.length - 1];
@@ -109,8 +145,6 @@ function TranscriptView({ raw }: { raw: string }) {
   if (blocks.length === 0) {
     return <EmptyState message="Transcripción no disponible para esta sesión." />;
   }
-
-  // Assign a consistent color per speaker name
   const speakers = Array.from(new Set(blocks.map((b) => b.speaker)));
   const speakerColors: Record<string, string> = {};
   const palette = [
@@ -119,9 +153,7 @@ function TranscriptView({ raw }: { raw: string }) {
     "bg-violet-50 border-violet-200 text-violet-900",
     "bg-amber-50 border-amber-200 text-amber-900",
   ];
-  speakers.forEach((s, i) => {
-    speakerColors[s] = palette[i % palette.length];
-  });
+  speakers.forEach((s, i) => { speakerColors[s] = palette[i % palette.length]; });
 
   return (
     <div className="space-y-3">
@@ -133,15 +165,14 @@ function TranscriptView({ raw }: { raw: string }) {
             </span>
             <span className="text-xs opacity-50">{block.time}</span>
           </div>
-          <p className="text-sm leading-relaxed">
-            {block.lines.join(" ")}
-          </p>
+          <p className="text-sm leading-relaxed">{block.lines.join(" ")}</p>
         </div>
       ))}
     </div>
   );
 }
 
+// ─── Main component ───────────────────────────────────────────────────────────
 export default function SessionDetail() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const { user } = useAuth();
@@ -156,9 +187,14 @@ export default function SessionDetail() {
   const [transcript, setTranscript] = useState<TranscriptData | null>(null);
   const [loading, setLoading] = useState(true);
   const [fetchingTranscript, setFetchingTranscript] = useState(false);
-  const [analyzing, setAnalyzing] = useState(false);
   const [activeTab, setActiveTab] = useState(initialTab);
   const [backPath, setBackPath] = useState<string>("/therapist/patients");
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    summary: true,
+    topics: true,
+    followup: true,
+    tasks: true,
+  });
 
   useEffect(() => {
     if (user && sessionId) fetchData();
@@ -168,7 +204,6 @@ export default function SessionDetail() {
     if (!user || !sessionId) return;
     setLoading(true);
     try {
-      // Get appointment + patient name
       const { data: appt } = await supabase
         .from("appointments")
         .select("id, start_time, end_time, patient_id")
@@ -181,12 +216,10 @@ export default function SessionDetail() {
           .select("full_name")
           .eq("id", appt.patient_id)
           .single();
-
         setAppointment({ ...appt, patient_name: profile?.full_name ?? null });
         setBackPath(`/therapist/patients/${appt.patient_id}`);
       }
 
-      // Get transcript
       const { data: tx } = await (supabase as any)
         .from("session_transcripts")
         .select("*")
@@ -208,91 +241,32 @@ export default function SessionDetail() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
       const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/fetch-session-transcript`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.access_token}`,
+          "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
         },
         body: JSON.stringify({ appointment_id: sessionId }),
       });
       if (!res.ok) {
-        const text = await res.text().catch(() => '');
-        console.error('fetch-session-transcript error:', res.status, text);
+        const text = await res.text().catch(() => "");
+        console.error("fetch-session-transcript error:", res.status, text);
         toast.error(`Error al obtener transcripción (${res.status})`);
         return;
       }
       await res.json().catch(() => null);
       await fetchData();
     } catch (err) {
-      console.error('Error fetching transcript:', err);
-      toast.error('Error al obtener la transcripción');
+      console.error("Error fetching transcript:", err);
+      toast.error("Error al obtener la transcripción");
     } finally {
       setFetchingTranscript(false);
     }
   };
 
-  const triggerAiAnalysis = async (force = false) => {
-    if (!sessionId) return;
-    setAnalyzing(true);
-    try {
-      const { data: { session: authSession } } = await supabase.auth.getSession();
-      if (!authSession?.access_token) {
-        toast.error('No hay sesión activa');
-        return;
-      }
-
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-transcript`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${authSession.access_token}`,
-          },
-          body: JSON.stringify({ appointment_id: sessionId, force }),
-        }
-      );
-
-      if (!response.ok) {
-        let serverMessage = '';
-        try {
-          const errData = await response.json();
-          serverMessage = errData.error || '';
-        } catch {
-          serverMessage = await response.text().catch(() => '');
-        }
-        console.error('analyze-transcript error:', response.status, serverMessage);
-        toast.error(serverMessage || `Error del servidor (${response.status})`);
-        return;
-      }
-
-      let data: any = {};
-      try {
-        data = await response.json();
-      } catch {
-        // response was ok but body is empty or non-JSON — treat as success
-        toast.success('Análisis completado');
-        await fetchData();
-        setActiveTab('notes');
-        return;
-      }
-
-      if (data.error) {
-        toast.error(data.error);
-      } else if (data.status === 'already_analyzed' && !force) {
-        toast.info('Esta transcripción ya fue analizada');
-      } else {
-        toast.success('Análisis completado');
-        await fetchData();
-        setActiveTab('notes');
-      }
-    } catch (error) {
-      console.error('Error triggering analysis:', error);
-      toast.error('Error al analizar la transcripción');
-    } finally {
-      setAnalyzing(false);
-    }
+  const toggleSection = (key: string) => {
+    setExpandedSections((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
   if (loading) {
@@ -307,7 +281,7 @@ export default function SessionDetail() {
     ? format(new Date(appointment.start_time), "d 'de' MMMM, yyyy • HH:mm", { locale: es })
     : "";
 
-  const hasAiNotes = !!(transcript?.ai_clinical_notes || transcript?.ai_progress_notes);
+  const hasAiSummary = !!transcript?.ai_summary;
 
   return (
     <div className="space-y-6">
@@ -325,7 +299,7 @@ export default function SessionDetail() {
       </div>
 
       {/* Fetch transcript button when not yet available */}
-      {(!transcript || transcript.status !== 'completed') && (
+      {(!transcript || transcript.status !== "completed") && (
         <Button
           variant="outline"
           size="sm"
@@ -333,8 +307,8 @@ export default function SessionDetail() {
           disabled={fetchingTranscript}
           className="gap-2 w-fit"
         >
-          <RefreshCw className={`w-4 h-4 ${fetchingTranscript ? 'animate-spin' : ''}`} />
-          {fetchingTranscript ? 'Buscando transcripción...' : 'Obtener transcripción'}
+          <RefreshCw className={`w-4 h-4 ${fetchingTranscript ? "animate-spin" : ""}`} />
+          {fetchingTranscript ? "Buscando transcripción..." : "Obtener transcripción"}
         </Button>
       )}
 
@@ -373,7 +347,7 @@ export default function SessionDetail() {
           </TabsTrigger>
           <TabsTrigger value="notes" className="gap-1.5">
             <Brain className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Notas IA</span>
+            <span className="hidden sm:inline">Resumen IA</span>
           </TabsTrigger>
         </TabsList>
 
@@ -387,46 +361,7 @@ export default function SessionDetail() {
               {!transcript?.transcript_raw ? (
                 <EmptyState message="Transcripción no disponible para esta sesión." />
               ) : (
-                <>
-                  <TranscriptView raw={transcript.transcript_raw} />
-
-                  {/* Botón para generar notas IA */}
-                  {transcript.status === "completed" && !transcript.ai_summary && (
-                    <div className="mt-6 p-4 bg-gradient-to-r from-emerald-50 to-cyan-50 rounded-lg border border-emerald-200">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-emerald-100 rounded-lg">
-                          <Sparkles className="w-5 h-5 text-emerald-600" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-medium text-sm text-foreground">
-                            Generar notas clínicas con IA
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            Claude analizará la transcripción y generará resumen, notas SOAP, temas clave y más.
-                          </p>
-                        </div>
-                        <Button
-                          onClick={() => triggerAiAnalysis()}
-                          disabled={analyzing}
-                          className="bg-emerald-600 hover:bg-emerald-700"
-                          size="sm"
-                        >
-                          {analyzing ? (
-                            <>
-                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                              Analizando...
-                            </>
-                          ) : (
-                            <>
-                              <Sparkles className="w-4 h-4 mr-2" />
-                              Analizar
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </>
+                <TranscriptView raw={transcript.transcript_raw} />
               )}
             </CardContent>
           </Card>
@@ -499,7 +434,7 @@ export default function SessionDetail() {
           )}
         </TabsContent>
 
-        {/* RESUMEN */}
+        {/* RESUMEN (texto libre) */}
         <TabsContent value="summary">
           <Card>
             <CardHeader>
@@ -515,87 +450,108 @@ export default function SessionDetail() {
           </Card>
         </TabsContent>
 
-        {/* NOTAS IA */}
-        <TabsContent value="notes" className="space-y-4">
-          {hasAiNotes ? (
-            <>
-              {transcript?.ai_progress_notes && (
-                <Card>
-                  <CardHeader><CardTitle className="text-base">Notas de progreso</CardTitle></CardHeader>
-                  <CardContent>
-                    <p className="text-sm leading-relaxed whitespace-pre-wrap">{transcript.ai_progress_notes}</p>
-                  </CardContent>
-                </Card>
-              )}
-              {transcript?.ai_clinical_notes && (
-                <Card>
-                  <CardHeader><CardTitle className="text-base">Notas clínicas IA</CardTitle></CardHeader>
-                  <CardContent>
-                    <pre className="text-sm leading-relaxed font-sans whitespace-pre-wrap">
-                      {typeof transcript.ai_clinical_notes === "string"
-                        ? transcript.ai_clinical_notes
-                        : JSON.stringify(transcript.ai_clinical_notes, null, 2)}
-                    </pre>
-                  </CardContent>
-                </Card>
+        {/* RESUMEN IA — resumen, temas, highlights, tareas */}
+        <TabsContent value="notes" className="p-0 mt-0">
+          {hasAiSummary ? (
+            <div className="space-y-4 pt-4">
+              {/* Resumen */}
+              {transcript!.ai_summary && (
+                <CollapsibleSection
+                  title="Resumen de la sesión"
+                  icon={<Sparkles className="w-4 h-4 text-emerald-600" />}
+                  expanded={expandedSections.summary}
+                  onToggle={() => toggleSection("summary")}
+                >
+                  <p className="text-sm text-foreground leading-relaxed">
+                    {transcript!.ai_summary}
+                  </p>
+                </CollapsibleSection>
               )}
 
-              {/* Re-analyze button */}
-              <div className="flex justify-end mt-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => triggerAiAnalysis(true)}
-                  disabled={analyzing}
-                  className="text-xs text-muted-foreground"
+              {/* Temas clave */}
+              {(transcript!.ai_key_topics?.length ?? 0) > 0 && (
+                <CollapsibleSection
+                  title="Temas clave"
+                  icon={<Hash className="w-4 h-4 text-violet-600" />}
+                  expanded={expandedSections.topics}
+                  onToggle={() => toggleSection("topics")}
                 >
-                  {analyzing ? (
-                    <>
-                      <Loader2 className="w-3 h-3 mr-1.5 animate-spin" />
-                      Re-analizando...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-3 h-3 mr-1.5" />
-                      Re-analizar con IA
-                    </>
-                  )}
-                </Button>
-              </div>
-            </>
-          ) : analyzing ? (
-            <div className="flex flex-col items-center justify-center py-16 text-emerald-600">
-              <Loader2 className="w-10 h-10 mb-3 animate-spin" />
-              <p className="font-medium">Analizando transcripción...</p>
-              <p className="text-sm mt-2 text-center max-w-sm text-muted-foreground">
-                Claude está generando las notas clínicas. Esto puede tardar 15-30 segundos.
+                  <div className="flex flex-wrap gap-2">
+                    {transcript!.ai_key_topics!.map((topic, i) => (
+                      <Badge key={i} variant="secondary" className="text-xs">
+                        {topic}
+                      </Badge>
+                    ))}
+                  </div>
+                </CollapsibleSection>
+              )}
+
+              {/* Highlights / Puntos discutidos */}
+              {(transcript!.ai_followup_suggestions?.length ?? 0) > 0 && (
+                <CollapsibleSection
+                  title="Puntos discutidos"
+                  icon={<ListChecks className="w-4 h-4 text-blue-600" />}
+                  expanded={expandedSections.followup}
+                  onToggle={() => toggleSection("followup")}
+                >
+                  <ul className="space-y-2">
+                    {transcript!.ai_followup_suggestions!.map((point, i) => (
+                      <li key={i} className="flex items-start gap-2 text-sm text-foreground">
+                        <span className="text-emerald-500 mt-0.5">•</span>
+                        <span>{point}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </CollapsibleSection>
+              )}
+
+              {/* Tareas del paciente */}
+              {(transcript!.ai_patient_tasks?.length ?? 0) > 0 && (
+                <CollapsibleSection
+                  title="Tareas del paciente"
+                  icon={<ListChecks className="w-4 h-4 text-amber-600" />}
+                  expanded={expandedSections.tasks}
+                  onToggle={() => toggleSection("tasks")}
+                >
+                  <ul className="space-y-2">
+                    {transcript!.ai_patient_tasks!.map((task, i) => (
+                      <li key={i} className="flex items-start gap-2 text-sm text-foreground">
+                        <span className="text-amber-500 mt-0.5">☐</span>
+                        <span>{task}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </CollapsibleSection>
+              )}
+
+              {/* Disclaimer */}
+              <p className="text-xs text-muted-foreground text-center mt-4 italic">
+                Resumen generado automáticamente. No constituye análisis clínico.
               </p>
+            </div>
+          ) : transcript?.status === "completed" ? (
+            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+              <Loader2 className="w-8 h-8 mb-3 animate-spin opacity-40" />
+              <p className="font-medium">Generando resumen...</p>
+              <p className="text-sm mt-2 text-center max-w-sm">
+                El resumen se genera automáticamente y estará listo en unos segundos.
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-4"
+                onClick={fetchData}
+              >
+                Actualizar
+              </Button>
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
               <Brain className="w-10 h-10 mb-3 opacity-40" />
-              {transcript?.status === "completed" ? (
-                <>
-                  <p className="font-medium">Notas de IA disponibles</p>
-                  <p className="text-sm mt-2 text-center max-w-sm">
-                    La transcripción está lista. Haz clic para generar las notas clínicas automáticas.
-                  </p>
-                  <Button
-                    onClick={() => triggerAiAnalysis()}
-                    className="mt-4 bg-emerald-600 hover:bg-emerald-700"
-                  >
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    Generar notas IA
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <p className="font-medium">Notas de IA — Próximamente</p>
-                  <p className="text-sm mt-2 text-center max-w-sm">
-                    Las notas se generarán automáticamente cuando la transcripción esté completa.
-                  </p>
-                </>
-              )}
+              <p className="font-medium">Sin resumen disponible</p>
+              <p className="text-sm mt-2 text-center max-w-sm">
+                El resumen se generará automáticamente cuando la transcripción esté lista.
+              </p>
             </div>
           )}
         </TabsContent>
