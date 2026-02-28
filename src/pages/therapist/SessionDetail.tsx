@@ -1,11 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import {
-  ArrowLeft, FileText, Sparkles, AlignLeft, Brain,
-  Clock, Hash, RefreshCw, Loader2, ListChecks, ChevronDown, ChevronUp,
-} from "lucide-react";
+import { ArrowLeft, FileText, Sparkles, AlignLeft, Clock, Hash, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,44 +33,7 @@ interface AppointmentData {
   patient_name: string | null;
 }
 
-const TAB_VALUES = ["complete", "highlights", "summary", "notes"] as const;
-
-// ─── CollapsibleSection ────────────────────────────────────────────────────────
-function CollapsibleSection({
-  title,
-  icon,
-  expanded,
-  onToggle,
-  children,
-}: {
-  title: string;
-  icon: React.ReactNode;
-  expanded: boolean;
-  onToggle: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="border border-border rounded-lg overflow-hidden">
-      <button
-        className="w-full flex items-center justify-between px-4 py-3 bg-muted/50 hover:bg-muted transition-colors text-left"
-        onClick={onToggle}
-      >
-        <div className="flex items-center gap-2">
-          {icon}
-          <span className="font-medium text-sm">{title}</span>
-        </div>
-        {expanded
-          ? <ChevronUp className="w-4 h-4 text-muted-foreground" />
-          : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
-      </button>
-      {expanded && (
-        <div className="px-4 py-3">
-          {children}
-        </div>
-      )}
-    </div>
-  );
-}
+const TAB_VALUES = ["complete", "highlights", "summary"] as const;
 
 // ─── EmptyState ────────────────────────────────────────────────────────────────
 function EmptyState({ message }: { message: string }) {
@@ -189,12 +148,6 @@ export default function SessionDetail() {
   const [fetchingTranscript, setFetchingTranscript] = useState(false);
   const [activeTab, setActiveTab] = useState(initialTab);
   const [backPath, setBackPath] = useState<string>("/therapist/patients");
-  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
-    summary: true,
-    topics: true,
-    followup: true,
-    tasks: true,
-  });
 
   useEffect(() => {
     if (user && sessionId) fetchData();
@@ -265,10 +218,6 @@ export default function SessionDetail() {
     }
   };
 
-  const toggleSection = (key: string) => {
-    setExpandedSections((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -280,8 +229,6 @@ export default function SessionDetail() {
   const dateLabel = appointment
     ? format(new Date(appointment.start_time), "d 'de' MMMM, yyyy • HH:mm", { locale: es })
     : "";
-
-  const hasAiSummary = !!transcript?.ai_summary;
 
   return (
     <div className="space-y-6">
@@ -332,7 +279,7 @@ export default function SessionDetail() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="complete" className="gap-1.5">
             <FileText className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Completo</span>
@@ -344,10 +291,6 @@ export default function SessionDetail() {
           <TabsTrigger value="summary" className="gap-1.5">
             <AlignLeft className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Resumen</span>
-          </TabsTrigger>
-          <TabsTrigger value="notes" className="gap-1.5">
-            <Brain className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Resumen IA</span>
           </TabsTrigger>
         </TabsList>
 
@@ -450,111 +393,6 @@ export default function SessionDetail() {
           </Card>
         </TabsContent>
 
-        {/* RESUMEN IA — resumen, temas, highlights, tareas */}
-        <TabsContent value="notes" className="p-0 mt-0">
-          {hasAiSummary ? (
-            <div className="space-y-4 pt-4">
-              {/* Resumen */}
-              {transcript!.ai_summary && (
-                <CollapsibleSection
-                  title="Resumen de la sesión"
-                  icon={<Sparkles className="w-4 h-4 text-emerald-600" />}
-                  expanded={expandedSections.summary}
-                  onToggle={() => toggleSection("summary")}
-                >
-                  <p className="text-sm text-foreground leading-relaxed">
-                    {transcript!.ai_summary}
-                  </p>
-                </CollapsibleSection>
-              )}
-
-              {/* Temas clave */}
-              {(transcript!.ai_key_topics?.length ?? 0) > 0 && (
-                <CollapsibleSection
-                  title="Temas clave"
-                  icon={<Hash className="w-4 h-4 text-violet-600" />}
-                  expanded={expandedSections.topics}
-                  onToggle={() => toggleSection("topics")}
-                >
-                  <div className="flex flex-wrap gap-2">
-                    {transcript!.ai_key_topics!.map((topic, i) => (
-                      <Badge key={i} variant="secondary" className="text-xs">
-                        {topic}
-                      </Badge>
-                    ))}
-                  </div>
-                </CollapsibleSection>
-              )}
-
-              {/* Highlights / Puntos discutidos */}
-              {(transcript!.ai_followup_suggestions?.length ?? 0) > 0 && (
-                <CollapsibleSection
-                  title="Puntos discutidos"
-                  icon={<ListChecks className="w-4 h-4 text-blue-600" />}
-                  expanded={expandedSections.followup}
-                  onToggle={() => toggleSection("followup")}
-                >
-                  <ul className="space-y-2">
-                    {transcript!.ai_followup_suggestions!.map((point, i) => (
-                      <li key={i} className="flex items-start gap-2 text-sm text-foreground">
-                        <span className="text-emerald-500 mt-0.5">•</span>
-                        <span>{point}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </CollapsibleSection>
-              )}
-
-              {/* Tareas del paciente */}
-              {(transcript!.ai_patient_tasks?.length ?? 0) > 0 && (
-                <CollapsibleSection
-                  title="Tareas del paciente"
-                  icon={<ListChecks className="w-4 h-4 text-amber-600" />}
-                  expanded={expandedSections.tasks}
-                  onToggle={() => toggleSection("tasks")}
-                >
-                  <ul className="space-y-2">
-                    {transcript!.ai_patient_tasks!.map((task, i) => (
-                      <li key={i} className="flex items-start gap-2 text-sm text-foreground">
-                        <span className="text-amber-500 mt-0.5">☐</span>
-                        <span>{task}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </CollapsibleSection>
-              )}
-
-              {/* Disclaimer */}
-              <p className="text-xs text-muted-foreground text-center mt-4 italic">
-                Resumen generado automáticamente. No constituye análisis clínico.
-              </p>
-            </div>
-          ) : transcript?.status === "completed" ? (
-            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-              <Loader2 className="w-8 h-8 mb-3 animate-spin opacity-40" />
-              <p className="font-medium">Generando resumen...</p>
-              <p className="text-sm mt-2 text-center max-w-sm">
-                El resumen se genera automáticamente y estará listo en unos segundos.
-              </p>
-              <Button
-                variant="outline"
-                size="sm"
-                className="mt-4"
-                onClick={fetchData}
-              >
-                Actualizar
-              </Button>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-              <Brain className="w-10 h-10 mb-3 opacity-40" />
-              <p className="font-medium">Sin resumen disponible</p>
-              <p className="text-sm mt-2 text-center max-w-sm">
-                El resumen se generará automáticamente cuando la transcripción esté lista.
-              </p>
-            </div>
-          )}
-        </TabsContent>
       </Tabs>
     </div>
   );
