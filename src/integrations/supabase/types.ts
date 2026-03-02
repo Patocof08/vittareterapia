@@ -14,6 +14,86 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_alerts: {
+        Row: {
+          alert_type: string
+          appointment_id: string | null
+          created_at: string | null
+          details: Json | null
+          id: string
+          is_read: boolean | null
+          is_resolved: boolean | null
+          patient_id: string | null
+          psychologist_id: string | null
+          resolution_notes: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          transcript_excerpt: string | null
+        }
+        Insert: {
+          alert_type: string
+          appointment_id?: string | null
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          is_read?: boolean | null
+          is_resolved?: boolean | null
+          patient_id?: string | null
+          psychologist_id?: string | null
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          transcript_excerpt?: string | null
+        }
+        Update: {
+          alert_type?: string
+          appointment_id?: string | null
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          is_read?: boolean | null
+          is_resolved?: boolean | null
+          patient_id?: string | null
+          psychologist_id?: string | null
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          transcript_excerpt?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_alerts_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admin_alerts_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admin_alerts_psychologist_id_fkey"
+            columns: ["psychologist_id"]
+            isOneToOne: false
+            referencedRelation: "psychologist_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admin_alerts_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       admin_wallet: {
         Row: {
           balance: number

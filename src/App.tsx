@@ -50,6 +50,7 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminVerifications from "./pages/admin/AdminVerifications";
 import AdminPsychologistDetail from "./pages/admin/AdminPsychologistDetail";
 import AdminFinancials from "./pages/admin/AdminFinancials";
+import AdminAlerts from "./pages/admin/AdminAlerts";
 import VideoSession from "./pages/VideoSession";
 
 const App = () => {
@@ -134,6 +135,7 @@ const App = () => {
             <Route path="verifications" element={<AdminVerifications />} />
             <Route path="psychologist/:id" element={<AdminPsychologistDetail />} />
             <Route path="financials" element={<AdminFinancials />} />
+            <Route path="alerts" element={<AdminAlerts />} />
           </Route>
           
           {/* Video session — accessible to any authenticated user */}
