@@ -294,7 +294,7 @@ export default function SessionDetail() {
           </Button>
         )}
 
-        {/* Analyze when transcript ready but no AI analysis yet */}
+        {/* Analyze — only once, when transcript ready but no AI analysis yet */}
         {transcript?.status === "completed" && transcript.transcript_raw && !transcript.ai_summary && (
           <Button
             size="sm"
@@ -303,21 +303,7 @@ export default function SessionDetail() {
             className="gap-2"
           >
             <Sparkles className={`w-4 h-4 ${analyzing ? "animate-pulse" : ""}`} />
-            {analyzing ? "Analizando con IA..." : "Analizar con IA"}
-          </Button>
-        )}
-
-        {/* Re-analyze when analysis already exists */}
-        {transcript?.status === "completed" && transcript.transcript_raw && transcript.ai_summary && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleAnalyzeTranscript(true)}
-            disabled={analyzing}
-            className="gap-2 text-muted-foreground"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${analyzing ? "animate-spin" : ""}`} />
-            {analyzing ? "Re-analizando..." : "Re-analizar"}
+            {analyzing ? "Analizando..." : "Analizar transcripción"}
           </Button>
         )}
       </div>
@@ -423,7 +409,7 @@ export default function SessionDetail() {
               )}
               {!!transcript?.ai_followup_suggestions?.length && (
                 <Card>
-                  <CardHeader><CardTitle className="text-base">Sugerencias de seguimiento</CardTitle></CardHeader>
+                  <CardHeader><CardTitle className="text-base">Puntos principales</CardTitle></CardHeader>
                   <CardContent>
                     <ul className="space-y-1">
                       {transcript.ai_followup_suggestions.map((s, i) => (

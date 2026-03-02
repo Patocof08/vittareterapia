@@ -347,7 +347,7 @@ export default function PatientDetail() {
                           className="gap-1.5"
                         >
                           <Sparkles className={`w-3.5 h-3.5 ${analyzingId === session.id ? "animate-pulse" : ""}`} />
-                          {analyzingId === session.id ? "Analizando..." : "Analizar con IA"}
+                          {analyzingId === session.id ? "Analizando..." : "Analizar transcripción"}
                         </Button>
                       )}
 
