@@ -231,7 +231,15 @@ export default function TherapistSessions() {
                         Iniciar videollamada
                       </Button>
                     )}
-                    <Button 
+                    {session.status === "completed" && (
+                      <Button
+                        variant="outline"
+                        onClick={() => navigate(`/therapist/sessions/${session.id}`)}
+                      >
+                        Ver transcripción / análisis
+                      </Button>
+                    )}
+                    <Button
                       variant="ghost"
                       onClick={() => navigate(`/therapist/patients/${session.patient_id}`)}
                     >

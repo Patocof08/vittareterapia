@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft, Calendar, Search, MessageSquareText,
-  Loader2, Video, Timer, Users, FileText,
+  Loader2, Video, Timer, Users, FileText, Sparkles,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { toast } from "sonner";
 
 const PAGE_SIZE = 10;
 
@@ -38,6 +39,7 @@ interface SessionItem {
     status: string;
     duration_minutes: number | null;
     word_count: number | null;
+    ai_summary: string | null;
   } | null;
 }
 
@@ -49,6 +51,7 @@ export default function PatientDetail() {
   const [patient, setPatient] = useState<PatientInfo | null>(null);
   const [allSessions, setAllSessions] = useState<SessionItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [analyzingId, setAnalyzingId] = useState<string | null>(null);
 
   // Filters
   const [searchText, setSearchText] = useState("");
@@ -98,7 +101,7 @@ export default function PatientDetail() {
 
             const { data: transcript } = await (supabase as any)
               .from("session_transcripts")
-              .select("id, status, duration_minutes, word_count")
+              .select("id, status, duration_minutes, word_count, ai_summary")
               .eq("appointment_id", s.id)
               .maybeSingle();
 
@@ -138,6 +141,33 @@ export default function PatientDetail() {
   }, [allSessions, searchText, dateFrom, dateTo]);
 
   const visibleSessions = filteredSessions.slice(0, pageSize);
+
+  const handleAnalyze = async (appointmentId: string) => {
+    setAnalyzingId(appointmentId);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-transcript`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.access_token}`,
+          "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+        body: JSON.stringify({ appointment_id: appointmentId }),
+      });
+      if (!res.ok) {
+        toast.error("Error al analizar la sesión");
+        return;
+      }
+      toast.success("Análisis completado");
+      await fetchData();
+    } catch {
+      toast.error("Error al analizar la sesión");
+    } finally {
+      setAnalyzingId(null);
+    }
+  };
 
   if (loading) {
     return (
@@ -306,48 +336,61 @@ export default function PatientDetail() {
                       </p>
                     )}
 
-                    {/* 4 view buttons — only if transcript exists */}
-                    {hasTranscript ? (
-                      <div className="flex flex-wrap gap-2">
+                    {/* Buttons */}
+                    <div className="flex flex-wrap gap-2">
+                      {/* Analyze button — transcript ready but no AI analysis yet */}
+                      {hasTranscript && !session.transcript?.ai_summary && (
                         <Button
-                          variant="outline"
                           size="sm"
-                          onClick={() => navigate(`/therapist/sessions/${session.id}?tab=complete`)}
+                          onClick={() => handleAnalyze(session.id)}
+                          disabled={analyzingId === session.id}
+                          className="gap-1.5"
                         >
-                          <FileText className="w-3.5 h-3.5 mr-1.5" />
-                          Ver completo
+                          <Sparkles className={`w-3.5 h-3.5 ${analyzingId === session.id ? "animate-pulse" : ""}`} />
+                          {analyzingId === session.id ? "Analizando..." : "Analizar con IA"}
                         </Button>
+                      )}
+
+                      {/* View buttons — only if analysis exists */}
+                      {hasTranscript && session.transcript?.ai_summary && (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => navigate(`/therapist/sessions/${session.id}?tab=complete`)}
+                          >
+                            <FileText className="w-3.5 h-3.5 mr-1.5" />
+                            Completo
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => navigate(`/therapist/sessions/${session.id}?tab=highlights`)}
+                          >
+                            <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                            Highlights
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => navigate(`/therapist/sessions/${session.id}?tab=summary`)}
+                          >
+                            📄 Resumen
+                          </Button>
+                        </>
+                      )}
+
+                      {/* View detail without transcript */}
+                      {!hasTranscript && (
                         <Button
-                          variant="outline"
+                          variant="ghost"
                           size="sm"
-                          onClick={() => navigate(`/therapist/sessions/${session.id}?tab=highlights`)}
+                          onClick={() => navigate(`/therapist/sessions/${session.id}`)}
                         >
-                          ✨ Ver highlights
+                          Ver detalle
                         </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => navigate(`/therapist/sessions/${session.id}?tab=summary`)}
-                        >
-                          📄 Ver resumen
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => navigate(`/therapist/sessions/${session.id}?tab=notes`)}
-                        >
-                          🧠 Ver notas resumidas
-                        </Button>
-                      </div>
-                    ) : (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => navigate(`/therapist/sessions/${session.id}`)}
-                      >
-                        Ver detalle
-                      </Button>
-                    )}
+                      )}
+                    </div>
                   </div>
                 );
               })}
