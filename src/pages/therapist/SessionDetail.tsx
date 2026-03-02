@@ -146,6 +146,7 @@ export default function SessionDetail() {
   const [transcript, setTranscript] = useState<TranscriptData | null>(null);
   const [loading, setLoading] = useState(true);
   const [fetchingTranscript, setFetchingTranscript] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
   const [activeTab, setActiveTab] = useState(initialTab);
   const [backPath, setBackPath] = useState<string>("/therapist/patients");
 
@@ -218,6 +219,38 @@ export default function SessionDetail() {
     }
   };
 
+  const handleAnalyzeTranscript = async (force = false) => {
+    if (!sessionId) return;
+    setAnalyzing(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-transcript`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.access_token}`,
+          "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+        body: JSON.stringify({ appointment_id: sessionId, force }),
+      });
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        console.error("analyze-transcript error:", res.status, text);
+        toast.error(`Error al analizar transcripción (${res.status})`);
+        return;
+      }
+      await res.json().catch(() => null);
+      await fetchData();
+      toast.success("Análisis completado");
+    } catch (err) {
+      console.error("Error analyzing transcript:", err);
+      toast.error("Error al analizar la transcripción");
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -245,19 +278,49 @@ export default function SessionDetail() {
         </div>
       </div>
 
-      {/* Fetch transcript button when not yet available */}
-      {(!transcript || transcript.status !== "completed") && (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleFetchTranscript}
-          disabled={fetchingTranscript}
-          className="gap-2 w-fit"
-        >
-          <RefreshCw className={`w-4 h-4 ${fetchingTranscript ? "animate-spin" : ""}`} />
-          {fetchingTranscript ? "Buscando transcripción..." : "Obtener transcripción"}
-        </Button>
-      )}
+      {/* Action buttons row */}
+      <div className="flex flex-wrap gap-2">
+        {/* Fetch transcript when not yet available */}
+        {(!transcript || transcript.status !== "completed") && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleFetchTranscript}
+            disabled={fetchingTranscript}
+            className="gap-2"
+          >
+            <RefreshCw className={`w-4 h-4 ${fetchingTranscript ? "animate-spin" : ""}`} />
+            {fetchingTranscript ? "Buscando transcripción..." : "Obtener transcripción"}
+          </Button>
+        )}
+
+        {/* Analyze when transcript ready but no AI analysis yet */}
+        {transcript?.status === "completed" && transcript.transcript_raw && !transcript.ai_summary && (
+          <Button
+            size="sm"
+            onClick={() => handleAnalyzeTranscript(false)}
+            disabled={analyzing}
+            className="gap-2"
+          >
+            <Sparkles className={`w-4 h-4 ${analyzing ? "animate-pulse" : ""}`} />
+            {analyzing ? "Analizando con IA..." : "Analizar con IA"}
+          </Button>
+        )}
+
+        {/* Re-analyze when analysis already exists */}
+        {transcript?.status === "completed" && transcript.transcript_raw && transcript.ai_summary && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleAnalyzeTranscript(true)}
+            disabled={analyzing}
+            className="gap-2 text-muted-foreground"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${analyzing ? "animate-spin" : ""}`} />
+            {analyzing ? "Re-analizando..." : "Re-analizar"}
+          </Button>
+        )}
+      </div>
 
       {/* Meta info strip */}
       {transcript && (
