@@ -516,6 +516,48 @@ export type Database = {
           },
         ]
       }
+      notification_preferences: {
+        Row: {
+          created_at: string | null
+          email_cancellation: boolean | null
+          email_new_booking: boolean | null
+          email_new_message: boolean | null
+          email_no_show: boolean | null
+          email_payment_update: boolean | null
+          email_session_reminder: boolean | null
+          id: string
+          updated_at: string | null
+          user_id: string
+          user_type: string
+        }
+        Insert: {
+          created_at?: string | null
+          email_cancellation?: boolean | null
+          email_new_booking?: boolean | null
+          email_new_message?: boolean | null
+          email_no_show?: boolean | null
+          email_payment_update?: boolean | null
+          email_session_reminder?: boolean | null
+          id?: string
+          updated_at?: string | null
+          user_id: string
+          user_type?: string
+        }
+        Update: {
+          created_at?: string | null
+          email_cancellation?: boolean | null
+          email_new_booking?: boolean | null
+          email_new_message?: boolean | null
+          email_no_show?: boolean | null
+          email_payment_update?: boolean | null
+          email_session_reminder?: boolean | null
+          id?: string
+          updated_at?: string | null
+          user_id?: string
+          user_type?: string
+        }
+        Relationships: []
+      }
       patient_preferences: {
         Row: {
           accepts_homework: string

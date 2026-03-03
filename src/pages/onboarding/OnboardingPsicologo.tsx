@@ -6,6 +6,7 @@ import { Step2Experience } from "./Step2Experience";
 import { Step3Documentation } from "./Step3Documentation";
 import { Step4Availability } from "./Step4Availability";
 import { Step5Pricing } from "./Step5Pricing";
+import { Step6Notifications } from "./Step6Notifications";
 import { useAuth } from "@/hooks/useAuth";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -180,13 +181,15 @@ const Content = () => {
         return <Step4Availability />;
       case 5:
         return <Step5Pricing />;
+      case 6:
+        return <Step6Notifications />;
       default:
         return <Step1PersonalData />;
     }
   };
 
   return (
-    <OnboardingLayout currentStep={currentStep} totalSteps={5} onSaveAndExit={handleSaveAndExit}>
+    <OnboardingLayout currentStep={currentStep} totalSteps={6} onSaveAndExit={handleSaveAndExit}>
       {renderStep()}
     </OnboardingLayout>
   );

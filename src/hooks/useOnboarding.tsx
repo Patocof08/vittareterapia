@@ -207,7 +207,7 @@ export const useOnboarding = () => {
   };
 
   const nextStep = async () => {
-    const newStep = Math.min(currentStep + 1, 5);
+    const newStep = Math.min(currentStep + 1, 6);
     await saveProgress(false, newStep);
     setCurrentStep(newStep);
   };
@@ -340,9 +340,9 @@ export const useOnboarding = () => {
       // @ts-ignore - Types will regenerate automatically
       const { error } = await supabase
         .from("psychologist_profiles")
-        .update({ 
+        .update({
           is_published: false, // No publicar hasta aprobación
-          onboarding_step: 5 // Marcar como completado
+          onboarding_step: 6 // Marcar como completado
         })
         .eq("id", profileId);
 

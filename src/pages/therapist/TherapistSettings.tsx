@@ -130,6 +130,15 @@ const documentTypes: Array<{
   },
 ];
 
+interface NotificationPrefs {
+  email_new_booking: boolean;
+  email_session_reminder: boolean;
+  email_new_message: boolean;
+  email_payment_update: boolean;
+  email_cancellation: boolean;
+  email_no_show: boolean;
+}
+
 export default function TherapistSettings() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
@@ -142,7 +151,18 @@ export default function TherapistSettings() {
   const [psychologistId, setPsychologistId] = useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  
+
+  // Notification preferences state
+  const [notifPrefs, setNotifPrefs] = useState<NotificationPrefs>({
+    email_new_booking: true,
+    email_session_reminder: true,
+    email_new_message: true,
+    email_payment_update: true,
+    email_cancellation: true,
+    email_no_show: true,
+  });
+  const [notifLoading, setNotifLoading] = useState(false);
+
   // Password change state
   const [passwordData, setPasswordData] = useState({
     currentPassword: "",
@@ -152,6 +172,7 @@ export default function TherapistSettings() {
 
   useEffect(() => {
     loadProfile();
+    loadNotificationPrefs();
   }, [user]);
 
   useEffect(() => {
@@ -192,6 +213,43 @@ export default function TherapistSettings() {
       toast.error("Error al cargar el perfil");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadNotificationPrefs = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("notification_preferences")
+      .select("*")
+      .eq("user_id", user.id)
+      .single();
+
+    if (data) {
+      setNotifPrefs({
+        email_new_booking: data.email_new_booking ?? true,
+        email_session_reminder: data.email_session_reminder ?? true,
+        email_new_message: data.email_new_message ?? true,
+        email_payment_update: data.email_payment_update ?? true,
+        email_cancellation: data.email_cancellation ?? true,
+        email_no_show: data.email_no_show ?? true,
+      });
+    }
+  };
+
+  const updateNotifPref = async (key: keyof NotificationPrefs, value: boolean) => {
+    if (!user) return;
+    setNotifPrefs((prev) => ({ ...prev, [key]: value }));
+    setNotifLoading(true);
+
+    const { error } = await supabase
+      .from("notification_preferences")
+      .update({ [key]: value, updated_at: new Date().toISOString() })
+      .eq("user_id", user.id);
+
+    setNotifLoading(false);
+    if (error) {
+      setNotifPrefs((prev) => ({ ...prev, [key]: !value }));
+      toast.error("Error al actualizar preferencia");
     }
   };
 
@@ -1002,7 +1060,10 @@ export default function TherapistSettings() {
           <Card>
             <CardHeader>
               <CardTitle>Preferencias de Notificaciones</CardTitle>
-              <CardDescription>Controla cómo y cuándo recibes notificaciones</CardDescription>
+              <CardDescription>
+                Controla qué emails de notificación quieres recibir
+                {notifLoading && <span className="ml-2 text-xs text-muted-foreground">Guardando...</span>}
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="flex items-center justify-between">
@@ -1012,7 +1073,10 @@ export default function TherapistSettings() {
                     Recibe un email cuando un cliente reserve una sesión
                   </p>
                 </div>
-                <Switch />
+                <Switch
+                  checked={notifPrefs.email_new_booking}
+                  onCheckedChange={(v) => updateNotifPref("email_new_booking", v)}
+                />
               </div>
               <div className="flex items-center justify-between">
                 <div>
@@ -1021,7 +1085,10 @@ export default function TherapistSettings() {
                     Recibe recordatorios 24 horas antes de cada sesión
                   </p>
                 </div>
-                <Switch defaultChecked />
+                <Switch
+                  checked={notifPrefs.email_session_reminder}
+                  onCheckedChange={(v) => updateNotifPref("email_session_reminder", v)}
+                />
               </div>
               <div className="flex items-center justify-between">
                 <div>
@@ -1030,7 +1097,10 @@ export default function TherapistSettings() {
                     Notificaciones cuando recibas mensajes nuevos
                   </p>
                 </div>
-                <Switch defaultChecked />
+                <Switch
+                  checked={notifPrefs.email_new_message}
+                  onCheckedChange={(v) => updateNotifPref("email_new_message", v)}
+                />
               </div>
               <div className="flex items-center justify-between">
                 <div>
@@ -1039,7 +1109,34 @@ export default function TherapistSettings() {
                     Avisos sobre pagos recibidos y transferencias
                   </p>
                 </div>
-                <Switch defaultChecked />
+                <Switch
+                  checked={notifPrefs.email_payment_update}
+                  onCheckedChange={(v) => updateNotifPref("email_payment_update", v)}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium">Cancelaciones</p>
+                  <p className="text-sm text-muted-foreground">
+                    Notificación cuando un cliente cancele una sesión
+                  </p>
+                </div>
+                <Switch
+                  checked={notifPrefs.email_cancellation}
+                  onCheckedChange={(v) => updateNotifPref("email_cancellation", v)}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium">Inasistencias</p>
+                  <p className="text-sm text-muted-foreground">
+                    Notificación cuando se registre una inasistencia
+                  </p>
+                </div>
+                <Switch
+                  checked={notifPrefs.email_no_show}
+                  onCheckedChange={(v) => updateNotifPref("email_no_show", v)}
+                />
               </div>
             </CardContent>
           </Card>

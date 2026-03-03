@@ -5,11 +5,9 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useOnboardingContext } from "@/hooks/useOnboarding";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
 
 export const Step5Pricing = () => {
-  const { data, prevStep, savePricing, publishProfile } = useOnboardingContext();
-  const navigate = useNavigate();
+  const { data, prevStep, nextStep, savePricing } = useOnboardingContext();
 
   // Calculate max price based on years of experience
   const getMaxPrice = () => {
@@ -23,7 +21,7 @@ export const Step5Pricing = () => {
   const maxPrice = getMaxPrice();
 
   const [sessionPrice, setSessionPrice] = useState(data.session_price || 0);
-  const [isPublishing, setIsPublishing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const validateForm = () => {
     if (!sessionPrice || sessionPrice <= 0) {
@@ -39,17 +37,15 @@ export const Step5Pricing = () => {
     return true;
   };
 
-  const handlePublish = async () => {
+  const handleNext = async () => {
     if (!validateForm()) return;
 
-    setIsPublishing(true);
+    setIsSaving(true);
 
     try {
-      // Calculate package prices with discounts
-      const package4Price = sessionPrice * 4 * 0.90; // 10% discount
-      const package8Price = sessionPrice * 8 * 0.85; // 15% discount
+      const package4Price = sessionPrice * 4 * 0.90;
+      const package8Price = sessionPrice * 8 * 0.85;
 
-      // Save pricing data
       await savePricing({
         session_price: sessionPrice,
         currency: "MXN",
@@ -61,17 +57,12 @@ export const Step5Pricing = () => {
         late_tolerance_minutes: 10,
       });
 
-      // Publish profile (marca onboarding_step como 5)
-      const success = await publishProfile();
-      if (success) {
-        // Redirigir a página de verificación pendiente
-        navigate("/therapist/pending-verification");
-      }
+      await nextStep();
     } catch (error: any) {
-      console.error("Error publishing:", error);
-      toast.error("Error al publicar perfil");
+      console.error("Error saving pricing:", error);
+      toast.error("Error al guardar precios");
     } finally {
-      setIsPublishing(false);
+      setIsSaving(false);
     }
   };
 
@@ -167,8 +158,8 @@ export const Step5Pricing = () => {
         <Button variant="outline" onClick={prevStep}>
           Anterior
         </Button>
-        <Button onClick={handlePublish} size="lg" disabled={isPublishing}>
-          {isPublishing ? "Publicando..." : "Finalizar registro"}
+        <Button onClick={handleNext} size="lg" disabled={isSaving}>
+          {isSaving ? "Guardando..." : "Siguiente"}
         </Button>
       </div>
     </div>
