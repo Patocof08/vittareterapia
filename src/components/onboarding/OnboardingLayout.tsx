@@ -16,7 +16,8 @@ const stepTitles = [
   "Experiencia profesional",
   "Documentación",
   "Disponibilidad",
-  "Precios y publicación"
+  "Precios",
+  "Notificaciones"
 ];
 
 export const OnboardingLayout = ({ 
