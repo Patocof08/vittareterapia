@@ -220,6 +220,10 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
     }
 
     // 3) No créditos ni suscripciones para este psicólogo → mostrar selector de plan
+    if (!pricing) {
+      toast.error("Este psicólogo aún no tiene precios configurados");
+      return;
+    }
     setShowBookingDialog(true);
   };
 
