@@ -174,12 +174,37 @@ export const useOnboarding = () => {
   const saveProgress = async (silent = true, stepOverride?: number) => {
     if (!user || !profileId) return;
 
+    // Solo incluir campos que existen en psychologist_profiles
+    const profileFields = {
+      first_name: data.first_name,
+      last_name: data.last_name,
+      email: data.email,
+      phone: data.phone,
+      city: data.city,
+      country: data.country,
+      languages: data.languages,
+      modalities: data.modalities,
+      profile_photo_url: data.profile_photo_url,
+      years_experience: data.years_experience,
+      therapeutic_approaches: data.therapeutic_approaches,
+      specialties: data.specialties,
+      populations: data.populations,
+      bio_short: data.bio_short,
+      bio_extended: data.bio_extended,
+      terms_accepted: data.terms_accepted,
+      emergency_disclaimer_accepted: data.emergency_disclaimer_accepted,
+    };
+    // Eliminar claves undefined para no sobrescribir datos existentes
+    const cleanFields = Object.fromEntries(
+      Object.entries(profileFields).filter(([, v]) => v !== undefined)
+    );
+
     try {
       // @ts-ignore - Types will regenerate automatically
       const { error } = await supabase
         .from("psychologist_profiles")
         .update({
-          ...data,
+          ...cleanFields,
           onboarding_step: stepOverride ?? currentStep,
         })
         .eq("id", profileId);
