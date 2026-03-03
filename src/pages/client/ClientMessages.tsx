@@ -250,6 +250,46 @@ export default function ClientMessages() {
     }
   };
 
+  const notifyPsychologist = () => {
+    if (!selectedConversation || !user) return;
+    (async () => {
+      try {
+        const { data: psych } = await supabase
+          .from("psychologist_profiles")
+          .select("user_id, first_name")
+          .eq("id", selectedConversation.psychologist_id)
+          .single();
+        if (!psych?.user_id) return;
+
+        const { data: clientProfile } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("id", user.id)
+          .single();
+
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) return;
+
+        fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-notification-email`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${session.access_token}`,
+            "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({
+            notification_type: "new_message",
+            recipient_user_id: psych.user_id,
+            variables: {
+              recipient_name: psych.first_name || "Psicólogo",
+              sender_name: clientProfile?.full_name || "Tu paciente",
+            },
+          }),
+        }).catch(() => {});
+      } catch {}
+    })();
+  };
+
   const handleSendMessage = async () => {
     if (!messageText.trim() || !selectedConversation || !user) {
       toast.error("Escribe un mensaje antes de enviar");
@@ -285,6 +325,7 @@ export default function ClientMessages() {
 
       setMessageText("");
       setValidationError(null);
+      notifyPsychologist();
     } catch (error) {
       console.error("Error sending message:", error);
       toast.error("Error al enviar mensaje");

@@ -112,6 +112,47 @@ export default function ClientSessions() {
     }
   };
 
+  const notifyCancellation = (appointment: any) => {
+    (async () => {
+      try {
+        const { data: psych } = await supabase
+          .from("psychologist_profiles")
+          .select("user_id, first_name")
+          .eq("id", appointment.psychologist_id)
+          .single();
+        if (!psych?.user_id) return;
+
+        const { data: clientProfile } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("id", user!.id)
+          .single();
+
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) return;
+
+        fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-notification-email`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${session.access_token}`,
+            "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({
+            notification_type: "cancellation",
+            recipient_user_id: psych.user_id,
+            variables: {
+              recipient_name: psych.first_name || "Psicólogo",
+              patient_name: clientProfile?.full_name || "Un paciente",
+              session_date: format(new Date(appointment.start_time), "dd/MM/yyyy", { locale: es }),
+              session_time: format(new Date(appointment.start_time), "HH:mm"),
+            },
+          }),
+        }).catch(() => {});
+      } catch {}
+    })();
+  };
+
   // Cancelación de cita de paquete (>24h): devuelve crédito al paquete, dinero sigue diferido
   const handlePackageCancellation = async () => {
     if (!selectedAppointment) return;
@@ -121,6 +162,7 @@ export default function ClientSessions() {
       });
       if (error) throw error;
       toast.success("Cita cancelada. El crédito se devolvió a tu paquete.");
+      notifyCancellation(selectedAppointment);
       loadSessions();
     } catch (error) {
       console.error("Error cancelling:", error);
@@ -140,6 +182,7 @@ export default function ClientSessions() {
       });
       if (error) throw error;
       toast.success("Cita cancelada. La sesión fue cobrada por política de cancelación tardía.");
+      notifyCancellation(selectedAppointment);
       loadSessions();
     } catch (error) {
       console.error("Error cancelling:", error);
@@ -210,8 +253,10 @@ export default function ClientSessions() {
             });
           
           toast.success("Cita cancelada. El crédito estará disponible por 6 meses.");
+          notifyCancellation(selectedAppointment);
         } else {
           toast.success("Cita cancelada.");
+          notifyCancellation(selectedAppointment);
         }
       } else {
         // Opción reembolso: RPC maneja el diferido, el pago y la cita en una sola operación
@@ -221,6 +266,7 @@ export default function ClientSessions() {
         });
         if (error) throw error;
         toast.success("Cita cancelada. El reembolso se procesará en 3-5 días hábiles.");
+        notifyCancellation(selectedAppointment);
       }
 
       loadSessions();

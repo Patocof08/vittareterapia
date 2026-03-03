@@ -223,6 +223,47 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
     setShowBookingDialog(true);
   };
 
+  const notifyNewBooking = (appointmentId: string, startTime: Date) => {
+    (async () => {
+      try {
+        const { data: psych } = await supabase
+          .from("psychologist_profiles")
+          .select("user_id, first_name")
+          .eq("id", psychologistId)
+          .single();
+        if (!psych?.user_id) return;
+
+        const { data: clientProfile } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("id", user!.id)
+          .single();
+
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) return;
+
+        fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-notification-email`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${session.access_token}`,
+            "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({
+            notification_type: "new_booking",
+            recipient_user_id: psych.user_id,
+            variables: {
+              recipient_name: psych.first_name || "Psicólogo",
+              patient_name: clientProfile?.full_name || "Un paciente",
+              session_date: format(startTime, "dd/MM/yyyy", { locale: es }),
+              session_time: format(startTime, "HH:mm"),
+            },
+          }),
+        }).catch(() => {});
+      } catch {}
+    })();
+  };
+
   const handleCreditBooking = async (credit: any) => {
     if (!user || !selectedDate || !selectedTime) return;
 
@@ -245,6 +286,7 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
       if (error) throw error;
 
       toast.success("Cita agendada con tu crédito disponible");
+      notifyNewBooking(String(appointmentId), startTime);
       navigate("/portal/sesiones");
     } catch (error: any) {
       console.error("Error al agendar con crédito:", error);
@@ -327,6 +369,7 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
       if (subUpdateError) throw subUpdateError;
 
       toast.success("Cita agendada usando tu suscripción");
+      notifyNewBooking(appointment.id, startTime);
       navigate("/portal/sesiones");
     } catch (error: any) {
       console.error("Error booking with subscription:", error);

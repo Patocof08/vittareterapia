@@ -326,6 +326,39 @@ export default function TherapistMessages() {
     }
   };
 
+  const notifyClient = () => {
+    if (!selectedConversation || !user) return;
+    (async () => {
+      try {
+        const { data: therapistProfile } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("id", user.id)
+          .single();
+
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) return;
+
+        fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-notification-email`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${session.access_token}`,
+            "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({
+            notification_type: "new_message",
+            recipient_user_id: selectedConversation.client_id,
+            variables: {
+              recipient_name: selectedConversation.client_name || "Cliente",
+              sender_name: therapistProfile?.full_name || "Tu psicólogo",
+            },
+          }),
+        }).catch(() => {});
+      } catch {}
+    })();
+  };
+
   const handleSendMessage = async () => {
     if (!messageText.trim() || !selectedConversation || !user) {
       toast.error("Escribe un mensaje antes de enviar");
@@ -361,6 +394,7 @@ export default function TherapistMessages() {
 
       setMessageText("");
       setValidationError(null);
+      notifyClient();
       // No need to reload conversations - realtime subscription will handle it
     } catch (error) {
       console.error("Error sending message:", error);
