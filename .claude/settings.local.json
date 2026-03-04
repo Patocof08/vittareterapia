@@ -31,7 +31,8 @@
       "Bash(node:*)",
       "mcp__ide__getDiagnostics",
       "mcp__claude_ai_Supabase__get_advisors",
-      "Bash(git -C \"C:/Users/patoc/OneDrive/Documentos/Vittare/lovable dev/vittareterapia\" remote -v)"
+      "Bash(git -C \"C:/Users/patoc/OneDrive/Documentos/Vittare/lovable dev/vittareterapia\" remote -v)",
+      "Bash(del C:/Users/patoc/tmp_analyze.js)"
     ]
   }
 }
