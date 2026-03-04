@@ -43,6 +43,43 @@ export default function PostSessionDialog({ appointmentId, patientName, onComple
             body: JSON.stringify({ appointment_id: appointmentId }),
           }).catch(() => { /* silent — transcript can be fetched later from SessionDetail */ })
         }
+      } else {
+        // No-show: enviar email de notificación al paciente
+        try {
+          const { data: appointment } = await supabase
+            .from('appointments')
+            .select('patient_id, start_time')
+            .eq('id', appointmentId)
+            .single()
+
+          if (appointment?.patient_id) {
+            const sessionDate = new Date(appointment.start_time)
+
+            await supabase.functions.invoke('send-notification-email', {
+              body: {
+                notification_type: 'no_show',
+                recipient_user_id: appointment.patient_id,
+                variables: {
+                  recipient_name: patientName?.split(' ')[0] || 'Hola',
+                  psychologist_name: 'tu psicólogo',
+                  session_date: sessionDate.toLocaleDateString('es-MX', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                  }),
+                  session_time: sessionDate.toLocaleTimeString('es-MX', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true,
+                  }),
+                },
+              },
+            })
+          }
+        } catch {
+          // Silent — la notificación es best-effort, no debe bloquear el flujo
+        }
       }
 
       setStep('done')
