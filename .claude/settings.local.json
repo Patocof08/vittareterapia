@@ -28,7 +28,9 @@
       "mcp__claude_ai_Supabase__get_project_url",
       "Bash(curl:*)",
       "Bash(node scripts/generate-favicon.js:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "mcp__ide__getDiagnostics",
+      "mcp__claude_ai_Supabase__get_advisors"
     ]
   }
 }
