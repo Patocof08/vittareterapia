@@ -46,7 +46,7 @@ export default function ParaPsicologos() {
     {
       icon: CreditCard,
       title: "Pagos simplificados",
-      description: "Recibe tus pagos de forma segura y automática. Sin comisiones ocultas."
+      description: "Recibe tus pagos de forma segura y automática. Comisión transparente, sin cargos sorpresa."
     },
     {
       icon: Users,
@@ -171,18 +171,14 @@ export default function ParaPsicologos() {
             <p className="text-xl text-muted-foreground mb-8">
               No trabajas solo. Formas parte de una comunidad de profesionales que crece junta.
             </p>
-            <div className="grid md:grid-cols-3 gap-6 mb-12">
-              <div className="bg-card p-6 rounded-xl border border-border">
-                <h3 className="font-semibold mb-2">Capacitación continua</h3>
-                <p className="text-sm text-muted-foreground">Sesiones de formación y webinars para seguir creciendo.</p>
-              </div>
+            <div className="grid md:grid-cols-2 gap-6 mb-12 max-w-2xl mx-auto">
               <div className="bg-card p-6 rounded-xl border border-border">
                 <h3 className="font-semibold mb-2">Soporte técnico</h3>
                 <p className="text-sm text-muted-foreground">Equipo disponible para resolver cualquier duda o problema.</p>
               </div>
               <div className="bg-card p-6 rounded-xl border border-border">
                 <h3 className="font-semibold mb-2">Red de profesionales</h3>
-                <p className="text-sm text-muted-foreground">Conecta con otros terapeutas y comparte experiencias.</p>
+                <p className="text-sm text-muted-foreground">Próximamente: conecta con otros terapeutas y comparte experiencias.</p>
               </div>
             </div>
             <p className="text-lg font-medium mb-6">

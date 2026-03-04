@@ -84,9 +84,9 @@ export const Footer = () => {
                 </Link>
               </li>
               <li>
-                <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                <Link to="/cookies" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                   Política de cookies
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
@@ -97,7 +97,7 @@ export const Footer = () => {
             <ul className="space-y-3">
               <li className="flex items-start space-x-2 text-sm text-muted-foreground">
                 <Mail className="w-4 h-4 mt-0.5 text-primary" />
-                <span>contacto@vittare.com</span>
+                <span>contacto@vittareterapia.com</span>
               </li>
               <li className="flex items-start space-x-2 text-sm text-muted-foreground">
                 <Phone className="w-4 h-4 mt-0.5 text-primary" />

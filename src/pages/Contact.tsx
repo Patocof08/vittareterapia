@@ -66,10 +66,10 @@ const Contact = () => {
                   <div>
                     <h3 className="font-semibold mb-1">Correo electrónico</h3>
                     <a
-                      href="mailto:contacto@vittare.com"
+                      href="mailto:contacto@vittareterapia.com"
                       className="text-muted-foreground hover:text-primary transition-colors"
                     >
-                      contacto@vittare.com
+                      contacto@vittareterapia.com
                     </a>
                   </div>
                 </div>

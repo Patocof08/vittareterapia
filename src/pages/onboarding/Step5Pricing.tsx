@@ -29,6 +29,11 @@ export const Step5Pricing = () => {
       return false;
     }
 
+    if (sessionPrice < 500) {
+      toast.error("El precio mínimo por sesión es $500 MXN");
+      return false;
+    }
+
     if (sessionPrice > maxPrice) {
       toast.error(`El precio máximo para tu experiencia es $${maxPrice} MXN`);
       return false;
@@ -98,7 +103,7 @@ export const Step5Pricing = () => {
               <Input
                 id="session_price"
                 type="number"
-                min="0"
+                min="500"
                 max={maxPrice}
                 value={sessionPrice}
                 onChange={(e) => setSessionPrice(parseFloat(e.target.value))}
@@ -106,6 +111,11 @@ export const Step5Pricing = () => {
               />
               <span className="text-sm font-medium text-muted-foreground w-16">MXN</span>
             </div>
+            {sessionPrice > 0 && sessionPrice < 500 && (
+              <p className="text-sm text-destructive">
+                El precio mínimo por sesión es $500 MXN
+              </p>
+            )}
             {sessionPrice > maxPrice && (
               <p className="text-sm text-destructive">
                 El precio excede el máximo permitido para tu experiencia

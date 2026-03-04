@@ -91,7 +91,7 @@ export default function PendingVerification() {
 
           <div className="pt-4 border-t">
             <p className="text-sm text-muted-foreground mb-4">
-              Si tienes alguna pregunta, no dudes en contactarnos a soporte@vittare.com
+              Si tienes alguna pregunta, no dudes en contactarnos a soporte@vittareterapia.com
             </p>
             <Button variant="outline" onClick={handleLogout} className="w-full">
               Cerrar Sesión

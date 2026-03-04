@@ -14,6 +14,7 @@ import FAQ from "./pages/FAQ";
 import Contact from "./pages/Contact";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
+import Cookies from "./pages/Cookies";
 import ParaPsicologos from "./pages/ParaPsicologos";
 import NotFound from "./pages/NotFound";
 import { TherapistLayout } from "./components/therapist/TherapistLayout";
@@ -73,6 +74,7 @@ const App = () => {
           <Route path="/contact" element={<Contact />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/terms" element={<Terms />} />
+          <Route path="/cookies" element={<Cookies />} />
           <Route path="/para-psicologos" element={<ParaPsicologos />} />
           
           {/* Onboarding */}

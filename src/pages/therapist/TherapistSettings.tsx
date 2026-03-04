@@ -298,6 +298,11 @@ export default function TherapistSettings() {
 
     // Validate session price against experience-based limit
     const maxPrice = getMaxPrice(profileData.years_experience || 0);
+    if (profileData.session_price && profileData.session_price < 500) {
+      toast.error("El precio mínimo por sesión es $500 MXN");
+      setLoading(false);
+      return;
+    }
     if (profileData.session_price && profileData.session_price > maxPrice) {
       toast.error(`El precio máximo para tu experiencia (${profileData.years_experience} años) es $${maxPrice} MXN`);
       return;
@@ -864,7 +869,7 @@ export default function TherapistSettings() {
                 <div className="flex gap-2 items-center">
                   <Input
                     type="number"
-                    min="0"
+                    min="500"
                     max={profileData ? getMaxPrice(profileData.years_experience || 0) : undefined}
                     value={profileData?.session_price || 0}
                     onChange={(e) =>
@@ -877,6 +882,11 @@ export default function TherapistSettings() {
                   />
                   <span className="text-sm font-medium text-muted-foreground w-16">MXN</span>
                 </div>
+                {profileData && profileData.session_price > 0 && profileData.session_price < 500 && (
+                  <p className="text-sm text-destructive">
+                    El precio mínimo por sesión es $500 MXN
+                  </p>
+                )}
                 {profileData && profileData.session_price > getMaxPrice(profileData.years_experience || 0) && (
                   <p className="text-sm text-destructive">
                     El precio excede el máximo permitido para tu experiencia

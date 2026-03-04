@@ -79,9 +79,8 @@ const Terms = () => {
               </p>
               <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
                 <li>Cancelación con 24+ horas de anticipación: sin cargo</li>
-                <li>Cancelación con menos de 24 horas: 50% del valor de la sesión</li>
-                <li>Inasistencia sin aviso: 100% del valor de la sesión</li>
-                <li>Reembolsos de paquetes: disponibles dentro de 7 días si no se ha usado ninguna sesión</li>
+                <li>Cancelación con menos de 24 horas: se cobrará el 100% del valor de la sesión</li>
+                <li>Inasistencia sin aviso: se cobrará el 100% del valor de la sesión</li>
               </ul>
             </section>
 
@@ -135,7 +134,7 @@ const Terms = () => {
                 Para preguntas sobre estos términos, puede contactarnos en:
               </p>
               <p className="text-muted-foreground mt-4">
-                Email: legal@vittare.com<br />
+                Email: legal@vittareterapia.com<br />
                 Teléfono: +52 55 1234 5678
               </p>
             </section>

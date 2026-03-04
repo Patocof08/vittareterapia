@@ -34,7 +34,7 @@ const Index = () => {
     {
       icon: Shield,
       title: "100% Confidencial",
-      description: "Tu privacidad está protegida con cifrado de extremo a extremo",
+      description: "Tu privacidad está protegida con conexiones seguras y datos cifrados",
     },
     {
       icon: Clock,
@@ -142,7 +142,7 @@ const Index = () => {
                     name={`${therapist.first_name} ${therapist.last_name}`}
                     specialty={therapist.specialties?.[0] || "Psicología"}
                     photo={therapist.profile_photo_url || "https://images.unsplash.com/photo-1594824476967-48c8b964273f?w=400&h=400&fit=crop"}
-                    rating={4.8}
+                    rating={0}
                     reviews={0}
                     price={0}
                     approaches={therapist.therapeutic_approaches || []}
@@ -185,38 +185,11 @@ const Index = () => {
         </div>
       </section> */}
 
-      {/* Certifications */}
+      {/* Certificaciones — deshabilitado hasta tener avales reales
       <section className="py-20">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Certificaciones y avales</h2>
-            <p className="text-lg text-muted-foreground">
-              Respaldados por las principales instituciones de salud mental
-            </p>
-          </div>
-
-          <div className="flex flex-wrap justify-center items-center gap-12 max-w-4xl mx-auto opacity-60">
-            <div className="text-center">
-              <div className="w-32 h-32 bg-muted rounded-lg flex items-center justify-center mb-2">
-                <span className="text-xs text-muted-foreground">Logo Colegio</span>
-              </div>
-              <p className="text-sm text-muted-foreground">Colegio de Psicólogos</p>
-            </div>
-            <div className="text-center">
-              <div className="w-32 h-32 bg-muted rounded-lg flex items-center justify-center mb-2">
-                <span className="text-xs text-muted-foreground">Logo Certificación</span>
-              </div>
-              <p className="text-sm text-muted-foreground">Certificación Nacional</p>
-            </div>
-            <div className="text-center">
-              <div className="w-32 h-32 bg-muted rounded-lg flex items-center justify-center mb-2">
-                <span className="text-xs text-muted-foreground">Logo Aval</span>
-              </div>
-              <p className="text-sm text-muted-foreground">Aval Institucional</p>
-            </div>
-          </div>
-        </div>
+        ...
       </section>
+      */}
 
       {/* CTA Section */}
       <section className="py-20 bg-gradient-to-br from-primary to-primary-dark text-primary-foreground">

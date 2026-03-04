@@ -345,7 +345,7 @@ const Pricing = () => {
                       <h3 className="font-semibold mb-2">Política de cancelación</h3>
                       <p className="text-sm text-muted-foreground">
                         Puedes cancelar o reprogramar tu sesión con al menos 24 horas de anticipación sin cargo.
-                        Cancelaciones con menos de 24 horas se cobrarán el 50% del valor de la sesión.
+                        Cancelaciones con menos de 24 horas se cobrarán en su totalidad (100% del valor de la sesión).
                       </p>
                     </div>
                   </div>
@@ -391,8 +391,7 @@ const Pricing = () => {
                     <div>
                       <h3 className="font-semibold mb-2">Métodos de pago</h3>
                       <p className="text-sm text-muted-foreground">
-                        Aceptamos tarjetas de crédito y débito (Visa, Mastercard, American Express), transferencias
-                        bancarias y pagos a través de PayPal. Todos los pagos son procesados de forma segura.
+                        Aceptamos tarjetas de crédito y débito (Visa, Mastercard, American Express). Todos los pagos son procesados de forma segura a través de Stripe.
                       </p>
                     </div>
                   </div>

@@ -13,7 +13,7 @@ const FAQ = () => {
     },
     {
       question: "¿Qué métodos de pago aceptan?",
-      answer: "Aceptamos tarjetas de crédito y débito (Visa, Mastercard, American Express), transferencias bancarias y pagos a través de PayPal. Todos los pagos son procesados de forma segura.",
+      answer: "Aceptamos tarjetas de crédito y débito (Visa, Mastercard, American Express). Todos los pagos son procesados de forma segura a través de Stripe.",
     },
     {
       question: "¿Puedo cambiar de terapeuta?",
@@ -21,11 +21,11 @@ const FAQ = () => {
     },
     {
       question: "¿Qué pasa si necesito cancelar una sesión?",
-      answer: "Puedes cancelar o reprogramar tu sesión con al menos 24 horas de anticipación sin cargo. Cancelaciones con menos de 24 horas se cobrarán el 50% del valor de la sesión.",
+      answer: "Puedes cancelar o reprogramar tu sesión con al menos 24 horas de anticipación sin cargo. Cancelaciones con menos de 24 horas se cobrarán en su totalidad (100% del valor de la sesión).",
     },
     {
       question: "¿Es confidencial la terapia en línea?",
-      answer: "Absolutamente. Todas las sesiones están protegidas por el secreto profesional y utilizamos plataformas seguras con cifrado de extremo a extremo. Tu privacidad es nuestra prioridad.",
+      answer: "Absolutamente. Todas las sesiones están protegidas por el secreto profesional y utilizamos plataformas seguras con conexiones cifradas. Tu privacidad es nuestra prioridad.",
     },
     {
       question: "¿Emiten facturas?",

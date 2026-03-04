@@ -55,7 +55,7 @@ const Privacy = () => {
               <h2 className="text-3xl font-bold mb-4">4. Protección de datos sensibles</h2>
               <p className="text-muted-foreground leading-relaxed">
                 Reconocemos que los datos de salud mental son especialmente sensibles. Implementamos las
-                medidas de seguridad más estrictas, incluyendo cifrado de extremo a extremo para todas las
+                medidas de seguridad más estrictas, incluyendo conexiones cifradas (SSL/TLS) para todas las
                 comunicaciones, almacenamiento seguro de datos clínicos, y acceso restringido solo al personal
                 autorizado.
               </p>
@@ -83,7 +83,7 @@ const Privacy = () => {
                 <li>Revocar su consentimiento para el tratamiento de datos</li>
               </ul>
               <p className="text-muted-foreground leading-relaxed mt-4">
-                Para ejercer estos derechos, puede enviar una solicitud a privacidad@vittare.com
+                Para ejercer estos derechos, puede enviar una solicitud a privacidad@vittareterapia.com
               </p>
             </section>
 
@@ -111,7 +111,7 @@ const Privacy = () => {
                 personales, puede contactarnos en:
               </p>
               <p className="text-muted-foreground mt-4">
-                Email: privacidad@vittare.com<br />
+                Email: privacidad@vittareterapia.com<br />
                 Teléfono: +52 55 1234 5678
               </p>
             </section>
