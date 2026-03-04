@@ -139,7 +139,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } else if (userRole === "psicologo") {
         navigate("/therapist/dashboard");
       } else if (userRole === "cliente") {
-        navigate("/portal");
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("onboarding_completed")
+          .eq("id", data.user.id)
+          .single();
+        if (!profile?.onboarding_completed) {
+          navigate("/portal/onboarding");
+        } else {
+          navigate("/portal");
+        }
       } else {
         navigate("/");
       }
@@ -183,7 +192,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (selectedRole === "psicologo") {
           navigate("/onboarding-psicologo");
         } else if (selectedRole === "cliente") {
-          navigate("/portal");
+          navigate("/portal/onboarding");
         }
       } else {
         // No session yet — email confirmation required.

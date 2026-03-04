@@ -522,9 +522,11 @@ export type Database = {
           email_cancellation: boolean | null
           email_new_booking: boolean | null
           email_new_message: boolean | null
+          email_newsletter: boolean | null
           email_no_show: boolean | null
           email_payment_update: boolean | null
           email_session_reminder: boolean | null
+          email_task_assigned: boolean | null
           id: string
           updated_at: string | null
           user_id: string
@@ -535,9 +537,11 @@ export type Database = {
           email_cancellation?: boolean | null
           email_new_booking?: boolean | null
           email_new_message?: boolean | null
+          email_newsletter?: boolean | null
           email_no_show?: boolean | null
           email_payment_update?: boolean | null
           email_session_reminder?: boolean | null
+          email_task_assigned?: boolean | null
           id?: string
           updated_at?: string | null
           user_id: string
@@ -548,9 +552,11 @@ export type Database = {
           email_cancellation?: boolean | null
           email_new_booking?: boolean | null
           email_new_message?: boolean | null
+          email_newsletter?: boolean | null
           email_no_show?: boolean | null
           email_payment_update?: boolean | null
           email_session_reminder?: boolean | null
+          email_task_assigned?: boolean | null
           id?: string
           updated_at?: string | null
           user_id?: string
@@ -759,8 +765,11 @@ export type Database = {
           email: string | null
           full_name: string | null
           id: string
+          onboarding_completed: boolean | null
           phone: string | null
           processor_customer_id: string | null
+          terms_accepted: boolean | null
+          terms_accepted_at: string | null
           updated_at: string
         }
         Insert: {
@@ -769,8 +778,11 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id: string
+          onboarding_completed?: boolean | null
           phone?: string | null
           processor_customer_id?: string | null
+          terms_accepted?: boolean | null
+          terms_accepted_at?: string | null
           updated_at?: string
         }
         Update: {
@@ -779,8 +791,11 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          onboarding_completed?: boolean | null
           phone?: string | null
           processor_customer_id?: string | null
+          terms_accepted?: boolean | null
+          terms_accepted_at?: string | null
           updated_at?: string
         }
         Relationships: []

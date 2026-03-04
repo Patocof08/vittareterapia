@@ -44,6 +44,7 @@ import ClientSubscriptions from "./pages/client/ClientSubscriptions";
 import ClientTasks from "./pages/client/ClientTasks";
 import ClientPayments from "./pages/client/ClientPayments";
 import ClientProfile from "./pages/client/ClientProfile";
+import ClientOnboarding from "./pages/client/ClientOnboarding";
 import PaymentSuccess from "./pages/client/PaymentSuccess";
 import Auth from "./pages/Auth";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -121,6 +122,7 @@ const App = () => {
             <Route path="pagos" element={<ClientPayments />} />
             <Route path="perfil" element={<ClientProfile />} />
             <Route path="ajustes" element={<ClientSettings />} />
+            <Route path="onboarding" element={<ClientOnboarding />} />
             <Route path="payment-success" element={<PaymentSuccess />} />
           </Route>
 

@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/hooks/useAuth";
 import { Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,6 +34,26 @@ interface ProfileData {
   avatar_url?: string;
 }
 
+interface ClientNotifPrefs {
+  email_session_reminder: boolean;
+  email_new_message: boolean;
+  email_task_assigned: boolean;
+  email_payment_update: boolean;
+  email_cancellation: boolean;
+  email_no_show: boolean;
+  email_newsletter: boolean;
+}
+
+const DEFAULT_NOTIF_PREFS: ClientNotifPrefs = {
+  email_session_reminder: true,
+  email_new_message: true,
+  email_task_assigned: true,
+  email_payment_update: true,
+  email_cancellation: true,
+  email_no_show: true,
+  email_newsletter: false,
+};
+
 export default function ClientSettings() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -51,10 +72,12 @@ export default function ClientSettings() {
     newPassword: "",
     confirmPassword: ""
   });
+  const [notifPrefs, setNotifPrefs] = useState<ClientNotifPrefs>(DEFAULT_NOTIF_PREFS);
 
   useEffect(() => {
     if (user) {
       loadProfile();
+      loadNotifPrefs();
     }
   }, [user]);
 
@@ -78,6 +101,45 @@ export default function ClientSettings() {
       }
     } catch (error) {
       console.error('Error loading profile:', error);
+    }
+  };
+
+  const loadNotifPrefs = async () => {
+    if (!user) return;
+    try {
+      const { data } = await supabase
+        .from("notification_preferences")
+        .select("email_session_reminder, email_new_message, email_task_assigned, email_payment_update, email_cancellation, email_no_show, email_newsletter")
+        .eq("user_id", user.id)
+        .single();
+      if (data) {
+        setNotifPrefs({
+          email_session_reminder: data.email_session_reminder ?? true,
+          email_new_message: data.email_new_message ?? true,
+          email_task_assigned: data.email_task_assigned ?? true,
+          email_payment_update: data.email_payment_update ?? true,
+          email_cancellation: data.email_cancellation ?? true,
+          email_no_show: data.email_no_show ?? true,
+          email_newsletter: data.email_newsletter ?? false,
+        });
+      }
+    } catch {
+      // Use defaults if no record exists yet
+    }
+  };
+
+  const updateNotifPref = async (key: keyof ClientNotifPrefs, value: boolean) => {
+    if (!user) return;
+    const previous = notifPrefs;
+    setNotifPrefs((prev) => ({ ...prev, [key]: value }));
+    try {
+      const { error } = await supabase
+        .from("notification_preferences")
+        .upsert({ user_id: user.id, user_type: "client", [key]: value }, { onConflict: "user_id" });
+      if (error) throw error;
+    } catch {
+      setNotifPrefs(previous);
+      toast({ title: "Error", description: "No se pudo guardar la preferencia.", variant: "destructive" });
     }
   };
 
@@ -453,63 +515,86 @@ export default function ClientSettings() {
                 Preferencias de Notificaciones
               </CardTitle>
               <CardDescription>
-                Controla qué notificaciones quieres recibir
+                Controla qué notificaciones quieres recibir por correo. Los cambios se guardan automáticamente.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Recordatorios de Sesiones</p>
-                    <p className="text-sm text-muted-foreground">
-                      Recibe notificaciones antes de tus sesiones programadas
-                    </p>
-                  </div>
-                  <input type="checkbox" defaultChecked className="w-5 h-5" />
+            <CardContent className="space-y-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium">Recordatorios de Sesiones</p>
+                  <p className="text-sm text-muted-foreground">Recibe notificaciones antes de tus sesiones programadas</p>
                 </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Nuevos Mensajes</p>
-                    <p className="text-sm text-muted-foreground">
-                      Notificaciones cuando recibas mensajes de tu terapeuta
-                    </p>
-                  </div>
-                  <input type="checkbox" defaultChecked className="w-5 h-5" />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Tareas Asignadas</p>
-                    <p className="text-sm text-muted-foreground">
-                      Avisos sobre nuevas tareas o ejercicios
-                    </p>
-                  </div>
-                  <input type="checkbox" defaultChecked className="w-5 h-5" />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Confirmaciones de Pago</p>
-                    <p className="text-sm text-muted-foreground">
-                      Recibos y confirmaciones de transacciones
-                    </p>
-                  </div>
-                  <input type="checkbox" defaultChecked className="w-5 h-5" />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Boletín y Promociones</p>
-                    <p className="text-sm text-muted-foreground">
-                      Consejos de bienestar y ofertas especiales
-                    </p>
-                  </div>
-                  <input type="checkbox" className="w-5 h-5" />
-                </div>
+                <Switch
+                  checked={notifPrefs.email_session_reminder}
+                  onCheckedChange={(v) => updateNotifPref("email_session_reminder", v)}
+                />
               </div>
 
-              <Button>Guardar Preferencias</Button>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium">Nuevos Mensajes</p>
+                  <p className="text-sm text-muted-foreground">Notificaciones cuando recibas mensajes de tu terapeuta</p>
+                </div>
+                <Switch
+                  checked={notifPrefs.email_new_message}
+                  onCheckedChange={(v) => updateNotifPref("email_new_message", v)}
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium">Tareas Asignadas</p>
+                  <p className="text-sm text-muted-foreground">Avisos sobre nuevas tareas o ejercicios</p>
+                </div>
+                <Switch
+                  checked={notifPrefs.email_task_assigned}
+                  onCheckedChange={(v) => updateNotifPref("email_task_assigned", v)}
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium">Confirmaciones de Pago</p>
+                  <p className="text-sm text-muted-foreground">Recibos y confirmaciones de transacciones</p>
+                </div>
+                <Switch
+                  checked={notifPrefs.email_payment_update}
+                  onCheckedChange={(v) => updateNotifPref("email_payment_update", v)}
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium">Cancelaciones</p>
+                  <p className="text-sm text-muted-foreground">Notificación cuando se cancele una sesión</p>
+                </div>
+                <Switch
+                  checked={notifPrefs.email_cancellation}
+                  onCheckedChange={(v) => updateNotifPref("email_cancellation", v)}
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium">Inasistencias</p>
+                  <p className="text-sm text-muted-foreground">Notificación si se registra una inasistencia</p>
+                </div>
+                <Switch
+                  checked={notifPrefs.email_no_show}
+                  onCheckedChange={(v) => updateNotifPref("email_no_show", v)}
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium">Boletín y Promociones</p>
+                  <p className="text-sm text-muted-foreground">Consejos de bienestar y ofertas especiales</p>
+                </div>
+                <Switch
+                  checked={notifPrefs.email_newsletter}
+                  onCheckedChange={(v) => updateNotifPref("email_newsletter", v)}
+                />
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
