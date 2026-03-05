@@ -7,6 +7,7 @@ import {
   Users,
   DollarSign,
   BookOpen,
+  CheckSquare,
   HelpCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -20,6 +21,7 @@ const menuItems = [
   { icon: Video, label: "Sesiones", path: "/therapist/sessions" },
   { icon: MessageSquare, label: "Mensajes", path: "/therapist/messages", hasUnreadBadge: true },
   { icon: Users, label: "Pacientes", path: "/therapist/patients" },
+  { icon: CheckSquare, label: "Tareas", path: "/therapist/tasks" },
   { icon: DollarSign, label: "Pagos", path: "/therapist/payments" },
   { icon: BookOpen, label: "Biblioteca", path: "/therapist/library" },
 ];
