@@ -36,11 +36,6 @@ const therapistFAQs = [
       "Los pagos se procesan semanalmente y se depositan en tu cuenta bancaria registrada. Puedes ver el detalle en la sección de Pagos.",
   },
   {
-    question: "¿Puedo compartir materiales con mis pacientes?",
-    answer:
-      'Sí, en la sección "Biblioteca" puedes subir materiales y compartirlos con pacientes específicos. Ellos recibirán una notificación cuando compartas algo nuevo.',
-  },
-  {
     question: "¿Cómo funciona la videollamada?",
     answer:
       "Las videollamadas se generan automáticamente para cada sesión confirmada. Solo debes hacer clic en el enlace cuando llegue la hora de la sesión.",

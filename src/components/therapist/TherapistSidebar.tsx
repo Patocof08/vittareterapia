@@ -6,7 +6,6 @@ import {
   MessageSquare,
   Users,
   DollarSign,
-  BookOpen,
   CheckSquare,
   HelpCircle,
 } from "lucide-react";
@@ -23,7 +22,6 @@ const menuItems = [
   { icon: Users, label: "Pacientes", path: "/therapist/patients" },
   { icon: CheckSquare, label: "Tareas", path: "/therapist/tasks" },
   { icon: DollarSign, label: "Pagos", path: "/therapist/payments" },
-  { icon: BookOpen, label: "Biblioteca", path: "/therapist/library" },
 ];
 
 export const TherapistSidebar = () => {
