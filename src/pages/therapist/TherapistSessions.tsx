@@ -85,64 +85,6 @@ export default function TherapistSessions() {
     return diffMin <= 15 && diffMin >= -30;
   };
 
-  const handleCompleteSession = async (sessionId: string) => {
-    try {
-      const { error } = await supabase
-        .from("appointments")
-        .update({ status: "completed" })
-        .eq("id", sessionId);
-
-      if (error) throw error;
-      toast.success("Sesión marcada como completada");
-      loadSessions();
-    } catch (error) {
-      console.error("Error completing session:", error);
-      toast.error("Error al marcar como completada");
-    }
-  };
-
-  const handleNoShow = async (sessionId: string) => {
-    try {
-      const { error } = await supabase
-        .from("appointments")
-        .update({ status: "no_show" })
-        .eq("id", sessionId);
-
-      if (error) throw error;
-
-      const session = sessions.find((s) => s.id === sessionId);
-      if (session) {
-        const sessionDate = new Date(session.start_time);
-        await supabase.functions.invoke("send-notification-email", {
-          body: {
-            notification_type: "no_show",
-            recipient_user_id: session.patient_id,
-            variables: {
-              recipient_name: session.profile?.full_name?.split(" ")[0] || "Hola",
-              psychologist_name: "tu psicólogo",
-              session_date: sessionDate.toLocaleDateString("es-MX", {
-                weekday: "long",
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              }),
-              session_time: sessionDate.toLocaleTimeString("es-MX", {
-                hour: "2-digit",
-                minute: "2-digit",
-                hour12: true,
-              }),
-            },
-          },
-        });
-      }
-
-      toast.success("Sesión marcada como inasistencia");
-      loadSessions();
-    } catch (error) {
-      console.error("Error marking no-show:", error);
-      toast.error("Error al marcar inasistencia");
-    }
-  };
 
 
   const filteredSessions = sessions.filter((session) => {
@@ -289,23 +231,6 @@ export default function TherapistSessions() {
                         <Video className="w-4 h-4 mr-2" />
                         Iniciar videollamada
                       </Button>
-                    )}
-                    {(session.status === "pending" || session.status === "confirmed") && (
-                      <>
-                        <Button
-                          variant="outline"
-                          onClick={() => handleCompleteSession(session.id)}
-                        >
-                          Marcar como completada
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          className="text-muted-foreground"
-                          onClick={() => handleNoShow(session.id)}
-                        >
-                          No asistió
-                        </Button>
-                      </>
                     )}
                     {session.status === "completed" && (
                       <Button
