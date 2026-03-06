@@ -15,6 +15,48 @@ async function verifyStripeSignature(payload: string, sigHeader: string, secret:
   } catch { return false }
 }
 
+async function notifyNewBookingToPsych(
+  supabase: any,
+  psychologistProfileId: string,
+  clientUserId: string,
+  startTime: string
+) {
+  try {
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? ''
+    const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+
+    const [{ data: psych }, { data: client }] = await Promise.all([
+      supabase.from('psychologist_profiles').select('user_id, first_name').eq('id', psychologistProfileId).single(),
+      supabase.from('profiles').select('full_name').eq('id', clientUserId).single(),
+    ])
+
+    if (!psych?.user_id) return
+
+    const sessionDate = new Date(startTime)
+
+    fetch(`${SUPABASE_URL}/functions/v1/send-notification-email`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SERVICE_ROLE}`,
+        'apikey': SERVICE_ROLE,
+      },
+      body: JSON.stringify({
+        notification_type: 'new_booking',
+        recipient_user_id: psych.user_id,
+        variables: {
+          recipient_name: psych.first_name || 'Psicólogo',
+          patient_name: client?.full_name || 'Paciente',
+          session_date: sessionDate.toLocaleDateString('es-MX', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
+          session_time: sessionDate.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', hour12: true }),
+        },
+      }),
+    }).catch(() => {})
+  } catch (err) {
+    console.error('Error sending new booking notification to psych:', err)
+  }
+}
+
 async function notifyPaymentToClient(
   supabase: any,
   clientUserId: string,
@@ -220,6 +262,9 @@ Deno.serve(async (req) => {
         })
         console.log('Package processed:', sub.id, 'stripe_sub:', stripeSubId)
         notifyPaymentToClient(supabase, userId, psychologistId, Number(payment.amount), `Paquete ${sessionsTotal} sesiones`)
+        if (apptData?.appointment_start_time) {
+          notifyNewBookingToPsych(supabase, psychologistId, userId, apptData.appointment_start_time)
+        }
 
       } else {
         // ── Single session ──
@@ -245,6 +290,9 @@ Deno.serve(async (req) => {
         })
         console.log('Single session processed:', payment.id)
         notifyPaymentToClient(supabase, payment.client_id, payment.psychologist_id, Number(payment.amount), 'Sesión individual')
+        if (apptData?.appointment_start_time) {
+          notifyNewBookingToPsych(supabase, payment.psychologist_id, payment.client_id, apptData.appointment_start_time)
+        }
       }
     }
 
