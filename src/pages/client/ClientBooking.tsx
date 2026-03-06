@@ -47,7 +47,7 @@ export default function ClientBooking() {
 
           if (appointments && appointments.length > 0) {
             // Get unique psychologist IDs
-            const uniquePsychologistIds = [...new Set(appointments.map(a => a.psychologist_id))];
+            const uniquePsychologistIds = [...new Set(appointments.map(a => a.psychologist_id))].filter(Boolean);
             
             // Fetch all psychologist profiles
             const { data: psychologistData, error: psychError } = await supabase
