@@ -45,8 +45,8 @@ export default function PostSessionDialog({ appointmentId, patientName, onComple
              apptData?.subscription_id || appointmentId)
           .maybeSingle()
 
-        // Fallback: usar base_amount del payment si no hay deferred_revenue
-        const { data: paymentData } = !deferredData ? await supabase
+        // Fallback: usar base_amount del payment si no hay price_per_session en deferred_revenue
+        const { data: paymentData } = !deferredData?.price_per_session ? await supabase
           .from('payments')
           .select('base_amount')
           .eq('appointment_id', appointmentId)

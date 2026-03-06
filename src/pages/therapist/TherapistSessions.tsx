@@ -108,7 +108,7 @@ export default function TherapistSessions() {
              session.subscription_id || session.id)
           .maybeSingle();
 
-        const { data: paymentData } = !deferredData ? await supabase
+        const { data: paymentData } = !deferredData?.price_per_session ? await supabase
           .from("payments")
           .select("base_amount")
           .eq("appointment_id", session.id)
