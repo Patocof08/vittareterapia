@@ -87,6 +87,8 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
         }
       );
 
+      console.log("[BookingCalendar] booked slots:", appointments, "error:", apptError, "params:", { psychologistId, start: startOfDay.toISOString(), end: endOfDay.toISOString() });
+
       if (apptError) throw apptError;
 
       // Get therapist calendar blocks for this date (external/blocked times)
