@@ -30,6 +30,7 @@ const TherapistProfile = () => {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [pendingSessionInfo, setPendingSessionInfo] = useState<SessionInfo | null>(null);
   const [bookedSlots, setBookedSlots] = useState<string[]>([]);
+  const [calendarBlocks, setCalendarBlocks] = useState<{ start: number; end: number }[]>([]);
   const [reviews, setReviews] = useState<any[]>([]);
   const [avgRating, setAvgRating] = useState<number>(0);
   const [reviewCount, setReviewCount] = useState<number>(0);
@@ -127,6 +128,31 @@ const TherapistProfile = () => {
         });
         setBookedSlots(booked);
       }
+
+      // Load calendar blocks (recurring + specific date)
+      const dayOfWeek = selectedDate.getDay();
+      const dateString = selectedDate.toISOString().split('T')[0];
+
+      const [{ data: recurringBlocks }, { data: specificBlocks }] = await Promise.all([
+        (supabase as any)
+          .from("therapist_calendar_blocks")
+          .select("start_time, end_time")
+          .eq("psychologist_id", id)
+          .eq("is_recurring", true)
+          .eq("day_of_week", dayOfWeek),
+        (supabase as any)
+          .from("therapist_calendar_blocks")
+          .select("start_time, end_time")
+          .eq("psychologist_id", id)
+          .eq("is_recurring", false)
+          .eq("specific_date", dateString),
+      ]);
+
+      const allBlocks = [...(recurringBlocks || []), ...(specificBlocks || [])];
+      setCalendarBlocks(allBlocks.map((b: any) => ({
+        start: parseInt(b.start_time.split(':')[0]),
+        end: parseInt(b.end_time.split(':')[0]),
+      })));
     };
 
     loadBookedSlots();
@@ -189,8 +215,9 @@ const TherapistProfile = () => {
         }
 
         const timeSlot = `${hour.toString().padStart(2, '0')}:00`;
-        // Only add if not already booked
-        if (!bookedSlots.includes(timeSlot)) {
+        // Skip if booked or blocked by therapist
+        const isBlocked = calendarBlocks.some(b => hour >= b.start && hour < b.end);
+        if (!bookedSlots.includes(timeSlot) && !isBlocked) {
           times.push(timeSlot);
         }
       }
