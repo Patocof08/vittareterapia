@@ -268,7 +268,7 @@ const About = () => {
               </Button>
             </Link>
             <Link to="/para-psicologos">
-              <Button variant="secondary" size="lg" className="bg-white/20 text-white border border-white/40 hover:bg-white/30 backdrop-blur-sm">
+              <Button variant="ghost" size="lg" className="text-white border border-white/50 hover:bg-white/15 hover:text-white">
                 Soy psicólogo
               </Button>
             </Link>
