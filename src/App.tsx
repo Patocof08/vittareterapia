@@ -16,6 +16,7 @@ import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import Cookies from "./pages/Cookies";
 import ParaPsicologos from "./pages/ParaPsicologos";
+import About from "./pages/About";
 import NotFound from "./pages/NotFound";
 import { TherapistLayout } from "./components/therapist/TherapistLayout";
 import { ClientLayout } from "./components/client/ClientLayout";
@@ -76,6 +77,7 @@ const App = () => {
           <Route path="/terms" element={<Terms />} />
           <Route path="/cookies" element={<Cookies />} />
           <Route path="/para-psicologos" element={<ParaPsicologos />} />
+          <Route path="/sobre-nosotros" element={<About />} />
           
           {/* Onboarding */}
           <Route path="/onboarding-psicologo" element={<OnboardingPsicologo />} />

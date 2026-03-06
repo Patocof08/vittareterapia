@@ -15,6 +15,7 @@ export const Navbar = () => {
   const navLinks = [
     { name: "Inicio", path: "/" },
     { name: "Terapeutas", path: "/therapists" },
+    { name: "Nosotros", path: "/sobre-nosotros" },
     { name: "Precios", path: "/pricing" },
     { name: "Blog", path: "/blog" },
     { name: "Ayuda", path: "/faq" },
