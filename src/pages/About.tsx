@@ -2,193 +2,276 @@ import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { Heart, Shield, Users, Star, Target, Eye } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
-const values = [
-  {
-    icon: Heart,
-    title: "Empatía",
-    description:
-      "Creemos que cada persona merece ser escuchada sin juicio. La empatía es el fundamento de toda relación terapéutica.",
-  },
-  {
-    icon: Shield,
-    title: "Confidencialidad",
-    description:
-      "Tu privacidad es sagrada. Toda información compartida en la plataforma está protegida con los más altos estándares de seguridad.",
-  },
-  {
-    icon: Star,
-    title: "Excelencia",
-    description:
-      "Solo trabajamos con psicólogos colegiados y verificados. La calidad de la atención es nuestra responsabilidad.",
-  },
-  {
-    icon: Users,
-    title: "Accesibilidad",
-    description:
-      "La salud mental debe estar al alcance de todos. Ofrecemos opciones flexibles para que nada te detenga.",
-  },
-  {
-    icon: Target,
-    title: "Compromiso",
-    description:
-      "Acompañamos tu proceso desde el primer contacto hasta que alcances tus metas de bienestar.",
-  },
-  {
-    icon: Eye,
-    title: "Transparencia",
-    description:
-      "Sin sorpresas. Precios claros, psicólogos verificados y procesos honestos en cada paso.",
-  },
-];
-
-const stats = [
-  { value: "500+", label: "Pacientes atendidos" },
-  { value: "30+", label: "Psicólogos verificados" },
-  { value: "95%", label: "Satisfacción" },
-  { value: "3", label: "Años de experiencia" },
-];
-
-export default function About() {
+const About = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
 
       {/* Hero */}
-      <section className="py-20 px-4 bg-gradient-to-b from-primary/5 to-background">
-        <div className="container mx-auto max-w-4xl text-center">
-          <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
-            Sobre Vittare
+      <section className="relative bg-gradient-to-br from-primary to-primary-dark text-primary-foreground py-28">
+        <div className="container mx-auto px-4 text-center">
+          <p className="text-sm uppercase tracking-widest opacity-70 mb-4">Acerca de</p>
+          <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight max-w-4xl mx-auto">
+            Nos apasiona hacer la salud mental accesible para todos.
           </h1>
-          <p className="text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto">
-            Somos una plataforma de terapia en línea fundada en México con una misión clara: hacer que la salud mental sea accesible, segura y efectiva para todos.
-          </p>
         </div>
       </section>
 
-      {/* Misión y Visión */}
-      <section className="py-16 px-4">
-        <div className="container mx-auto max-w-5xl">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div>
-              <h2 className="text-3xl font-bold text-foreground mb-4">Nuestra misión</h2>
-              <p className="text-muted-foreground leading-relaxed mb-6">
-                En Vittare conectamos a personas que buscan apoyo emocional con psicólogos profesionales verificados. Creemos que pedir ayuda es un acto de valentía, y nuestro trabajo es hacer ese camino lo más sencillo y seguro posible.
+      {/* Acerca de — texto narrativo */}
+      <section className="py-20">
+        <div className="container mx-auto px-4">
+          <div className="max-w-3xl mx-auto">
+            <h2 className="text-3xl md:text-4xl font-bold mb-8">Acerca de</h2>
+            <div className="space-y-6 text-lg text-muted-foreground leading-relaxed">
+              <p>
+                En México, millones de personas viven con ansiedad, estrés y presión constante,
+                pero siguen encontrando barreras para pedir ayuda: miedo al qué dirán, procesos
+                complicados, falta de información y una experiencia que se siente lejana e impersonal.
               </p>
-              <p className="text-muted-foreground leading-relaxed">
-                Cada psicólogo en nuestra plataforma pasa por un riguroso proceso de verificación de credenciales, cédula profesional y experiencia clínica. No aceptamos menos cuando se trata de tu bienestar.
-              </p>
-            </div>
-            <div className="bg-primary/5 rounded-2xl p-8 border border-primary/10">
-              <h3 className="text-xl font-semibold text-foreground mb-3 flex items-center gap-2">
-                <Eye className="w-5 h-5 text-primary" />
-                Nuestra visión
-              </h3>
-              <p className="text-muted-foreground leading-relaxed">
-                Ser la plataforma de salud mental de referencia en América Latina, donde cualquier persona pueda acceder a atención psicológica de calidad sin importar su ubicación o situación económica.
+              <p>
+                En Vittare creemos que cuidar tu salud mental no debería ser complicado ni estar
+                lleno de estigmas. Somos un equipo dedicado a transformar la forma en que las
+                personas acceden a terapia psicológica: con psicólogos verificados, procesos claros,
+                y una experiencia diseñada para sentirse segura, cercana y humana. Queremos que
+                dar el paso hacia la terapia deje de sentirse difícil y se convierta en algo natural,
+                accesible y confiable.
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Stats */}
-      <section className="py-16 px-4 bg-muted/30">
-        <div className="container mx-auto max-w-4xl">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {stats.map((stat) => (
-              <div key={stat.label} className="text-center">
-                <p className="text-4xl font-bold text-primary mb-2">{stat.value}</p>
-                <p className="text-sm text-muted-foreground">{stat.label}</p>
-              </div>
-            ))}
+      {/* Imagen grande */}
+      <section className="container mx-auto px-4 pb-20">
+        <div className="max-w-5xl mx-auto">
+          <img
+            src="https://images.unsplash.com/photo-1573497620053-ea5300f94f21?q=80&w=1400&auto=format&fit=crop"
+            alt="Personas conectando en un espacio seguro"
+            className="w-full h-[400px] md:h-[500px] object-cover rounded-2xl"
+          />
+        </div>
+      </section>
+
+      {/* Filosofía */}
+      <section className="py-20 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <div className="max-w-3xl mx-auto">
+            <h2 className="text-3xl md:text-4xl font-bold mb-10">Nuestra Filosofía</h2>
+            <ul className="space-y-6">
+              <li className="flex items-start gap-4">
+                <div className="w-2 h-2 bg-primary rounded-full mt-3 flex-shrink-0" />
+                <p className="text-lg text-muted-foreground leading-relaxed">
+                  <strong className="text-foreground">Transformamos</strong> las barreras que rodean
+                  la salud mental en puentes que conectan a las personas con el apoyo que necesitan.
+                </p>
+              </li>
+              <li className="flex items-start gap-4">
+                <div className="w-2 h-2 bg-primary rounded-full mt-3 flex-shrink-0" />
+                <p className="text-lg text-muted-foreground leading-relaxed">
+                  <strong className="text-foreground">Hacemos</strong> de la terapia una experiencia
+                  accesible, humana y libre de juicios — donde cada persona se sienta escuchada.
+                </p>
+              </li>
+              <li className="flex items-start gap-4">
+                <div className="w-2 h-2 bg-primary rounded-full mt-3 flex-shrink-0" />
+                <p className="text-lg text-muted-foreground leading-relaxed">
+                  <strong className="text-foreground">Creemos</strong> que pedir ayuda es un acto
+                  de valentía, no de debilidad, y que todos merecen un espacio seguro para
+                  reconectar consigo mismos.
+                </p>
+              </li>
+            </ul>
           </div>
         </div>
       </section>
 
-      {/* Valores */}
-      <section className="py-16 px-4">
-        <div className="container mx-auto max-w-5xl">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-foreground mb-4">Nuestros valores</h2>
-            <p className="text-muted-foreground max-w-xl mx-auto">
-              Estos principios guían cada decisión que tomamos, desde cómo verificamos a nuestros psicólogos hasta cómo protegemos tu información.
+      {/* Dos imágenes lado a lado */}
+      <section className="container mx-auto px-4 py-20">
+        <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
+          <img
+            src="https://images.unsplash.com/photo-1516302752625-fcc3c50ae61f?q=80&w=800&auto=format&fit=crop"
+            alt="Bienestar y crecimiento personal"
+            className="w-full h-[300px] md:h-[350px] object-cover rounded-2xl"
+          />
+          <img
+            src="https://images.unsplash.com/photo-1544027993-37dbfe43562a?q=80&w=800&auto=format&fit=crop"
+            alt="Espacio de trabajo colaborativo"
+            className="w-full h-[300px] md:h-[350px] object-cover rounded-2xl"
+          />
+        </div>
+      </section>
+
+      {/* Visión */}
+      <section className="py-20 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <div className="max-w-3xl mx-auto">
+            <h2 className="text-3xl md:text-4xl font-bold mb-8">Nuestra Visión</h2>
+            <div className="space-y-6 text-lg text-muted-foreground leading-relaxed">
+              <p>
+                Soñamos con un futuro en el que cuidar tu salud mental sea tan natural como
+                cuidar tu salud física. Donde nadie tenga que pensarlo dos veces antes de
+                buscar apoyo, y donde encontrar al psicólogo indicado sea simple, seguro y
+                sin complicaciones.
+              </p>
+              <p>
+                Queremos que Vittare sea ese espacio que faltaba: una plataforma que se
+                adapta a ti, no al revés. Donde los psicólogos están verificados, los
+                precios son transparentes y la experiencia se siente cercana desde el
+                primer clic.
+              </p>
+              <p>
+                En este futuro, la salud mental en América Latina deja de ser un tema tabú.
+                Las personas no solo buscan ayuda, sino que la encuentran fácilmente. En
+                Vittare creemos que ese futuro no es lejano — es el que estamos construyendo hoy.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Imagen grande */}
+      <section className="container mx-auto px-4 py-20">
+        <div className="max-w-5xl mx-auto">
+          <img
+            src="https://images.unsplash.com/photo-1531206715517-5c0ba140b2b8?q=80&w=1400&auto=format&fit=crop"
+            alt="Conexión y bienestar"
+            className="w-full h-[400px] md:h-[500px] object-cover rounded-2xl"
+          />
+        </div>
+      </section>
+
+      {/* Historia */}
+      <section className="py-20">
+        <div className="container mx-auto px-4">
+          <div className="max-w-3xl mx-auto">
+            <h2 className="text-3xl md:text-4xl font-bold mb-8">Nuestra Historia</h2>
+            <div className="space-y-6 text-lg text-muted-foreground leading-relaxed">
+              <p>
+                Vittare nació de la necesidad de hacer la terapia psicológica más accesible,
+                más humana y libre de estigmas en México.
+              </p>
+              <p>
+                La motivación surgió al ver una realidad que se repite todos los días:
+                personas que necesitan apoyo pero no saben por dónde empezar, procesos
+                que se sienten fríos y distantes, y una cultura que todavía le tiene miedo
+                a hablar de salud mental.
+              </p>
+              <p>
+                El momento clave fue entender que no bastaba con hablar más del tema.
+                Hacía falta crear algo diferente: un espacio donde pacientes y profesionales
+                pudieran encontrarse de una mejor manera. Sin complicaciones. Sin juicios.
+                Con la calidez que este proceso merece.
+              </p>
+              <p>
+                Hoy seguimos creciendo con esa misma convicción — demostrando que la
+                terapia puede ser simple, personalizada y accesible para todos.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Significado del nombre */}
+      <section className="py-20 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <div className="max-w-3xl mx-auto text-center">
+            <h2 className="text-3xl md:text-4xl font-bold mb-8">
+              ¿Qué significa Vittare?
+            </h2>
+            <p className="text-lg text-muted-foreground leading-relaxed mb-4">
+              Vittare es un nombre que transmite bienestar, crecimiento y reconexión personal.
+              Más que describir un servicio, representa la experiencia que queremos construir.
+            </p>
+            <p className="text-2xl font-semibold text-foreground mt-8">
+              "Un espacio seguro para reconectar contigo."
             </p>
           </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {values.map((value) => (
-              <div
-                key={value.title}
-                className="bg-card border border-border rounded-xl p-6 hover:shadow-md transition-shadow"
-              >
-                <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
-                  <value.icon className="w-5 h-5 text-primary" />
-                </div>
-                <h3 className="font-semibold text-foreground mb-2">{value.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {value.description}
-                </p>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 
-      {/* Por qué Vittare */}
-      <section className="py-16 px-4 bg-muted/30">
-        <div className="container mx-auto max-w-4xl">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-foreground mb-4">¿Por qué Vittare?</h2>
-          </div>
-          <div className="grid md:grid-cols-3 gap-8 text-center">
-            <div>
-              <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Shield className="w-6 h-6 text-primary" />
+      {/* Equipo */}
+      <section className="py-20">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-center">
+              Quiénes estamos detrás
+            </h2>
+            <p className="text-lg text-muted-foreground text-center mb-16 max-w-2xl mx-auto">
+              Un equipo pequeño con una misión grande: transformar la forma en que
+              México se acerca a la salud mental.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-3xl mx-auto">
+              {/* Patricio */}
+              <div className="text-center">
+                <div className="w-40 h-40 bg-muted rounded-2xl mx-auto mb-6 overflow-hidden">
+                  <img
+                    src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=400&auto=format&fit=crop"
+                    alt="Patricio Cohen"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <h3 className="text-xl font-bold">Patricio Cohen</h3>
+                <p className="text-primary font-medium text-sm mb-3">
+                  Co-Founder · Estrategia y Desarrollo de Negocio
+                </p>
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                  Encargado de la visión general de Vittare, la construcción del modelo
+                  de negocio, el crecimiento del proyecto y las alianzas estratégicas.
+                </p>
               </div>
-              <h3 className="font-semibold text-foreground mb-2">Psicólogos verificados</h3>
-              <p className="text-sm text-muted-foreground">
-                Revisamos cédula profesional, título y experiencia antes de aprobar a cualquier terapeuta.
-              </p>
-            </div>
-            <div>
-              <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Users className="w-6 h-6 text-primary" />
+
+              {/* Santiago */}
+              <div className="text-center">
+                <div className="w-40 h-40 bg-muted rounded-2xl mx-auto mb-6 overflow-hidden">
+                  <img
+                    src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=400&auto=format&fit=crop"
+                    alt="Santiago Sales"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <h3 className="text-xl font-bold">Santiago Sales</h3>
+                <p className="text-primary font-medium text-sm mb-3">
+                  Co-Founder
+                </p>
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                  Socio fundador de Vittare, enfocado en la construcción y consolidación
+                  del proyecto desde sus etapas iniciales, aportando a su desarrollo y ejecución.
+                </p>
               </div>
-              <h3 className="font-semibold text-foreground mb-2">Sesiones desde casa</h3>
-              <p className="text-sm text-muted-foreground">
-                Videollamadas seguras desde cualquier lugar. Sin traslados ni salas de espera.
-              </p>
             </div>
-            <div>
-              <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Heart className="w-6 h-6 text-primary" />
-              </div>
-              <h3 className="font-semibold text-foreground mb-2">Atención continua</h3>
-              <p className="text-sm text-muted-foreground">
-                Mensajería directa con tu terapeuta, seguimiento de tareas y notas de sesión en un solo lugar.
-              </p>
-            </div>
+
+            <p className="text-sm text-muted-foreground text-center mt-8">
+              Las fotos del equipo son temporales — reemplazar con fotos reales.
+            </p>
           </div>
         </div>
       </section>
 
       {/* CTA */}
-      <section className="py-20 px-4">
-        <div className="container mx-auto max-w-2xl text-center">
-          <h2 className="text-3xl font-bold text-foreground mb-4">
-            Da el primer paso hoy
+      <section className="py-24 bg-gradient-to-br from-primary to-primary-dark text-primary-foreground">
+        <div className="container mx-auto px-4 text-center">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            Tu bienestar empieza con un paso
           </h2>
-          <p className="text-muted-foreground mb-8">
-            Encontrar al psicólogo adecuado es más fácil de lo que crees. Explora nuestro directorio y agenda tu primera sesión.
+          <p className="text-xl opacity-90 mb-10 max-w-2xl mx-auto">
+            No tienes que hacerlo solo. Encuentra al psicólogo ideal para ti y
+            comienza tu proceso desde la comodidad de tu hogar.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" asChild>
-              <Link to="/therapists">Conocer terapeutas</Link>
-            </Button>
-            <Button size="lg" variant="outline" asChild>
-              <Link to="/contact">Contáctanos</Link>
-            </Button>
+            <Link to="/therapists">
+              <Button variant="secondary" size="lg">
+                Encontrar mi psicólogo
+                <ArrowRight className="ml-2 w-5 h-5" />
+              </Button>
+            </Link>
+            <Link to="/para-psicologos">
+              <Button variant="outline" size="lg" className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10">
+                Soy psicólogo
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
@@ -196,4 +279,6 @@ export default function About() {
       <Footer />
     </div>
   );
-}
+};
+
+export default About;
