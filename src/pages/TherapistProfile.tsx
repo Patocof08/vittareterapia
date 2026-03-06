@@ -113,17 +113,15 @@ const TherapistProfile = () => {
       const endOfDay = new Date(selectedDate);
       endOfDay.setHours(23, 59, 59, 999);
 
-      // @ts-ignore - Types will regenerate automatically
-      const { data: appointments } = await supabase
-        .from("appointments")
-        .select("start_time, end_time")
-        .eq("psychologist_id", id)
-        .gte("start_time", startOfDay.toISOString())
-        .lte("start_time", endOfDay.toISOString())
-        .in("status", ["pending", "confirmed"]);
+      // Use SECURITY DEFINER function to bypass RLS and see all booked slots
+      const { data: appointments } = await (supabase as any).rpc("get_booked_slots", {
+        _psychologist_id: id,
+        _date_start: startOfDay.toISOString(),
+        _date_end: endOfDay.toISOString(),
+      });
 
       if (appointments) {
-        const booked = appointments.map((apt) => {
+        const booked = appointments.map((apt: any) => {
           const start = new Date(apt.start_time);
           return `${start.getHours().toString().padStart(2, '0')}:${start.getMinutes().toString().padStart(2, '0')}`;
         });
