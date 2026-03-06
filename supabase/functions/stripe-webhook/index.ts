@@ -302,6 +302,73 @@ Deno.serve(async (req) => {
       if (sub) await supabase.from('client_subscriptions').update({ status: 'expired', auto_renew: false, updated_at: new Date().toISOString() }).eq('id', sub.id)
     }
 
+    // ============================================================
+    // CHARGE.REFUNDED — Sync refunds made from Stripe Dashboard
+    // ============================================================
+    else if (event.type === 'charge.refunded') {
+      const charge = event.data.object
+      const paymentIntentId = charge.payment_intent
+
+      if (paymentIntentId) {
+        const { data: payment } = await supabase
+          .from('payments')
+          .select('id, payment_status, appointment_id, platform_fee, psychologist_id')
+          .eq('processor_payment_id', paymentIntentId)
+          .single()
+
+        if (payment && payment.payment_status !== 'refunded') {
+          // Marcar como reembolsado
+          const latestRefund = charge.refunds?.data?.[0]
+          await supabase
+            .from('payments')
+            .update({
+              payment_status: 'refunded',
+              stripe_refund_id: latestRefund?.id || null,
+              refunded_at: new Date().toISOString(),
+            })
+            .eq('id', payment.id)
+
+          // Cancelar la cita si aún no está cancelada
+          if (payment.appointment_id) {
+            await supabase
+              .from('appointments')
+              .update({
+                status: 'cancelled',
+                cancellation_reason: 'Reembolso desde Stripe Dashboard',
+                updated_at: new Date().toISOString(),
+              })
+              .eq('id', payment.appointment_id)
+              .in('status', ['pending', 'confirmed'])
+
+            // Limpiar deferred revenue
+            await supabase
+              .from('deferred_revenue')
+              .update({ deferred_amount: 0, updated_at: new Date().toISOString() })
+              .eq('appointment_id', payment.appointment_id)
+          }
+
+          // Reversar platform fee del admin wallet
+          const platformFee = Number(payment.platform_fee || 0)
+          if (platformFee > 0) {
+            const { data: aw } = await supabase.from('admin_wallet').select('id, balance').single()
+            if (aw) {
+              const before = Number(aw.balance)
+              await supabase.from('admin_wallet').update({ balance: before - platformFee }).eq('id', aw.id)
+              await supabase.from('wallet_transactions').insert({
+                transaction_type: 'refund', transaction_category: 'platform_fee',
+                wallet_type: 'admin', payment_id: payment.id,
+                psychologist_id: payment.psychologist_id,
+                amount: -platformFee, balance_before: before, balance_after: before - platformFee,
+                description: `Devolución cargo por servicio — Reembolso Stripe Dashboard`,
+              })
+            }
+          }
+
+          console.log('Stripe Dashboard refund synced:', payment.id)
+        }
+      }
+    }
+
     else if (event.type === 'payment_intent.payment_failed') {
       const pi = event.data.object
       if (!pi.invoice) await supabase.from('payments').update({ payment_status: 'failed' }).eq('processor_payment_id', pi.id)

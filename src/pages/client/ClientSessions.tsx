@@ -259,13 +259,35 @@ export default function ClientSessions() {
           notifyCancellation(selectedAppointment);
         }
       } else {
-        // Opción reembolso: RPC maneja el diferido, el pago y la cita en una sola operación
-        const { error } = await supabase.rpc("cancel_session_with_refund", {
-          _appointment_id: selectedAppointment.id,
-          _payment_id: payment?.id ?? null,
-        });
-        if (error) throw error;
-        toast.success("Cita cancelada. El reembolso se procesará en 3-5 días hábiles.");
+        // Opción reembolso: edge function que llama a Stripe + actualiza DB
+        const { data: { session: authSession } } = await supabase.auth.getSession();
+        if (!authSession?.access_token) throw new Error("No autenticado");
+
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/process-refund`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${authSession.access_token}`,
+              "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            },
+            body: JSON.stringify({
+              appointment_id: selectedAppointment.id,
+              payment_id: payment?.id ?? null,
+            }),
+          }
+        );
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || "Error al procesar el reembolso");
+        }
+
+        toast.success(
+          `Cita cancelada. Reembolso de ${result.amount_refunded} MXN procesado. Se reflejará en tu estado de cuenta en 3-5 días hábiles.`
+        );
         notifyCancellation(selectedAppointment);
       }
 
