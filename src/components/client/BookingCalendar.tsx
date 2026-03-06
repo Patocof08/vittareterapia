@@ -71,21 +71,21 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
 
       if (availError) throw availError;
 
-      // Get existing appointments for this date
+      // Get existing appointments for this date via SECURITY DEFINER function
+      // (bypasses RLS so all booked slots are visible, not just the current user's)
       const startOfDay = new Date(date);
       startOfDay.setHours(0, 0, 0, 0);
       const endOfDay = new Date(date);
       endOfDay.setHours(23, 59, 59, 999);
 
-      // @ts-ignore - Types will regenerate automatically
-      const { data: appointments, error: apptError} = await supabase
-        // @ts-ignore - Types will regenerate automatically
-        .from("appointments")
-        .select("start_time, end_time")
-        .eq("psychologist_id", psychologistId)
-        .gte("start_time", startOfDay.toISOString())
-        .lte("start_time", endOfDay.toISOString())
-        .neq("status", "cancelled");
+      const { data: appointments, error: apptError } = await supabase.rpc(
+        "get_booked_slots" as any,
+        {
+          _psychologist_id: psychologistId,
+          _date_start: startOfDay.toISOString(),
+          _date_end: endOfDay.toISOString(),
+        }
+      );
 
       if (apptError) throw apptError;
 
