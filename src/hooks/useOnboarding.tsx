@@ -247,14 +247,29 @@ export const useOnboarding = () => {
     try {
       const fileExt = file.name.split(".").pop();
       const fileName = `${user.id}/${type}-${Date.now()}.${fileExt}`;
-      
+
+      if (type === "photo") {
+        // Profile photos go to the public avatars bucket for permanent URLs
+        const { error: uploadError } = await supabase.storage
+          .from("avatars")
+          .upload(fileName, file, { upsert: true });
+
+        if (uploadError) throw uploadError;
+
+        const { data: urlData } = supabase.storage
+          .from("avatars")
+          .getPublicUrl(fileName);
+
+        return urlData.publicUrl;
+      }
+
+      // Documents stay in psychologist-files (private) with signed URLs
       const { error: uploadError } = await supabase.storage
         .from("psychologist-files")
         .upload(fileName, file);
 
       if (uploadError) throw uploadError;
 
-      // Use signed URLs for security (24 hour expiration)
       const { data: signedData, error: signedError } = await supabase.storage
         .from("psychologist-files")
         .createSignedUrl(fileName, 86400);

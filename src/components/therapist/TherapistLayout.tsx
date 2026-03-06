@@ -90,13 +90,13 @@ export const TherapistLayout = () => {
       const filePath = `${user.id}/avatar_${Date.now()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
-        .from("psychologist-files")
-        .upload(filePath, file);
+        .from("avatars")
+        .upload(filePath, file, { upsert: true });
 
       if (uploadError) throw uploadError;
 
       const { data: urlData } = supabase.storage
-        .from("psychologist-files")
+        .from("avatars")
         .getPublicUrl(filePath);
 
       // @ts-ignore
