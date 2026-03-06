@@ -85,7 +85,20 @@ export default function TherapistSessions() {
     return diffMin <= 15 && diffMin >= -30;
   };
 
-
+  // TEMPORAL — para pruebas sin esperar sesión
+  const handleMarkCompleted = async (sessionId: string) => {
+    try {
+      const { error } = await supabase
+        .from("appointments")
+        .update({ status: "completed", updated_at: new Date().toISOString() })
+        .eq("id", sessionId);
+      if (error) throw error;
+      toast.success("Sesión marcada como completada");
+      loadSessions();
+    } catch (err) {
+      toast.error("Error al actualizar sesión");
+    }
+  };
 
   const filteredSessions = sessions.filter((session) => {
     const name = session.profile?.full_name?.toLowerCase() || "";
@@ -230,6 +243,15 @@ export default function TherapistSessions() {
                       >
                         <Video className="w-4 h-4 mr-2" />
                         Iniciar videollamada
+                      </Button>
+                    )}
+                    {(session.status === "pending" || session.status === "confirmed") && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleMarkCompleted(session.id)}
+                      >
+                        ⚠️ Marcar completada (temporal)
                       </Button>
                     )}
                     {session.status === "completed" && (
