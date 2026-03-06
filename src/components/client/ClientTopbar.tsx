@@ -1,4 +1,5 @@
-import { Bell, Menu, User, HelpCircle, Shield, FileText, LogOut } from "lucide-react";
+import { Menu, User, HelpCircle, Shield, FileText, LogOut } from "lucide-react";
+import { NotificationBell } from "@/components/NotificationBell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
@@ -36,10 +37,7 @@ export const ClientTopbar = () => {
         {/* Right section */}
         <div className="flex items-center gap-4">
           {/* Notifications */}
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="w-5 h-5" />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full" />
-          </Button>
+          <NotificationBell />
 
           {/* User menu */}
           <DropdownMenu>

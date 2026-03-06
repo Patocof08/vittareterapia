@@ -226,6 +226,63 @@ Deno.serve(async (req) => {
 
     const { subject, html } = templateFn(variables || {})
 
+    // ── Crear notificación in-app ──
+    const NOTIF_CONFIGS: Record<string, (v: Record<string, string>) => { title: string; body: string; link: string }> = {
+      new_booking: (v) => ({
+        title: `Nueva sesión con ${v.patient_name || 'un paciente'}`,
+        body: `${v.session_date} a las ${v.session_time}`,
+        link: '/therapist/sessions',
+      }),
+      session_reminder: (v) => ({
+        title: `Recordatorio: sesión hoy a las ${v.session_time}`,
+        body: `Con ${v.other_party_name}`,
+        link: '/portal/sesiones',
+      }),
+      session_reminder_soon: (v) => ({
+        title: 'Tu sesión comienza en 10 minutos',
+        body: `Con ${v.other_party_name}`,
+        link: '/therapist/sessions',
+      }),
+      new_message: (v) => ({
+        title: `Nuevo mensaje de ${v.sender_name}`,
+        body: 'Tienes un mensaje sin leer',
+        link: '/portal/mensajes',
+      }),
+      payment_update: (v) => ({
+        title: 'Actualización de pago',
+        body: `${v.amount} — ${v.concept}`,
+        link: '/portal/sesiones',
+      }),
+      cancellation: (v) => ({
+        title: 'Sesión cancelada',
+        body: `Con ${v.other_party_name} — ${v.session_date}`,
+        link: '/portal/sesiones',
+      }),
+      no_show: (v) => ({
+        title: 'Inasistencia registrada',
+        body: `Sesión con ${v.psychologist_name || 'tu psicólogo'}`,
+        link: '/portal/sesiones',
+      }),
+      task_assigned: (v) => ({
+        title: `Nueva tarea: ${v.task_title}`,
+        body: `Asignada por ${v.psychologist_name}`,
+        link: '/portal/tareas',
+      }),
+    }
+
+    const notifConfig = NOTIF_CONFIGS[notification_type]
+    if (notifConfig) {
+      const { title: notifTitle, body: notifBody, link: notifLink } = notifConfig(variables || {})
+      const { error: notifError } = await supabase.from('notifications').insert({
+        user_id: recipient_user_id,
+        type: notification_type,
+        title: notifTitle,
+        body: notifBody,
+        link: notifLink,
+      })
+      if (notifError) console.error('Error creating in-app notification:', notifError)
+    }
+
     const resendResponse = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {

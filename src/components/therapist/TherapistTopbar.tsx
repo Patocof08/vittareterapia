@@ -1,4 +1,5 @@
-import { Bell, Menu, Search, User, HelpCircle, Shield, FileText, LogOut, Settings } from "lucide-react";
+import { Menu, Search, User, HelpCircle, Shield, FileText, LogOut, Settings } from "lucide-react";
+import { NotificationBell } from "@/components/NotificationBell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
@@ -75,10 +76,7 @@ export const TherapistTopbar = ({ onMenuClick }: TherapistTopbarProps) => {
         {/* Right side */}
         <div className="flex items-center gap-2">
           {/* Notifications */}
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="w-5 h-5" />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full"></span>
-          </Button>
+          <NotificationBell />
 
           {/* Profile menu */}
           <DropdownMenu>
