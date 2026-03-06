@@ -484,19 +484,70 @@ export default function ClientSettings() {
                 Métodos de Pago
               </CardTitle>
               <CardDescription>
-                Gestiona tus tarjetas y métodos de pago
+                Gestiona tus tarjetas y métodos de pago a través de Stripe
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="text-center py-8">
-                <CreditCard className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground mb-4">
-                  No tienes métodos de pago guardados
-                </p>
-                <Button>
-                  Agregar Método de Pago
-                </Button>
-              </div>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Desde el portal de pagos puedes actualizar tu tarjeta, ver tus recibos y gestionar tus suscripciones activas.
+              </p>
+              <Button
+                onClick={async () => {
+                  try {
+                    setLoading(true);
+                    const { data: { session } } = await supabase.auth.getSession();
+                    if (!session?.access_token) {
+                      toast({ title: "Error", description: "No se pudo verificar tu sesión", variant: "destructive" });
+                      return;
+                    }
+
+                    const response = await fetch(
+                      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-customer-portal`,
+                      {
+                        method: "POST",
+                        headers: {
+                          "Content-Type": "application/json",
+                          "Authorization": `Bearer ${session.access_token}`,
+                          "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+                        },
+                        body: JSON.stringify({
+                          return_url: window.location.href,
+                        }),
+                      }
+                    );
+
+                    const result = await response.json();
+
+                    if (!response.ok) {
+                      toast({
+                        title: "Error",
+                        description: result.error || "No se pudo abrir el portal de pagos",
+                        variant: "destructive",
+                      });
+                      return;
+                    }
+
+                    window.open(result.url, "_blank");
+                  } catch (error: any) {
+                    toast({
+                      title: "Error",
+                      description: error.message || "Error inesperado",
+                      variant: "destructive",
+                    });
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+                disabled={loading}
+                className="w-full"
+                size="lg"
+              >
+                <CreditCard className="w-4 h-4 mr-2" />
+                {loading ? "Abriendo..." : "Gestionar métodos de pago"}
+              </Button>
+              <p className="text-xs text-center text-muted-foreground">
+                Serás redirigido al portal seguro de Stripe
+              </p>
             </CardContent>
           </Card>
         </TabsContent>
