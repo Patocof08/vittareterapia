@@ -245,6 +245,12 @@ export default function ClientMessages() {
         .eq("conversation_id", selectedConversation.id)
         .neq("sender_id", user.id)
         .eq("is_read", false);
+
+      setConversations(prev =>
+        prev.map(c =>
+          c.id === selectedConversation.id ? { ...c, unread_count: 0 } : c
+        )
+      );
     } catch (error) {
       console.error("Error marking messages as read:", error);
     }
