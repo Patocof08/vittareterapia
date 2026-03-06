@@ -34,7 +34,7 @@ async function notifyNewBookingToPsych(
 
     const sessionDate = new Date(startTime)
 
-    fetch(`${SUPABASE_URL}/functions/v1/send-notification-email`, {
+    await fetch(`${SUPABASE_URL}/functions/v1/send-notification-email`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -75,7 +75,7 @@ async function notifyPaymentToClient(
 
     const formattedAmount = `${amount.toLocaleString('es-MX', { minimumFractionDigits: 0 })} MXN`
 
-    fetch(`${SUPABASE_URL}/functions/v1/send-notification-email`, {
+    await fetch(`${SUPABASE_URL}/functions/v1/send-notification-email`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -261,9 +261,9 @@ Deno.serve(async (req) => {
           amount: Number(payment.amount), invoice_number: `INV-${Date.now()}`
         })
         console.log('Package processed:', sub.id, 'stripe_sub:', stripeSubId)
-        notifyPaymentToClient(supabase, userId, psychologistId, Number(payment.amount), `Paquete ${sessionsTotal} sesiones`)
+        await notifyPaymentToClient(supabase, userId, psychologistId, Number(payment.amount), `Paquete ${sessionsTotal} sesiones`)
         if (apptData?.appointment_start_time) {
-          notifyNewBookingToPsych(supabase, psychologistId, userId, apptData.appointment_start_time)
+          await notifyNewBookingToPsych(supabase, psychologistId, userId, apptData.appointment_start_time)
         }
 
       } else {
@@ -289,9 +289,9 @@ Deno.serve(async (req) => {
           amount: Number(payment.amount), invoice_number: `INV-${Date.now()}`
         })
         console.log('Single session processed:', payment.id)
-        notifyPaymentToClient(supabase, payment.client_id, payment.psychologist_id, Number(payment.amount), 'Sesión individual')
+        await notifyPaymentToClient(supabase, payment.client_id, payment.psychologist_id, Number(payment.amount), 'Sesión individual')
         if (apptData?.appointment_start_time) {
-          notifyNewBookingToPsych(supabase, payment.psychologist_id, payment.client_id, apptData.appointment_start_time)
+          await notifyNewBookingToPsych(supabase, payment.psychologist_id, payment.client_id, apptData.appointment_start_time)
         }
       }
     }
@@ -378,7 +378,7 @@ Deno.serve(async (req) => {
         amount: totalAmount, invoice_number: `INV-R-${Date.now()}`
       })
       console.log('Subscription renewed:', existingSub.id, 'rollover:', rolloverSessions)
-      notifyPaymentToClient(supabase, userId, psychologistId, totalAmount, `Renovación: Paquete ${sessionsTotal} sesiones`)
+      await notifyPaymentToClient(supabase, userId, psychologistId, totalAmount, `Renovación: Paquete ${sessionsTotal} sesiones`)
     }
 
     else if (event.type === 'invoice.payment_failed') {
