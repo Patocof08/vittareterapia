@@ -1,4 +1,4 @@
-import { Outlet, useNavigate } from "react-router-dom";
+import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { TherapistSidebar } from "./TherapistSidebar";
 import { TherapistTopbar } from "./TherapistTopbar";
 import { useAuth } from "@/hooks/useAuth";
@@ -12,6 +12,7 @@ import { toast } from "sonner";
 export const TherapistLayout = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [loading, setLoading] = useState(true);
   const [profileStatus, setProfileStatus] = useState<{
     onboardingStep: number;
@@ -182,7 +183,7 @@ export const TherapistLayout = () => {
 
         <main className="flex-1 overflow-y-auto">
           <div className="container mx-auto p-4 lg:p-6 max-w-7xl">
-            <Outlet />
+            <Outlet key={location.pathname} />
           </div>
         </main>
       </div>
