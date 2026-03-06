@@ -33,18 +33,29 @@ export default function PostSessionDialog({ appointmentId, patientName, onComple
       try {
         const { data: apptData } = await supabase
           .from('appointments')
-          .select('psychologist_id')
+          .select('psychologist_id, subscription_id')
           .eq('id', appointmentId)
           .single()
 
-        const { data: paymentData } = await supabase
-          .from('payments')
-          .select('base_amount, psychologist_id')
-          .eq('appointment_id', appointmentId)
+        // Obtener precio por sesión desde deferred_revenue
+        const { data: deferredData } = await supabase
+          .from('deferred_revenue')
+          .select('price_per_session')
+          .eq(apptData?.subscription_id ? 'subscription_id' : 'appointment_id',
+             apptData?.subscription_id || appointmentId)
           .maybeSingle()
 
-        if (apptData && paymentData) {
-          const psychCut = Math.round(Number(paymentData.base_amount) * 0.85 * 100) / 100
+        // Fallback: usar base_amount del payment si no hay deferred_revenue
+        const { data: paymentData } = !deferredData ? await supabase
+          .from('payments')
+          .select('base_amount')
+          .eq('appointment_id', appointmentId)
+          .maybeSingle() : { data: null }
+
+        const sessionPrice = Number(deferredData?.price_per_session || paymentData?.base_amount || 0)
+
+        if (apptData && sessionPrice > 0) {
+          const psychCut = Math.round(sessionPrice * 0.85 * 100) / 100
           const { data: psychProfile } = await supabase
             .from('psychologist_profiles')
             .select('user_id, first_name')

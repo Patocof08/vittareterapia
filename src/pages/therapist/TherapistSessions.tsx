@@ -100,13 +100,23 @@ export default function TherapistSessions() {
 
       // 3. Notificar al psicólogo por email
       try {
-        const { data: paymentData } = await supabase
+        // Precio por sesión desde deferred_revenue
+        const { data: deferredData } = await supabase
+          .from("deferred_revenue")
+          .select("price_per_session")
+          .eq(session.subscription_id ? "subscription_id" : "appointment_id",
+             session.subscription_id || session.id)
+          .maybeSingle();
+
+        const { data: paymentData } = !deferredData ? await supabase
           .from("payments")
           .select("base_amount")
           .eq("appointment_id", session.id)
-          .maybeSingle();
+          .maybeSingle() : { data: null };
 
-        if (paymentData && user) {
+        const sessionPrice = Number(deferredData?.price_per_session || paymentData?.base_amount || 0);
+
+        if (sessionPrice > 0 && user) {
           const { data: psychProfile } = await supabase
             .from("psychologist_profiles")
             .select("user_id, first_name")
@@ -114,7 +124,7 @@ export default function TherapistSessions() {
             .maybeSingle();
 
           if (psychProfile?.user_id) {
-            const psychCut = Math.round(Number(paymentData.base_amount) * 0.85 * 100) / 100;
+            const psychCut = Math.round(sessionPrice * 0.85 * 100) / 100;
             const { data: { session: authSession } } = await supabase.auth.getSession();
             if (authSession) {
               fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-notification-email`, {
