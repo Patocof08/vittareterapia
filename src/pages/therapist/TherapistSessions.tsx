@@ -86,16 +86,66 @@ export default function TherapistSessions() {
   };
 
   // TEMPORAL — para pruebas sin esperar sesión
-  const handleMarkCompleted = async (sessionId: string) => {
+  const handleMarkCompleted = async (session: any) => {
     try {
+      // 1. Actualizar status
       const { error } = await supabase
         .from("appointments")
         .update({ status: "completed", updated_at: new Date().toISOString() })
-        .eq("id", sessionId);
+        .eq("id", session.id);
       if (error) throw error;
+
+      // 2. Revenue recognition (85/15 split)
+      await supabase.rpc("recognize_session_revenue", { _appointment_id: session.id });
+
+      // 3. Notificar al psicólogo por email
+      try {
+        const { data: paymentData } = await supabase
+          .from("payments")
+          .select("base_amount")
+          .eq("appointment_id", session.id)
+          .maybeSingle();
+
+        if (paymentData && user) {
+          const { data: psychProfile } = await supabase
+            .from("psychologist_profiles")
+            .select("user_id, first_name")
+            .eq("user_id", user.id)
+            .maybeSingle();
+
+          if (psychProfile?.user_id) {
+            const psychCut = Math.round(Number(paymentData.base_amount) * 0.85 * 100) / 100;
+            const { data: { session: authSession } } = await supabase.auth.getSession();
+            if (authSession) {
+              fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-notification-email`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": `Bearer ${authSession.access_token}`,
+                  "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+                },
+                body: JSON.stringify({
+                  notification_type: "payment_update",
+                  recipient_user_id: psychProfile.user_id,
+                  variables: {
+                    recipient_name: psychProfile.first_name || "Psicólogo",
+                    payment_description: "Sesión completada. El pago ha sido acreditado a tu cuenta.",
+                    amount: `${psychCut.toLocaleString("es-MX", { minimumFractionDigits: 0 })} MXN`,
+                    concept: `Tu parte (85%) de la sesión con ${session.profile?.full_name || "paciente"}`,
+                  },
+                }),
+              }).catch(() => {});
+            }
+          }
+        }
+      } catch {
+        // Best-effort
+      }
+
       toast.success("Sesión marcada como completada");
       loadSessions();
     } catch (err) {
+      console.error(err);
       toast.error("Error al actualizar sesión");
     }
   };
@@ -249,7 +299,7 @@ export default function TherapistSessions() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleMarkCompleted(session.id)}
+                        onClick={() => handleMarkCompleted(session)}
                       >
                         ⚠️ Marcar completada (temporal)
                       </Button>
