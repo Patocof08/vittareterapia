@@ -20,12 +20,11 @@ Deno.serve(async (req) => {
     const now = new Date()
     let clientSent = 0
     let psychSent = 0
+    let expired = 0
 
     // ─────────────────────────────────────────────────────────
     // 1. RECORDATORIO AL CLIENTE — 12 horas antes
-    //
-    //    Ventana: sesiones que empiezan entre ahora+11.5h y ahora+12.5h
-    //    1 hora de margen para que el cron de 5 min nunca pierda una sesión
+    //    Ventana: sesiones entre ahora+11.5h y ahora+12.5h
     // ─────────────────────────────────────────────────────────
     const clientFrom = new Date(now.getTime() + 11.5 * 60 * 60 * 1000)
     const clientTo   = new Date(now.getTime() + 12.5 * 60 * 60 * 1000)
@@ -42,14 +41,12 @@ Deno.serve(async (req) => {
 
     for (const appt of clientAppts || []) {
       try {
-        // Obtener nombre del cliente
         const { data: clientProfile } = await supabase
           .from('profiles')
           .select('full_name')
           .eq('id', appt.patient_id)
           .single()
 
-        // Obtener nombre del psicólogo (appointments.psychologist_id → psychologist_profiles.id)
         const { data: psychProfile } = await supabase
           .from('psychologist_profiles')
           .select('first_name, last_name')
@@ -98,9 +95,7 @@ Deno.serve(async (req) => {
 
     // ─────────────────────────────────────────────────────────
     // 2. RECORDATORIO AL PSICÓLOGO — 10 minutos antes
-    //
-    //    Ventana: sesiones que empiezan entre ahora+5min y ahora+15min
-    //    10 minutos de margen para que el cron de 5 min lo capture
+    //    Ventana: sesiones entre ahora+5min y ahora+15min
     // ─────────────────────────────────────────────────────────
     const psychFrom = new Date(now.getTime() +  5 * 60 * 1000)
     const psychTo   = new Date(now.getTime() + 15 * 60 * 1000)
@@ -117,7 +112,6 @@ Deno.serve(async (req) => {
 
     for (const appt of psychAppts || []) {
       try {
-        // Obtener user_id del psicólogo (necesario para send-notification-email)
         const { data: psychProfile } = await supabase
           .from('psychologist_profiles')
           .select('user_id, first_name')
@@ -126,7 +120,6 @@ Deno.serve(async (req) => {
 
         if (!psychProfile?.user_id) continue
 
-        // Obtener nombre del paciente
         const { data: clientProfile } = await supabase
           .from('profiles')
           .select('full_name')
@@ -167,6 +160,132 @@ Deno.serve(async (req) => {
     }
 
     // ─────────────────────────────────────────────────────────
+    // 3. AUTO-EXPIRAR SESIONES — 2 horas después de start_time
+    //
+    //    Si una sesión sigue pending/confirmed 2 horas después
+    //    de su hora de inicio, se marca como no_show.
+    // ─────────────────────────────────────────────────────────
+    const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000)
+
+    const { data: staleAppts, error: sErr } = await supabase
+      .from('appointments')
+      .select('id, start_time, patient_id, psychologist_id')
+      .in('status', ['pending', 'confirmed'])
+      .lte('start_time', twoHoursAgo.toISOString())
+
+    if (sErr) console.error('Error fetching stale appointments:', sErr)
+
+    for (const appt of staleAppts || []) {
+      try {
+        // Marcar como no_show
+        const { error: updateErr } = await supabase
+          .from('appointments')
+          .update({ status: 'no_show', updated_at: now.toISOString() })
+          .eq('id', appt.id)
+
+        if (updateErr) {
+          console.error(`❌ Failed to expire appt ${appt.id}:`, updateErr)
+          continue
+        }
+
+        // Revenue recognition — el paciente ya pagó
+        try {
+          await supabase.rpc('recognize_session_revenue', {
+            _appointment_id: appt.id,
+          })
+        } catch {
+          // Silencioso — puede que no aplique para todas las citas
+        }
+
+        // Notificar al psicólogo que recibió pago por sesión expirada
+        try {
+          const { data: payData } = await supabase
+            .from('payments')
+            .select('base_amount')
+            .eq('appointment_id', appt.id)
+            .maybeSingle()
+
+          const { data: psychProfile } = await supabase
+            .from('psychologist_profiles')
+            .select('user_id, first_name')
+            .eq('id', appt.psychologist_id)
+            .single()
+
+          const { data: clientProfile } = await supabase
+            .from('profiles')
+            .select('full_name')
+            .eq('id', appt.patient_id)
+            .single()
+
+          if (payData && psychProfile?.user_id) {
+            const psychCut = Math.round(Number(payData.base_amount) * 0.85 * 100) / 100
+            await supabase.functions.invoke('send-notification-email', {
+              body: {
+                notification_type: 'payment_update',
+                recipient_user_id: psychProfile.user_id,
+                variables: {
+                  recipient_name: psychProfile.first_name || 'Psicólogo',
+                  payment_description: 'Sesión registrada como inasistencia. El pago ha sido acreditado a tu cuenta.',
+                  amount: `${psychCut} MXN`,
+                  concept: `Tu parte (85%) — Sesión con ${clientProfile?.full_name || 'paciente'}`,
+                },
+              },
+            })
+          }
+        } catch {
+          // Best-effort
+        }
+
+        // Notificar al cliente
+        try {
+          const { data: clientProfile } = await supabase
+            .from('profiles')
+            .select('full_name')
+            .eq('id', appt.patient_id)
+            .single()
+
+          const { data: psychProfile } = await supabase
+            .from('psychologist_profiles')
+            .select('first_name, last_name')
+            .eq('id', appt.psychologist_id)
+            .single()
+
+          const sessionDate = new Date(appt.start_time)
+          const psychName = [psychProfile?.first_name, psychProfile?.last_name].filter(Boolean).join(' ') || 'tu psicólogo'
+
+          await supabase.functions.invoke('send-notification-email', {
+            body: {
+              notification_type: 'no_show',
+              recipient_user_id: appt.patient_id,
+              variables: {
+                recipient_name: clientProfile?.full_name?.split(' ')[0] || 'Hola',
+                psychologist_name: psychName,
+                session_date: sessionDate.toLocaleDateString('es-MX', {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                }),
+                session_time: sessionDate.toLocaleTimeString('es-MX', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  hour12: true,
+                }),
+              },
+            },
+          })
+        } catch {
+          // Notificación es best-effort
+        }
+
+        expired++
+        console.log(`⏰ Auto-expired appt ${appt.id} (start: ${appt.start_time})`)
+      } catch (err) {
+        console.error(`❌ Expire error → appt ${appt.id}:`, err)
+      }
+    }
+
+    // ─────────────────────────────────────────────────────────
     // Resultado
     // ─────────────────────────────────────────────────────────
     const summary = {
@@ -174,6 +293,7 @@ Deno.serve(async (req) => {
       ts: now.toISOString(),
       client: { found: clientAppts?.length || 0, sent: clientSent },
       psych:  { found: psychAppts?.length  || 0, sent: psychSent },
+      expired: { found: staleAppts?.length || 0, processed: expired },
     }
     console.log('📋 Reminders:', JSON.stringify(summary))
 

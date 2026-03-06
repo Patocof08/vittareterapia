@@ -29,6 +29,56 @@ export default function PostSessionDialog({ appointmentId, patientName, onComple
         _appointment_id: appointmentId,
       })
 
+      // Notificar al psicólogo que recibió pago
+      try {
+        const { data: apptData } = await supabase
+          .from('appointments')
+          .select('psychologist_id')
+          .eq('id', appointmentId)
+          .single()
+
+        const { data: paymentData } = await supabase
+          .from('payments')
+          .select('base_amount, psychologist_id')
+          .eq('appointment_id', appointmentId)
+          .maybeSingle()
+
+        if (apptData && paymentData) {
+          const psychCut = Math.round(Number(paymentData.base_amount) * 0.85 * 100) / 100
+          const { data: psychProfile } = await supabase
+            .from('psychologist_profiles')
+            .select('user_id, first_name')
+            .eq('id', apptData.psychologist_id)
+            .single()
+
+          if (psychProfile?.user_id) {
+            const { data: { session: authSession } } = await supabase.auth.getSession()
+            if (authSession) {
+              fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-notification-email`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${authSession.access_token}`,
+                  'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+                },
+                body: JSON.stringify({
+                  notification_type: 'payment_update',
+                  recipient_user_id: psychProfile.user_id,
+                  variables: {
+                    recipient_name: psychProfile.first_name || 'Psicólogo',
+                    payment_description: `Sesión ${attended ? 'completada' : 'registrada como inasistencia'}. El pago ha sido acreditado a tu cuenta.`,
+                    amount: `${psychCut.toLocaleString('es-MX', { minimumFractionDigits: 0 })} MXN`,
+                    concept: `Tu parte (85%) de la sesión con ${patientName}`,
+                  },
+                }),
+              }).catch(() => {})
+            }
+          }
+        }
+      } catch {
+        // Best-effort
+      }
+
       // Fetch transcript from Daily.co in background (fire and forget)
       if (attended) {
         const { data: { session } } = await supabase.auth.getSession()

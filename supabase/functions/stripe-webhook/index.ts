@@ -15,6 +15,47 @@ async function verifyStripeSignature(payload: string, sigHeader: string, secret:
   } catch { return false }
 }
 
+async function notifyPaymentToClient(
+  supabase: any,
+  clientUserId: string,
+  psychologistProfileId: string,
+  amount: number,
+  concept: string
+) {
+  try {
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? ''
+    const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+
+    const [{ data: client }, { data: psych }] = await Promise.all([
+      supabase.from('profiles').select('full_name').eq('id', clientUserId).single(),
+      supabase.from('psychologist_profiles').select('first_name, last_name').eq('id', psychologistProfileId).single(),
+    ])
+
+    const formattedAmount = `${amount.toLocaleString('es-MX', { minimumFractionDigits: 0 })} MXN`
+
+    fetch(`${SUPABASE_URL}/functions/v1/send-notification-email`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SERVICE_ROLE}`,
+        'apikey': SERVICE_ROLE,
+      },
+      body: JSON.stringify({
+        notification_type: 'payment_update',
+        recipient_user_id: clientUserId,
+        variables: {
+          recipient_name: client?.full_name?.split(' ')[0] || 'Hola',
+          payment_description: 'Tu pago ha sido procesado exitosamente.',
+          amount: formattedAmount,
+          concept: concept,
+        },
+      }),
+    }).catch(() => {})
+  } catch (err) {
+    console.error('Error sending payment notification to client:', err)
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, stripe-signature' } })
@@ -178,6 +219,7 @@ Deno.serve(async (req) => {
           amount: Number(payment.amount), invoice_number: `INV-${Date.now()}`
         })
         console.log('Package processed:', sub.id, 'stripe_sub:', stripeSubId)
+        notifyPaymentToClient(supabase, userId, psychologistId, Number(payment.amount), `Paquete ${sessionsTotal} sesiones`)
 
       } else {
         // ── Single session ──
@@ -202,6 +244,7 @@ Deno.serve(async (req) => {
           amount: Number(payment.amount), invoice_number: `INV-${Date.now()}`
         })
         console.log('Single session processed:', payment.id)
+        notifyPaymentToClient(supabase, payment.client_id, payment.psychologist_id, Number(payment.amount), 'Sesión individual')
       }
     }
 
@@ -287,6 +330,7 @@ Deno.serve(async (req) => {
         amount: totalAmount, invoice_number: `INV-R-${Date.now()}`
       })
       console.log('Subscription renewed:', existingSub.id, 'rollover:', rolloverSessions)
+      notifyPaymentToClient(supabase, userId, psychologistId, totalAmount, `Renovación: Paquete ${sessionsTotal} sesiones`)
     }
 
     else if (event.type === 'invoice.payment_failed') {
