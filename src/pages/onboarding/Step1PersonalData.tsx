@@ -92,6 +92,10 @@ export const Step1PersonalData = () => {
       toast.error("Selecciona al menos un idioma");
       return false;
     }
+    if (!formData.profile_photo_url) {
+      toast.error("La foto de perfil es obligatoria");
+      return false;
+    }
     return true;
   };
 
@@ -135,9 +139,12 @@ export const Step1PersonalData = () => {
                 disabled={uploading}
               >
                 <Upload className="w-4 h-4 mr-2" />
-                {uploading ? "Subiendo..." : "Subir foto de perfil"}
+                {uploading ? "Subiendo..." : "Subir foto de perfil *"}
               </Button>
             </div>
+            {!formData.profile_photo_url && (
+              <p className="text-sm text-destructive">* Foto de perfil obligatoria</p>
+            )}
           </div>
 
           {/* Name Fields */}
