@@ -30,6 +30,9 @@ const TherapistProfile = () => {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [pendingSessionInfo, setPendingSessionInfo] = useState<SessionInfo | null>(null);
   const [bookedSlots, setBookedSlots] = useState<string[]>([]);
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [avgRating, setAvgRating] = useState<number>(0);
+  const [reviewCount, setReviewCount] = useState<number>(0);
   const feeRate = 0.05; // Cargo por servicio de la plataforma (5%)
 
   useEffect(() => {
@@ -67,6 +70,27 @@ const TherapistProfile = () => {
           .order("day_of_week", { ascending: true });
         
         if (availabilityData) setAvailability(availabilityData);
+
+        // Load reviews and ratings
+        // @ts-ignore - Types will regenerate automatically
+        const { data: ratingsData } = await supabase
+          .from("psychologist_ratings")
+          .select("avg_rating, review_count")
+          .eq("psychologist_id", id)
+          .maybeSingle();
+        if (ratingsData) {
+          setAvgRating(Number(ratingsData.avg_rating));
+          setReviewCount(ratingsData.review_count);
+        }
+
+        // @ts-ignore - Types will regenerate automatically
+        const { data: reviewsData } = await supabase
+          .from("reviews")
+          .select("id, rating, comment, created_at, patient_id")
+          .eq("psychologist_id", id)
+          .order("created_at", { ascending: false })
+          .limit(10);
+        if (reviewsData) setReviews(reviewsData);
       } catch (error) {
         console.error("Error loading therapist:", error);
       } finally {
@@ -336,6 +360,18 @@ const TherapistProfile = () => {
                   </p>
                   <div className="flex items-center space-x-4 mb-4">
                     <Badge variant="secondary">Disponible</Badge>
+                    {avgRating > 0 && (
+                      <div className="flex items-center gap-1">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star
+                            key={star}
+                            className={`w-4 h-4 ${star <= Math.round(avgRating) ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground"}`}
+                          />
+                        ))}
+                        <span className="text-sm font-medium ml-1">{avgRating.toFixed(1)}</span>
+                        <span className="text-sm text-muted-foreground">({reviewCount} reseñas)</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -420,6 +456,33 @@ const TherapistProfile = () => {
                   )}
                 </div>
               </div>
+
+              {/* Reviews */}
+              {reviews.length > 0 && (
+                <div className="bg-card rounded-xl shadow-soft p-6 border border-border">
+                  <h2 className="text-2xl font-bold mb-4">Reseñas de pacientes</h2>
+                  <div className="space-y-4">
+                    {reviews.map((review) => (
+                      <div key={review.id} className="border-b border-border last:border-0 pb-4 last:pb-0">
+                        <div className="flex items-center gap-1 mb-1">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star
+                              key={star}
+                              className={`w-4 h-4 ${star <= review.rating ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground"}`}
+                            />
+                          ))}
+                          <span className="text-xs text-muted-foreground ml-2">
+                            {new Date(review.created_at).toLocaleDateString("es-MX", { year: "numeric", month: "long" })}
+                          </span>
+                        </div>
+                        {review.comment && (
+                          <p className="text-sm text-muted-foreground leading-relaxed">{review.comment}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Right Column - Booking */}

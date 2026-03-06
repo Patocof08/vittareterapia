@@ -104,6 +104,22 @@ export const TherapistCard = ({
             ))}
           </div>
 
+          {/* Rating */}
+          {rating > 0 && (
+            <div className="flex items-center gap-1.5 mt-3">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <Star
+                  key={star}
+                  className={`w-3.5 h-3.5 ${
+                    star <= Math.round(rating) ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground"
+                  }`}
+                />
+              ))}
+              <span className="text-sm font-medium ml-0.5">{rating.toFixed(1)}</span>
+              <span className="text-xs text-muted-foreground">({reviews} reseñas)</span>
+            </div>
+          )}
+
           {/* Languages & Availability */}
           <div className="flex items-center space-x-4 mt-3 text-sm text-muted-foreground">
             <div className="flex items-center space-x-1">

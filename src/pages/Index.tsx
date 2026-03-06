@@ -6,9 +6,11 @@ import { TherapistCard } from "@/components/TherapistCard";
 import { Shield, Clock, FileText, DollarSign, CheckCircle, ArrowRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { fetchPublicProfiles } from "@/lib/psychologistQueries";
+import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
   const [featuredTherapists, setFeaturedTherapists] = useState<any[]>([]);
+  const [ratingsMap, setRatingsMap] = useState<Record<string, { avg_rating: number; review_count: number }>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -20,6 +22,19 @@ const Index = () => {
         if (data) {
           // Limit to 2 featured therapists
           setFeaturedTherapists(data.slice(0, 2));
+
+          // Load ratings for featured therapists
+          // @ts-ignore - Types will regenerate automatically
+          const { data: ratingsData } = await supabase
+            .from("psychologist_ratings")
+            .select("psychologist_id, avg_rating, review_count");
+          if (ratingsData) {
+            const map: Record<string, { avg_rating: number; review_count: number }> = {};
+            ratingsData.forEach((r: any) => {
+              map[r.psychologist_id] = { avg_rating: Number(r.avg_rating), review_count: r.review_count };
+            });
+            setRatingsMap(map);
+          }
         }
       } catch (error) {
         console.error("Error loading therapists:", error);
@@ -142,8 +157,8 @@ const Index = () => {
                     name={`${therapist.first_name} ${therapist.last_name}`}
                     specialty={therapist.specialties?.[0] || "Psicología"}
                     photo={therapist.profile_photo_url || "https://images.unsplash.com/photo-1594824476967-48c8b964273f?w=400&h=400&fit=crop"}
-                    rating={0}
-                    reviews={0}
+                    rating={ratingsMap[therapist.id]?.avg_rating || 0}
+                    reviews={ratingsMap[therapist.id]?.review_count || 0}
                     price={0}
                     approaches={therapist.therapeutic_approaches || []}
                     languages={therapist.languages || []}

@@ -28,6 +28,7 @@ const Therapists = () => {
   const [showQuiz, setShowQuiz] = useState(false);
   const [savedPreferences, setSavedPreferences] = useState<PatientPreferences | null>(null);
   const [therapists, setTherapists] = useState<any[]>([]);
+  const [ratingsMap, setRatingsMap] = useState<Record<string, { avg_rating: number; review_count: number }>>({});
   const [loading, setLoading] = useState(true);
 
   const specialties = ["Todos"];
@@ -44,6 +45,19 @@ const Therapists = () => {
 
         if (!therapistsError && therapistsData) {
           setTherapists(therapistsData);
+        }
+
+        // Load ratings
+        // @ts-ignore - Types will regenerate automatically
+        const { data: ratingsData } = await supabase
+          .from("psychologist_ratings")
+          .select("psychologist_id, avg_rating, review_count");
+        if (ratingsData) {
+          const map: Record<string, { avg_rating: number; review_count: number }> = {};
+          ratingsData.forEach((r: any) => {
+            map[r.psychologist_id] = { avg_rating: Number(r.avg_rating), review_count: r.review_count };
+          });
+          setRatingsMap(map);
         }
 
         // Load preferences if user is logged in
@@ -427,8 +441,8 @@ const Therapists = () => {
                         name={`${therapist.first_name} ${therapist.last_name}`}
                         specialty={therapist.specialties?.[0] || "Psicología"}
                         photo={therapist.profile_photo_url || "https://images.unsplash.com/photo-1594824476967-48c8b964273f?w=400&h=400&fit=crop"}
-                        rating={0}
-                        reviews={0}
+                        rating={ratingsMap[therapist.id]?.avg_rating || 0}
+                        reviews={ratingsMap[therapist.id]?.review_count || 0}
                         price={pricing?.session_price || 0}
                         approaches={therapist.therapeutic_approaches || []}
                         languages={therapist.languages || []}

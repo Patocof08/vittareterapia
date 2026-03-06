@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Video, Calendar, Clock } from "lucide-react";
+import { Video, Calendar, Clock, Star } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 
 const canJoinCall = (startTime: string) => {
   const diffMin = (new Date(startTime).getTime() - Date.now()) / (1000 * 60);
@@ -36,6 +43,11 @@ export default function ClientSessions() {
   const [lateDialogOpen, setLateDialogOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<any | null>(null);
   const [refundOption, setRefundOption] = useState<"credit" | "refund" | null>(null);
+  const [reviewedAppointments, setReviewedAppointments] = useState<Set<string>>(new Set());
+  const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
+  const [selectedReviewSession, setSelectedReviewSession] = useState<any | null>(null);
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewComment, setReviewComment] = useState("");
 
   useEffect(() => {
     if (user) {
@@ -74,6 +86,18 @@ export default function ClientSessions() {
 
       setUpcomingSessions(upcoming);
       setPastSessions(past);
+
+      // Load which appointments have already been reviewed
+      if (past.length > 0) {
+        // @ts-ignore - Types will regenerate automatically
+        const { data: existingReviews } = await supabase
+          .from("reviews")
+          .select("appointment_id")
+          .eq("patient_id", user.id);
+        if (existingReviews) {
+          setReviewedAppointments(new Set(existingReviews.map((r: any) => r.appointment_id)));
+        }
+      }
     } catch (error) {
       console.error("Error loading sessions:", error);
       toast.error("Error al cargar sesiones");
@@ -302,6 +326,31 @@ export default function ClientSessions() {
     }
   };
 
+  const handleSubmitReview = async () => {
+    if (!selectedReviewSession || reviewRating === 0) return;
+    try {
+      // @ts-ignore - Types will regenerate automatically
+      const { error } = await supabase.from("reviews").insert({
+        appointment_id: selectedReviewSession.id,
+        psychologist_id: selectedReviewSession.psychologist_id,
+        patient_id: user!.id,
+        rating: reviewRating,
+        comment: reviewComment.trim() || null,
+      });
+      if (error) throw error;
+      setReviewedAppointments((prev) => new Set([...prev, selectedReviewSession.id]));
+      toast.success("¡Gracias por tu reseña!");
+    } catch (error) {
+      console.error("Error submitting review:", error);
+      toast.error("Error al enviar la reseña");
+    } finally {
+      setReviewDialogOpen(false);
+      setSelectedReviewSession(null);
+      setReviewRating(0);
+      setReviewComment("");
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     const variants: Record<string, { label: string; className: string }> = {
       pending: { label: "Pendiente", className: "bg-yellow-50 text-yellow-700 border-yellow-200" },
@@ -426,7 +475,29 @@ export default function ClientSessions() {
                         </span>
                       </div>
                     </div>
-                    {getStatusBadge(session.status)}
+                    <div className="flex flex-col items-end gap-2">
+                      {getStatusBadge(session.status)}
+                      {session.status === "completed" && (
+                        reviewedAppointments.has(session.id) ? (
+                          <Badge variant="outline" className="text-xs text-green-600 border-green-200">
+                            <Star className="w-3 h-3 mr-1 fill-yellow-400 text-yellow-400" />
+                            Reseña enviada
+                          </Badge>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setSelectedReviewSession(session);
+                              setReviewDialogOpen(true);
+                            }}
+                          >
+                            <Star className="w-3 h-3 mr-1" />
+                            Calificar
+                          </Button>
+                        )
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -497,6 +568,59 @@ export default function ClientSessions() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Dialog para enviar reseña */}
+      <Dialog open={reviewDialogOpen} onOpenChange={setReviewDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Calificar sesión</DialogTitle>
+          </DialogHeader>
+          {selectedReviewSession && (
+            <div className="space-y-4 py-2">
+              <p className="text-sm text-muted-foreground">
+                Sesión con {selectedReviewSession.psychologist_profiles?.first_name} {selectedReviewSession.psychologist_profiles?.last_name} —{" "}
+                {format(new Date(selectedReviewSession.start_time), "dd/MM/yyyy", { locale: es })}
+              </p>
+              <div>
+                <p className="text-sm font-medium mb-2">Tu calificación</p>
+                <div className="flex gap-1">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      onClick={() => setReviewRating(star)}
+                      className="p-1 hover:scale-110 transition-transform"
+                    >
+                      <Star
+                        className={`w-7 h-7 ${
+                          star <= reviewRating ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground"
+                        }`}
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="text-sm font-medium mb-2">Comentario (opcional)</p>
+                <Textarea
+                  placeholder="Comparte tu experiencia..."
+                  value={reviewComment}
+                  onChange={(e) => setReviewComment(e.target.value)}
+                  rows={3}
+                  maxLength={500}
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="ghost" onClick={() => setReviewDialogOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button onClick={handleSubmitReview} disabled={reviewRating === 0}>
+                  Enviar reseña
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Dialog para cancelaciones tardías */}
       <AlertDialog open={lateDialogOpen} onOpenChange={setLateDialogOpen}>
