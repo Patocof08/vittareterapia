@@ -87,11 +87,11 @@ export const ClientTopbar = ({ onMenuClick }: ClientTopbarProps) => {
                 <HelpCircle className="mr-2 h-4 w-4" />
                 <span>Ayuda</span>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate("/privacidad")}>
+              <DropdownMenuItem onClick={() => navigate("/privacy")}>
                 <Shield className="mr-2 h-4 w-4" />
                 <span>Privacidad</span>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate("/terminos")}>
+              <DropdownMenuItem onClick={() => navigate("/terms")}>
                 <FileText className="mr-2 h-4 w-4" />
                 <span>Términos</span>
               </DropdownMenuItem>
