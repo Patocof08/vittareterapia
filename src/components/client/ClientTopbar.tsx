@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,6 +22,26 @@ interface ClientTopbarProps {
 export const ClientTopbar = ({ onMenuClick }: ClientTopbarProps) => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const [clientName, setClientName] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("profiles")
+      .select("full_name")
+      .eq("id", user.id)
+      .single()
+      .then(({ data }) => {
+        if (data?.full_name) setClientName(data.full_name);
+      });
+  }, [user]);
+
+  const getInitials = () => {
+    if (!clientName) return user?.email?.[0]?.toUpperCase() || "?";
+    const parts = clientName.trim().split(" ").filter(Boolean);
+    if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    return parts[0][0].toUpperCase();
+  };
 
   return (
     <header className="sticky top-0 z-40 bg-background border-b border-border">
@@ -46,10 +68,10 @@ export const ClientTopbar = ({ onMenuClick }: ClientTopbarProps) => {
           {/* User menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <span className="text-primary font-medium">
-                    {user?.email?.[0].toUpperCase()}
+              <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center aspect-square">
+                  <span className="text-primary font-semibold text-sm leading-none">
+                    {getInitials()}
                   </span>
                 </div>
               </Button>
