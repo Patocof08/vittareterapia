@@ -39,7 +39,7 @@ export const Navbar = () => {
             </Link>
 
             {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-1">
+            <div className="hidden lg:flex items-center space-x-1">
               {navLinks.map((link) => (
                 <Link
                   key={link.path}
@@ -56,7 +56,7 @@ export const Navbar = () => {
             </div>
 
             {/* Desktop Auth Buttons */}
-            <div className="hidden md:flex items-center gap-3">
+            <div className="hidden lg:flex items-center gap-3">
               {user ? (
                 <Button
                   variant="default"
@@ -102,7 +102,7 @@ export const Navbar = () => {
 
             {/* Mobile Menu Button */}
             <button
-              className="md:hidden p-2 rounded-lg hover:bg-accent"
+              className="lg:hidden p-2 rounded-lg hover:bg-accent"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
               {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -111,7 +111,7 @@ export const Navbar = () => {
 
           {/* Mobile Navigation */}
           {isMenuOpen && (
-            <div className="md:hidden py-4 border-t border-border">
+            <div className="lg:hidden py-4 border-t border-border">
               <div className="flex flex-col space-y-2">
                 {navLinks.map((link) => (
                   <Link

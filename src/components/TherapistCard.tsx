@@ -61,17 +61,17 @@ export const TherapistCard = ({
           </Badge>
         </div>
       )}
-      <div className="flex items-start space-x-4">
+      <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
         {/* Photo */}
         <img
           src={photo}
           alt={name}
-          className="w-24 h-24 rounded-full object-cover border-2 border-primary/20"
+          className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-2 border-primary/20 flex-shrink-0"
         />
 
         {/* Info */}
-        <div className="flex-1">
-          <div className="flex items-start justify-between">
+        <div className="flex-1 w-full">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start sm:justify-between gap-2">
             <div>
               <Link
                 to={`/therapist/${id}`}
@@ -147,7 +147,7 @@ export const TherapistCard = ({
           )}
 
           {/* Price & CTA */}
-          <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-4 pt-4 border-t border-border">
             {price > 0 ? (
               <div>
                 <span className="text-2xl font-bold text-foreground">${price}</span>

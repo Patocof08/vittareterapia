@@ -369,17 +369,17 @@ const TherapistProfile = () => {
       {/* Profile Header */}
       <section className="bg-muted/30 py-12 border-b border-border">
         <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row gap-8 items-start">
+          <div className="flex flex-col md:flex-row gap-8 items-center md:items-start">
             <img
               src={therapist.profile_photo_url || "https://images.unsplash.com/photo-1594824476967-48c8b964273f?w=400&h=400&fit=crop"}
               alt={`${therapist.first_name} ${therapist.last_name}`}
-              className="w-48 h-48 rounded-2xl object-cover border-4 border-primary/20 shadow-large"
+              className="w-32 h-32 sm:w-48 sm:h-48 rounded-2xl object-cover border-4 border-primary/20 shadow-large mx-auto md:mx-0"
             />
 
-            <div className="flex-1">
+            <div className="flex-1 w-full">
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h1 className="text-4xl font-bold mb-2">{therapist.first_name} {therapist.last_name}</h1>
+                  <h1 className="text-2xl sm:text-4xl font-bold mb-2 text-center md:text-left">{therapist.first_name} {therapist.last_name}</h1>
                   <p className="text-xl text-muted-foreground mb-2">
                     Enfoque: {therapist.therapeutic_approaches?.[0] || 'No especificado'}
                   </p>
@@ -512,7 +512,7 @@ const TherapistProfile = () => {
 
             {/* Right Column - Booking */}
             <div className="lg:col-span-1">
-              <div className="bg-card rounded-xl shadow-large p-6 border border-border sticky top-24">
+              <div className="bg-card rounded-xl shadow-large p-4 sm:p-6 border border-border lg:sticky lg:top-24">
                 {/* Pricing */}
                 {pricing && (
                   <div className="mb-6 pb-6 border-b border-border">

@@ -532,32 +532,34 @@ export default function TherapistSettings() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-6">
-          <TabsTrigger value="profile">
-            <User className="w-4 h-4 mr-2" />
-            Mi Perfil
-          </TabsTrigger>
-          <TabsTrigger value="security">
-            <Shield className="w-4 h-4 mr-2" />
-            Seguridad
-          </TabsTrigger>
-          <TabsTrigger value="documents">
-            <FileText className="w-4 h-4 mr-2" />
-            Documentos
-          </TabsTrigger>
-          <TabsTrigger value="payment">
-            <CreditCard className="w-4 h-4 mr-2" />
-            Pagos
-          </TabsTrigger>
-          <TabsTrigger value="notifications">
-            <Bell className="w-4 h-4 mr-2" />
-            Notificaciones
-          </TabsTrigger>
-          <TabsTrigger value="delete">
-            <AlertTriangle className="w-4 h-4 mr-2" />
-            Eliminar
-          </TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto -mx-4 px-4">
+          <TabsList className="inline-flex w-auto min-w-full md:grid md:w-full md:grid-cols-6">
+            <TabsTrigger value="profile" className="whitespace-nowrap">
+              <User className="w-4 h-4 mr-2" />
+              Mi Perfil
+            </TabsTrigger>
+            <TabsTrigger value="security" className="whitespace-nowrap">
+              <Shield className="w-4 h-4 mr-2" />
+              Seguridad
+            </TabsTrigger>
+            <TabsTrigger value="documents" className="whitespace-nowrap">
+              <FileText className="w-4 h-4 mr-2" />
+              Documentos
+            </TabsTrigger>
+            <TabsTrigger value="payment" className="whitespace-nowrap">
+              <CreditCard className="w-4 h-4 mr-2" />
+              Pagos
+            </TabsTrigger>
+            <TabsTrigger value="notifications" className="whitespace-nowrap">
+              <Bell className="w-4 h-4 mr-2" />
+              Notificaciones
+            </TabsTrigger>
+            <TabsTrigger value="delete" className="whitespace-nowrap">
+              <AlertTriangle className="w-4 h-4 mr-2" />
+              Eliminar
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         {/* Mi Perfil Tab */}
         <TabsContent value="profile" className="space-y-6">

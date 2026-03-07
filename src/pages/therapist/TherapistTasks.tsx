@@ -349,7 +349,7 @@ export default function TherapistTasks() {
 
       {/* Dialog: Nueva Tarea */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Nueva Tarea</DialogTitle>
             <DialogDescription>

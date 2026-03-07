@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { MessageSquare, Send, AlertCircle } from "lucide-react";
+import { MessageSquare, Send, AlertCircle, ArrowLeft } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -443,7 +443,7 @@ export default function TherapistMessages() {
       {/* Messaging interface */}
       <div className="grid lg:grid-cols-3 gap-6 h-[600px]">
         {/* Conversations list */}
-        <Card className="lg:col-span-1 flex flex-col">
+        <Card className={`lg:col-span-1 flex flex-col ${selectedConversation ? "hidden lg:flex" : ""}`}>
           <CardHeader>
             <CardTitle>Conversaciones</CardTitle>
           </CardHeader>
@@ -497,11 +497,17 @@ export default function TherapistMessages() {
         </Card>
 
         {/* Chat area */}
-        <Card className="lg:col-span-2 flex flex-col overflow-hidden">
+        <Card className={`lg:col-span-2 flex flex-col overflow-hidden ${!selectedConversation ? "hidden lg:flex" : ""}`}>
           <CardHeader className="border-b flex-shrink-0">
             <CardTitle className="flex items-center gap-3">
               {selectedConversation ? (
                 <>
+                  <button
+                    className="lg:hidden p-1 rounded-lg hover:bg-accent"
+                    onClick={() => setSelectedConversation(null)}
+                  >
+                    <ArrowLeft className="w-5 h-5" />
+                  </button>
                   <Avatar className="w-8 h-8">
                     <AvatarImage src={selectedConversation.client_avatar || ""} />
                     <AvatarFallback>

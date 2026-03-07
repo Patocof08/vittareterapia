@@ -320,14 +320,16 @@ export default function ClientSettings() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6">
-          <TabsTrigger value="profile">Mi Perfil</TabsTrigger>
-          <TabsTrigger value="security">Seguridad</TabsTrigger>
-          <TabsTrigger value="payment-methods">Métodos de Pago</TabsTrigger>
-          <TabsTrigger value="payments">Pagos</TabsTrigger>
-          <TabsTrigger value="notifications">Notificaciones</TabsTrigger>
-          <TabsTrigger value="delete">Eliminar Cuenta</TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto -mx-4 px-4">
+          <TabsList className="inline-flex w-auto min-w-full md:grid md:w-full md:grid-cols-6">
+            <TabsTrigger value="profile" className="whitespace-nowrap">Mi Perfil</TabsTrigger>
+            <TabsTrigger value="security" className="whitespace-nowrap">Seguridad</TabsTrigger>
+            <TabsTrigger value="payment-methods" className="whitespace-nowrap">Métodos de Pago</TabsTrigger>
+            <TabsTrigger value="payments" className="whitespace-nowrap">Pagos</TabsTrigger>
+            <TabsTrigger value="notifications" className="whitespace-nowrap">Notificaciones</TabsTrigger>
+            <TabsTrigger value="delete" className="whitespace-nowrap">Eliminar</TabsTrigger>
+          </TabsList>
+        </div>
 
         {/* Mi Perfil */}
         <TabsContent value="profile" className="space-y-6">
