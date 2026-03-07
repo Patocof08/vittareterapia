@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { ClientSidebar } from "./ClientSidebar";
 import { ClientTopbar } from "./ClientTopbar";
@@ -9,10 +9,11 @@ export const ClientLayout = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     if (!user) return;
-    // Don't redirect if already on the onboarding route
     if (location.pathname === "/portal/onboarding") return;
 
     supabase
@@ -27,12 +28,22 @@ export const ClientLayout = () => {
       });
   }, [user, location.pathname]);
 
+  // Cerrar mobile menu al cambiar de ruta
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
+
   return (
     <div className="flex min-h-screen bg-background">
-      <ClientSidebar />
+      <ClientSidebar
+        collapsed={sidebarCollapsed}
+        onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+        mobileOpen={mobileMenuOpen}
+        onMobileClose={() => setMobileMenuOpen(false)}
+      />
 
-      <div className="flex-1 flex flex-col w-full">
-        <ClientTopbar />
+      <div className="flex-1 flex flex-col w-full min-w-0">
+        <ClientTopbar onMenuClick={() => setMobileMenuOpen(true)} />
 
         <main className="flex-1 overflow-y-auto">
           <div className="container mx-auto p-4 lg:p-6 max-w-7xl">

@@ -24,6 +24,8 @@ export const TherapistLayout = () => {
   const [psychologistId, setPsychologistId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const checkProfileStatus = async () => {
@@ -70,6 +72,10 @@ export const TherapistLayout = () => {
 
     checkProfileStatus();
   }, [user, navigate]);
+
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -176,10 +182,15 @@ export const TherapistLayout = () => {
 
   return (
     <div className="flex min-h-screen bg-background">
-      <TherapistSidebar />
+      <TherapistSidebar
+          collapsed={sidebarCollapsed}
+          onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+          mobileOpen={mobileMenuOpen}
+          onMobileClose={() => setMobileMenuOpen(false)}
+        />
 
       <div className="flex-1 flex flex-col w-full">
-        <TherapistTopbar />
+        <TherapistTopbar onMenuClick={() => setMobileMenuOpen(true)} />
 
         <main className="flex-1 overflow-y-auto">
           <div className="container mx-auto p-4 lg:p-6 max-w-7xl">

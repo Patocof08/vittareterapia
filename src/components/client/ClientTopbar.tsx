@@ -13,7 +13,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-export const ClientTopbar = () => {
+interface ClientTopbarProps {
+  onMenuClick?: () => void;
+}
+
+export const ClientTopbar = ({ onMenuClick }: ClientTopbarProps) => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
 
@@ -21,7 +25,7 @@ export const ClientTopbar = () => {
     <header className="sticky top-0 z-40 bg-background border-b border-border">
       <div className="flex items-center justify-between h-16 px-6">
         {/* Mobile menu button */}
-        <Button variant="ghost" size="icon" className="lg:hidden">
+        <Button variant="ghost" size="icon" className="lg:hidden" onClick={onMenuClick}>
           <Menu className="w-5 h-5" />
         </Button>
 
