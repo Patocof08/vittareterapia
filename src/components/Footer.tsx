@@ -93,6 +93,11 @@ export const Footer = () => {
                   Política de cookies
                 </Link>
               </li>
+              <li>
+                <Link to="/politica-citas" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  Política de citas
+                </Link>
+              </li>
             </ul>
           </div>
 

@@ -15,6 +15,7 @@ import Contact from "./pages/Contact";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import Cookies from "./pages/Cookies";
+import AppointmentPolicy from "./pages/AppointmentPolicy";
 import ParaPsicologos from "./pages/ParaPsicologos";
 import About from "./pages/About";
 import NotFound from "./pages/NotFound";
@@ -76,6 +77,7 @@ const App = () => {
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/cookies" element={<Cookies />} />
+          <Route path="/politica-citas" element={<AppointmentPolicy />} />
           <Route path="/para-psicologos" element={<ParaPsicologos />} />
           <Route path="/sobre-nosotros" element={<About />} />
           
