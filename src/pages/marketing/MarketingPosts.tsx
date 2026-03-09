@@ -4,9 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { PlusCircle, Edit, Eye, FileText } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { PlusCircle, Edit, Eye, FileText, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { toast } from "sonner";
 
 const statusLabels: Record<string, { label: string; variant: "default" | "secondary" | "outline" }> = {
   draft: { label: "Borrador", variant: "secondary" },
@@ -18,6 +20,8 @@ const MarketingPosts = () => {
   const navigate = useNavigate();
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deletePostId, setDeletePostId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     loadPosts();
@@ -36,6 +40,26 @@ const MarketingPosts = () => {
       console.error("Error loading posts:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deletePostId) return;
+    setDeleting(true);
+    try {
+      const { error } = await supabase
+        .from("blog_posts")
+        .delete()
+        .eq("id", deletePostId);
+      if (error) throw error;
+      toast.success("Post eliminado");
+      setPosts((prev) => prev.filter((p) => p.id !== deletePostId));
+    } catch (error: any) {
+      console.error("Error deleting post:", error);
+      toast.error("Error al eliminar el post");
+    } finally {
+      setDeleting(false);
+      setDeletePostId(null);
     }
   };
 
@@ -120,12 +144,38 @@ const MarketingPosts = () => {
                   >
                     <Edit className="w-4 h-4" />
                   </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setDeletePostId(post.id)}
+                    title="Eliminar"
+                    className="text-destructive hover:text-destructive"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
                 </div>
               </div>
             </Card>
           ))}
         </div>
       )}
+
+      <AlertDialog open={!!deletePostId} onOpenChange={(open) => !open && setDeletePostId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar este post?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. El post se eliminará permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} disabled={deleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {deleting ? "Eliminando..." : "Eliminar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
