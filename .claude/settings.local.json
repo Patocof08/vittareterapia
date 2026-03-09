@@ -34,7 +34,10 @@
       "Bash(git -C \"C:/Users/patoc/OneDrive/Documentos/Vittare/lovable dev/vittareterapia\" remote -v)",
       "Bash(del C:/Users/patoc/tmp_analyze.js)",
       "Bash(where:*)",
-      "Bash(npm:*)"
-     ]
+      "Bash(npm:*)",
+      "Bash(supabase:*)",
+      "Read(//c/Users/patoc/OneDrive/Documentos/Vittare/lovable dev/vittareterapia/$HOME/.supabase/**)",
+      "Read(//c/Users/patoc/OneDrive/Documentos/Vittare/lovable dev/vittareterapia/$APPDATA/supabase/**)"
+    ]
   }
 }

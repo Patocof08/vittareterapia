@@ -147,31 +147,15 @@ const MarketingPostEditor = () => {
 
     setSending(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) throw new Error("No autenticado");
+      const { data, error } = await supabase.functions.invoke("send-newsletter", {
+        body: { post_id: id },
+      });
 
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-newsletter`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${session.access_token}`,
-            "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          },
-          body: JSON.stringify({ post_id: id }),
-        }
-      );
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "Error al enviar newsletter");
-      }
+      if (error) throw error;
 
       setNewsletterSent(true);
-      setNewsletterRecipients(result.total_sent);
-      toast.success(`Newsletter enviado a ${result.total_sent} suscriptores`);
+      setNewsletterRecipients(data?.total_sent ?? 0);
+      toast.success(`Newsletter enviado a ${data?.total_sent ?? 0} suscriptores`);
     } catch (error: any) {
       console.error("Newsletter error:", error);
       toast.error(error.message || "Error al enviar newsletter");
