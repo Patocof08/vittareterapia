@@ -50,6 +50,10 @@ import ClientProfile from "./pages/client/ClientProfile";
 import ClientOnboarding from "./pages/client/ClientOnboarding";
 import PaymentSuccess from "./pages/client/PaymentSuccess";
 import Auth from "./pages/Auth";
+import { MarketingLayout } from "./components/marketing/MarketingLayout";
+import MarketingDashboard from "./pages/marketing/MarketingDashboard";
+import MarketingSubscribers from "./pages/marketing/MarketingSubscribers";
+import MarketingStats from "./pages/marketing/MarketingStats";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminVerifications from "./pages/admin/AdminVerifications";
 import AdminPsychologistDetail from "./pages/admin/AdminPsychologistDetail";
@@ -146,6 +150,18 @@ const App = () => {
             <Route path="alerts" element={<AdminAlerts />} />
           </Route>
           
+          {/* Marketing Panel Routes - Protected */}
+          <Route path="/marketing" element={
+            <ProtectedRoute allowedRole="marketing">
+              <MarketingLayout />
+            </ProtectedRoute>
+          }>
+            <Route index element={<MarketingDashboard />} />
+            <Route path="dashboard" element={<MarketingDashboard />} />
+            <Route path="subscribers" element={<MarketingSubscribers />} />
+            <Route path="stats" element={<MarketingStats />} />
+          </Route>
+
           {/* Video session — accessible to any authenticated user */}
           <Route path="/session/:appointmentId" element={<VideoSession />} />
 

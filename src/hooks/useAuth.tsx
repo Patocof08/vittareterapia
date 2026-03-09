@@ -3,7 +3,7 @@ import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 
-type UserRole = "psicologo" | "cliente" | "admin" | null;
+type UserRole = "psicologo" | "cliente" | "admin" | "marketing" | null;
 
 interface AuthContextType {
   user: User | null;
@@ -49,6 +49,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Prefer role priority: admin > psicologo > cliente
       const roles = data.map((r: any) => r.role as string);
       if (roles.includes("admin")) return "admin" as const;
+      if (roles.includes("marketing")) return "marketing" as const;
       if (roles.includes("psicologo")) return "psicologo" as const;
       if (roles.includes("cliente")) return "cliente" as const;
 
@@ -136,6 +137,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Redirect based on role
       if (userRole === "admin") {
         navigate("/admin/dashboard");
+      } else if (userRole === "marketing") {
+        navigate("/marketing/dashboard");
       } else if (userRole === "psicologo") {
         navigate("/therapist/dashboard");
       } else if (userRole === "cliente") {

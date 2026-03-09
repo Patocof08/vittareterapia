@@ -64,14 +64,16 @@ export const Navbar = () => {
                   asChild
                 >
                   <Link to={
-                    role === "admin" 
-                      ? "/admin/dashboard" 
-                      : role === "psicologo" 
-                      ? "/therapist/dashboard" 
+                    role === "admin"
+                      ? "/admin/dashboard"
+                      : role === "marketing"
+                      ? "/marketing/dashboard"
+                      : role === "psicologo"
+                      ? "/therapist/dashboard"
                       : "/portal"
                   }>
                     <User className="w-4 h-4 mr-2" />
-                    {role === "admin" ? "Panel Admin" : role === "psicologo" ? "Mi Panel" : "Mi Portal"}
+                    {role === "admin" ? "Panel Admin" : role === "marketing" ? "Marketing" : role === "psicologo" ? "Mi Panel" : "Mi Portal"}
                   </Link>
                 </Button>
               ) : (
@@ -141,7 +143,7 @@ export const Navbar = () => {
                         : "/portal"
                     }>
                       <User className="w-4 h-4 mr-2" />
-                      {role === "admin" ? "Panel Admin" : role === "psicologo" ? "Mi Panel" : "Mi Portal"}
+                      {role === "admin" ? "Panel Admin" : role === "marketing" ? "Marketing" : role === "psicologo" ? "Mi Panel" : "Mi Portal"}
                     </Link>
                   </Button>
                 ) : (
