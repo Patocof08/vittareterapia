@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -18,6 +18,8 @@ const statusLabels: Record<string, { label: string; variant: "default" | "second
 
 const MarketingPosts = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const basePath = location.pathname.startsWith("/admin") ? "/admin/marketing" : "/marketing";
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletePostId, setDeletePostId] = useState<string | null>(null);
@@ -70,7 +72,7 @@ const MarketingPosts = () => {
           <h1 className="text-3xl font-bold">Posts del Blog</h1>
           <p className="text-muted-foreground mt-1">Gestiona todos los artículos</p>
         </div>
-        <Button onClick={() => navigate("/marketing/posts/new")}>
+        <Button onClick={() => navigate(`${basePath}/posts/new`)}>
           <PlusCircle className="w-4 h-4 mr-2" />
           Nuevo Post
         </Button>
@@ -82,7 +84,7 @@ const MarketingPosts = () => {
         <Card className="p-12 text-center">
           <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
           <p className="text-muted-foreground mb-4">Aún no hay posts</p>
-          <Button onClick={() => navigate("/marketing/posts/new")}>
+          <Button onClick={() => navigate(`${basePath}/posts/new`)}>
             <PlusCircle className="w-4 h-4 mr-2" />
             Crear el primero
           </Button>
@@ -139,7 +141,7 @@ const MarketingPosts = () => {
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => navigate(`/marketing/posts/${post.id}/edit`)}
+                    onClick={() => navigate(`${basePath}/posts/${post.id}/edit`)}
                     title="Editar"
                   >
                     <Edit className="w-4 h-4" />

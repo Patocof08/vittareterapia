@@ -150,6 +150,10 @@ const App = () => {
             <Route path="psychologist/:id" element={<AdminPsychologistDetail />} />
             <Route path="financials" element={<AdminFinancials />} />
             <Route path="alerts" element={<AdminAlerts />} />
+            <Route path="marketing/posts" element={<MarketingPosts />} />
+            <Route path="marketing/posts/new" element={<MarketingPostEditor />} />
+            <Route path="marketing/posts/:id/edit" element={<MarketingPostEditor />} />
+            <Route path="marketing/subscribers" element={<MarketingSubscribers />} />
           </Route>
           
           {/* Marketing Panel Routes - Protected */}

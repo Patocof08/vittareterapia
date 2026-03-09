@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,8 @@ const MarketingPostEditor = () => {
   const { id } = useParams();
   const isEditing = !!id;
   const navigate = useNavigate();
+  const location = useLocation();
+  const basePath = location.pathname.startsWith("/admin") ? "/admin/marketing" : "/marketing";
   const { user } = useAuth();
 
   const [categories, setCategories] = useState<any[]>([]);
@@ -58,7 +60,7 @@ const MarketingPostEditor = () => {
 
     if (error || !data) {
       toast.error("Post no encontrado");
-      navigate("/marketing/posts");
+      navigate(`${basePath}/posts`);
       return;
     }
 
@@ -224,7 +226,7 @@ const MarketingPostEditor = () => {
         toast.success(publishNow ? "Post publicado" : "Borrador creado");
       }
 
-      navigate("/marketing/posts");
+      navigate(`${basePath}/posts`);
     } catch (error: any) {
       console.error("Save error:", error);
       if (error.message?.includes("duplicate")) {
@@ -240,7 +242,7 @@ const MarketingPostEditor = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/marketing/posts")}>
+        <Button variant="ghost" size="icon" onClick={() => navigate(`${basePath}/posts`)}>
           <ArrowLeft className="w-5 h-5" />
         </Button>
         <div className="flex-1">
