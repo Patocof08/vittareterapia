@@ -151,7 +151,20 @@ const MarketingPostEditor = () => {
         body: { post_id: id },
       });
 
-      if (error) throw error;
+      if (error) {
+        const context = (error as any).context;
+        let detail = error.message;
+        if (context) {
+          try {
+            const json = await context.json();
+            detail = json.error || JSON.stringify(json);
+          } catch {
+            detail = await context.text().catch(() => error.message);
+          }
+        }
+        console.error("Newsletter error detail:", detail);
+        throw new Error(detail);
+      }
 
       setNewsletterSent(true);
       setNewsletterRecipients(data?.total_sent ?? 0);
