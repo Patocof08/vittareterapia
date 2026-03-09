@@ -37,7 +37,8 @@
       "Bash(npm:*)",
       "Bash(supabase:*)",
       "Read(//c/Users/patoc/OneDrive/Documentos/Vittare/lovable dev/vittareterapia/$HOME/.supabase/**)",
-      "Read(//c/Users/patoc/OneDrive/Documentos/Vittare/lovable dev/vittareterapia/$APPDATA/supabase/**)"
+      "Read(//c/Users/patoc/OneDrive/Documentos/Vittare/lovable dev/vittareterapia/$APPDATA/supabase/**)",
+      "Bash(SUPABASE_ACCESS_TOKEN=sbp_478d06f35f824b307f7f32410e345415ccef7d23 npx supabase:*)"
     ]
   }
 }

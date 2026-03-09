@@ -84,7 +84,7 @@ Deno.serve(async (req) => {
     // Get active subscribers
     const { data: subscribers, error: subError } = await adminClient
       .from("newsletter_subscribers")
-      .select("email, nombre")
+      .select("email")
       .eq("status", "active");
 
     if (subError) throw subError;
@@ -98,7 +98,7 @@ Deno.serve(async (req) => {
       const postUrl = `${siteUrl}/blog/${post.slug}`;
 
       for (const subscriber of subscribers) {
-        const nombre = subscriber.nombre || "Hola";
+        const nombre = "Hola";
         const htmlBody = `
           <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #1a1a1a;">${post.title}</h2>
