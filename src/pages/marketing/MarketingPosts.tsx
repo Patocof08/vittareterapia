@@ -27,7 +27,7 @@ const MarketingPosts = () => {
     try {
       const { data, error } = await supabase
         .from("blog_posts")
-        .select("*, blog_categories(label)")
+        .select("*, blog_categories(label), newsletter_sent_at, newsletter_recipients")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -91,6 +91,12 @@ const MarketingPosts = () => {
                       <>
                         <span>·</span>
                         <span>Publicado: {format(new Date(post.published_at), "d MMM yyyy", { locale: es })}</span>
+                      </>
+                    )}
+                    {post.newsletter_sent_at && (
+                      <>
+                        <span>·</span>
+                        <span className="text-green-600">📧 Enviado a {post.newsletter_recipients || 0} suscriptores</span>
                       </>
                     )}
                   </div>

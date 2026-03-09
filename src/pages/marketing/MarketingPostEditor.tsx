@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { ArrowLeft, Save, Send, Upload } from "lucide-react";
+import { ArrowLeft, Save, Send, Upload, Mail } from "lucide-react";
 
 const MarketingPostEditor = () => {
   const { id } = useParams();
@@ -20,6 +20,9 @@ const MarketingPostEditor = () => {
   const [categories, setCategories] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [newsletterSent, setNewsletterSent] = useState(false);
+  const [newsletterRecipients, setNewsletterRecipients] = useState(0);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -70,6 +73,11 @@ const MarketingPostEditor = () => {
       meta_description: data.meta_description || "",
       status: data.status || "draft",
     });
+
+    if (data.newsletter_sent_at) {
+      setNewsletterSent(true);
+      setNewsletterRecipients(data.newsletter_recipients || 0);
+    }
   };
 
   const generateSlug = (title: string) => {
@@ -126,6 +134,49 @@ const MarketingPostEditor = () => {
       toast.error("Error al subir imagen");
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleSendNewsletter = async () => {
+    if (!id) return;
+
+    const confirmed = window.confirm(
+      "¿Enviar este artículo a todos los suscriptores del newsletter? Esta acción no se puede deshacer."
+    );
+    if (!confirmed) return;
+
+    setSending(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error("No autenticado");
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-newsletter`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${session.access_token}`,
+            "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({ post_id: id }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Error al enviar newsletter");
+      }
+
+      setNewsletterSent(true);
+      setNewsletterRecipients(result.total_sent);
+      toast.success(`Newsletter enviado a ${result.total_sent} suscriptores`);
+    } catch (error: any) {
+      console.error("Newsletter error:", error);
+      toast.error(error.message || "Error al enviar newsletter");
+    } finally {
+      setSending(false);
     }
   };
 
@@ -354,6 +405,44 @@ const MarketingPostEditor = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Newsletter */}
+          {isEditing && formData.status === "published" && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Newsletter</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {newsletterSent ? (
+                  <div className="text-center py-2">
+                    <Mail className="w-8 h-8 text-green-500 mx-auto mb-2" />
+                    <p className="text-sm font-medium text-green-600">Newsletter enviado</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Enviado a {newsletterRecipients} suscriptores
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <p className="text-sm text-muted-foreground">
+                      Envía este artículo a todos los suscriptores del newsletter por email.
+                    </p>
+                    <Button
+                      className="w-full"
+                      variant="outline"
+                      onClick={handleSendNewsletter}
+                      disabled={sending}
+                    >
+                      <Mail className="w-4 h-4 mr-2" />
+                      {sending ? "Enviando..." : "Enviar a suscriptores"}
+                    </Button>
+                    <p className="text-[10px] text-muted-foreground text-center">
+                      Solo se puede enviar una vez por artículo
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>
