@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Calendar, Search, ArrowRight } from "lucide-react";
+import { NewsletterSignup } from "@/components/NewsletterSignup";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -254,6 +255,19 @@ const Blog = () => {
               )}
             </>
           )}
+        </div>
+      </section>
+
+      {/* Newsletter */}
+      <section className="py-16 bg-muted/30 border-t border-border">
+        <div className="container mx-auto px-4">
+          <div className="max-w-xl mx-auto text-center">
+            <h2 className="text-2xl font-bold mb-2">Mantente informado</h2>
+            <p className="text-muted-foreground mb-6">
+              Recibe artículos sobre bienestar mental, tips prácticos y novedades de Vittare.
+            </p>
+            <NewsletterSignup source="blog-listing" variant="inline" />
+          </div>
         </div>
       </section>
 

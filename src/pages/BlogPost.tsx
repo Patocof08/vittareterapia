@@ -6,6 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Calendar, Share2 } from "lucide-react";
+import { NewsletterSignup } from "@/components/NewsletterSignup";
+import { SocialLinks } from "@/components/SocialLinks";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { toast } from "sonner";
@@ -204,6 +206,17 @@ const BlogPost = () => {
                 LinkedIn
               </Button>
             </div>
+          </div>
+
+          {/* Newsletter CTA */}
+          <div className="mt-12">
+            <NewsletterSignup source="blog-post" />
+          </div>
+
+          {/* Social links */}
+          <div className="mt-8 pt-8 border-t border-border">
+            <p className="text-sm font-semibold mb-3">Síguenos en redes</p>
+            <SocialLinks />
           </div>
 
           {/* Related posts */}

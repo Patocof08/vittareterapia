@@ -2,6 +2,8 @@ import { Link } from "react-router-dom";
 import { Mail, Phone, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import { NewsletterSignup } from "@/components/NewsletterSignup";
+import { SocialLinks } from "@/components/SocialLinks";
 
 export const Footer = () => {
   const { user, role } = useAuth();
@@ -121,12 +123,26 @@ export const Footer = () => {
           </div>
         </div>
 
+        {/* Newsletter */}
+        <div className="mt-8 pt-8 border-t border-border">
+          <div className="max-w-md">
+            <h3 className="font-semibold text-foreground mb-2">Newsletter</h3>
+            <p className="text-sm text-muted-foreground mb-3">
+              Recibe contenido sobre bienestar mental en tu correo.
+            </p>
+            <NewsletterSignup source="footer" variant="inline" />
+          </div>
+        </div>
+
         <div className="border-t border-border mt-8 pt-8">
           <div className="flex flex-col items-center space-y-4 mb-6">
             <p className="text-sm text-muted-foreground">¿Eres psicólogo?</p>
             <Button onClick={handleJoinClick} variant="outline" size="sm">
               Únete al equipo
             </Button>
+          </div>
+          <div className="flex justify-center mb-4">
+            <SocialLinks size="sm" />
           </div>
           <p className="text-sm text-muted-foreground text-center">
             © {new Date().getFullYear()} Vittare. Todos los derechos reservados.
