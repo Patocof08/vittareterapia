@@ -85,7 +85,7 @@ Deno.serve(async (req) => {
     const { data: subscribers, error: subError } = await adminClient
       .from("newsletter_subscribers")
       .select("email")
-      .eq("status", "active");
+      .eq("subscribed", true);
 
     if (subError) throw subError;
 
