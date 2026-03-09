@@ -54,6 +54,8 @@ import { MarketingLayout } from "./components/marketing/MarketingLayout";
 import MarketingDashboard from "./pages/marketing/MarketingDashboard";
 import MarketingSubscribers from "./pages/marketing/MarketingSubscribers";
 import MarketingStats from "./pages/marketing/MarketingStats";
+import MarketingPosts from "./pages/marketing/MarketingPosts";
+import MarketingPostEditor from "./pages/marketing/MarketingPostEditor";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminVerifications from "./pages/admin/AdminVerifications";
 import AdminPsychologistDetail from "./pages/admin/AdminPsychologistDetail";
@@ -158,6 +160,9 @@ const App = () => {
           }>
             <Route index element={<MarketingDashboard />} />
             <Route path="dashboard" element={<MarketingDashboard />} />
+            <Route path="posts" element={<MarketingPosts />} />
+            <Route path="posts/new" element={<MarketingPostEditor />} />
+            <Route path="posts/:id/edit" element={<MarketingPostEditor />} />
             <Route path="subscribers" element={<MarketingSubscribers />} />
             <Route path="stats" element={<MarketingStats />} />
           </Route>
