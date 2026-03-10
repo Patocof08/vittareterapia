@@ -97,7 +97,7 @@ Deno.serve(async (req) => {
       email,
       subject,
       message,
-    }).throwOnError().catch(() => {
+    }).catch(() => {
       // Table may not exist yet — not critical
     });
 
