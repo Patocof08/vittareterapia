@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Mail, Phone, MapPin, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { contactSchema } from "@/lib/validation";
@@ -27,10 +28,39 @@ const Contact = () => {
 
   const reasonValue = watch("reason");
 
-  const onSubmit = (data: ContactFormData) => {
-    // Placeholder para envío de formulario
-    toast.success("Mensaje enviado correctamente. Te responderemos pronto.");
-    reset();
+  const [sending, setSending] = useState(false);
+
+  const onSubmit = async (data: ContactFormData) => {
+    setSending(true);
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-contact-form`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: data.name,
+            email: data.email,
+            subject: data.reason,
+            message: data.message,
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Error al enviar el mensaje");
+      }
+
+      toast.success("Mensaje enviado correctamente. Te responderemos pronto.");
+      reset();
+    } catch (error: any) {
+      console.error("Contact form error:", error);
+      toast.error(error.message || "Error al enviar el mensaje. Intenta de nuevo.");
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -187,8 +217,8 @@ const Contact = () => {
                   )}
                 </div>
 
-                <Button type="submit" className="w-full" size="lg" variant="hero">
-                  Enviar mensaje
+                <Button type="submit" className="w-full" size="lg" variant="hero" disabled={sending}>
+                  {sending ? "Enviando..." : "Enviar mensaje"}
                 </Button>
 
                 <p className="text-xs text-center text-muted-foreground">
