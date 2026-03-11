@@ -17,15 +17,23 @@ const Auth = () => {
   const [name, setName] = useState("");
   const [role, setRole] = useState<"psicologo" | "cliente" | "">("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { signIn, signUp, user } = useAuth();
+  const { signIn, signUp, user, role: authRole, loading } = useAuth();
   const navigate = useNavigate();
 
-  // Redirect if already logged in
+  // Redirect if already logged in — wait for role to be set
   useEffect(() => {
-    if (user) {
-      navigate('/therapists');
+    if (!loading && user && authRole) {
+      if (authRole === "admin") {
+        navigate("/admin/dashboard", { replace: true });
+      } else if (authRole === "marketing") {
+        navigate("/marketing/dashboard", { replace: true });
+      } else if (authRole === "psicologo") {
+        navigate("/therapist/dashboard", { replace: true });
+      } else if (authRole === "cliente") {
+        navigate("/portal", { replace: true });
+      }
     }
-  }, [user, navigate]);
+  }, [user, authRole, loading, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,10 +61,10 @@ const Auth = () => {
     try {
       if (isLogin) {
         await signIn(email, password);
-        toast.success("¡Bienvenido! Has iniciado sesión correctamente");
+        toast.success("¡Bienvenido!");
       } else {
         await signUp(email, password, name, role as "psicologo" | "cliente");
-        toast.success("¡Cuenta creada! Tu cuenta ha sido creada exitosamente");
+        toast.success("¡Cuenta creada!");
       }
     } catch (error: any) {
       toast.error(error.message || "Ocurrió un error. Por favor intenta de nuevo.");
