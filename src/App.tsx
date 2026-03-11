@@ -62,9 +62,11 @@ import AdminPsychologistDetail from "./pages/admin/AdminPsychologistDetail";
 import AdminFinancials from "./pages/admin/AdminFinancials";
 import AdminAlerts from "./pages/admin/AdminAlerts";
 import VideoSession from "./pages/VideoSession";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 
 const App = () => {
   return (
+    <ErrorBoundary>
     <BrowserRouter>
       <AuthProvider>
         <ScrollToTop />
@@ -179,6 +181,7 @@ const App = () => {
         </Routes>
       </AuthProvider>
     </BrowserRouter>
+    </ErrorBoundary>
   );
 };
 
