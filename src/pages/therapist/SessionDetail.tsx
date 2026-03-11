@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { ArrowLeft, FileText, Sparkles, AlignLeft, Clock, Hash, RefreshCw } from "lucide-react";
+import { ArrowLeft, FileText, Sparkles, AlignLeft, Clock, Hash, RefreshCw, Save, Pencil, Upload, Image, Loader2, Camera, Type } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -33,7 +34,7 @@ interface AppointmentData {
   patient_name: string | null;
 }
 
-const TAB_VALUES = ["complete", "highlights", "summary"] as const;
+const TAB_VALUES = ["complete", "highlights", "summary", "notes"] as const;
 
 // ─── EmptyState ────────────────────────────────────────────────────────────────
 function EmptyState({ message }: { message: string }) {
@@ -149,6 +150,13 @@ export default function SessionDetail() {
   const [analyzing, setAnalyzing] = useState(false);
   const [activeTab, setActiveTab] = useState(initialTab);
   const [backPath, setBackPath] = useState<string>("/therapist/patients");
+  const [clinicalNotes, setClinicalNotes] = useState<{ id: string; note_text: string; image_url: string | null } | null>(null);
+  const [notesText, setNotesText] = useState("");
+  const [savingNotes, setSavingNotes] = useState(false);
+  const [notesEditing, setNotesEditing] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [transcribing, setTranscribing] = useState(false);
+  const [noteMode, setNoteMode] = useState<"text" | "photo">("text");
 
   useEffect(() => {
     if (user && sessionId) fetchData();
@@ -181,6 +189,18 @@ export default function SessionDetail() {
         .maybeSingle();
 
       setTranscript(tx ?? null);
+
+      // Load clinical notes
+      const { data: notes } = await (supabase as any)
+        .from("session_clinical_notes")
+        .select("id, note_text, image_url")
+        .eq("appointment_id", sessionId)
+        .eq("therapist_id", user.id)
+        .maybeSingle();
+      if (notes) {
+        setClinicalNotes(notes);
+        setNotesText(notes.note_text ?? "");
+      }
     } catch (err) {
       console.error("Error fetching session detail:", err);
     } finally {
@@ -248,6 +268,105 @@ export default function SessionDetail() {
       toast.error("Error al analizar la transcripción");
     } finally {
       setAnalyzing(false);
+    }
+  };
+
+  const handleSaveNotes = async () => {
+    if (!user || !sessionId) return;
+    setSavingNotes(true);
+    try {
+      if (clinicalNotes?.id) {
+        await (supabase as any)
+          .from("session_clinical_notes")
+          .update({ note_text: notesText })
+          .eq("id", clinicalNotes.id);
+        setClinicalNotes({ ...clinicalNotes, note_text: notesText });
+      } else {
+        const { data } = await (supabase as any)
+          .from("session_clinical_notes")
+          .insert({ appointment_id: sessionId, therapist_id: user.id, note_text: notesText })
+          .select("id, note_text, image_url")
+          .single();
+        if (data) setClinicalNotes(data);
+      }
+      setNotesEditing(false);
+      toast.success("Nota guardada");
+    } catch (err) {
+      console.error("Error saving notes:", err);
+      toast.error("Error al guardar la nota");
+    } finally {
+      setSavingNotes(false);
+    }
+  };
+
+  const handleImageUpload = async (file: File) => {
+    if (!user || !sessionId) return;
+    setUploadingImage(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const path = `${user.id}/${sessionId}/${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from("clinical-notes")
+        .upload(path, file, { upsert: true });
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage.from("clinical-notes").getPublicUrl(path);
+      const imageUrl = urlData.publicUrl;
+
+      if (clinicalNotes?.id) {
+        await (supabase as any)
+          .from("session_clinical_notes")
+          .update({ image_url: imageUrl })
+          .eq("id", clinicalNotes.id);
+        setClinicalNotes({ ...clinicalNotes, image_url: imageUrl });
+      } else {
+        const { data } = await (supabase as any)
+          .from("session_clinical_notes")
+          .insert({ appointment_id: sessionId, therapist_id: user.id, note_text: notesText, image_url: imageUrl })
+          .select("id, note_text, image_url")
+          .single();
+        if (data) setClinicalNotes(data);
+      }
+      toast.success("Imagen guardada");
+    } catch (err) {
+      console.error("Error uploading image:", err);
+      toast.error("Error al subir la imagen");
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const handleTranscribe = async () => {
+    if (!clinicalNotes?.image_url || !sessionId) return;
+    setTranscribing(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/transcribe-notes`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.access_token}`,
+          "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+        body: JSON.stringify({ appointment_id: sessionId, image_url: clinicalNotes.image_url }),
+      });
+      if (!res.ok) {
+        toast.error("Error al transcribir la imagen");
+        return;
+      }
+      const result = await res.json();
+      if (result.text) {
+        const merged = notesText ? `${notesText}\n\n${result.text}` : result.text;
+        setNotesText(merged);
+        setNoteMode("text");
+        toast.success("Transcripción lista");
+      }
+    } catch (err) {
+      console.error("Error transcribing:", err);
+      toast.error("Error al transcribir");
+    } finally {
+      setTranscribing(false);
     }
   };
 
@@ -328,7 +447,7 @@ export default function SessionDetail() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="complete" className="gap-1.5">
             <FileText className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Completo</span>
@@ -340,6 +459,10 @@ export default function SessionDetail() {
           <TabsTrigger value="summary" className="gap-1.5">
             <AlignLeft className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Resumen</span>
+          </TabsTrigger>
+          <TabsTrigger value="notes" className="gap-1.5">
+            <Pencil className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Mis Notas</span>
           </TabsTrigger>
         </TabsList>
 
@@ -437,6 +560,133 @@ export default function SessionDetail() {
                 <EmptyState message="Resumen no disponible aún." />
               ) : (
                 <p className="text-sm leading-relaxed whitespace-pre-wrap">{transcript.ai_summary}</p>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* MIS NOTAS */}
+        <TabsContent value="notes">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base">Mis Notas</CardTitle>
+                <div className="flex items-center gap-2">
+                  {!notesEditing ? (
+                    <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setNotesEditing(true)}>
+                      <Pencil className="w-3.5 h-3.5" />
+                      Editar
+                    </Button>
+                  ) : (
+                    <Button size="sm" className="gap-1.5" onClick={handleSaveNotes} disabled={savingNotes}>
+                      {savingNotes ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                      Guardar
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {notesEditing ? (
+                <>
+                  {/* Mode selector */}
+                  <div className="flex gap-2">
+                    <Button
+                      variant={noteMode === "text" ? "default" : "outline"}
+                      size="sm"
+                      className="gap-1.5"
+                      onClick={() => setNoteMode("text")}
+                    >
+                      <Type className="w-3.5 h-3.5" />
+                      Texto
+                    </Button>
+                    <Button
+                      variant={noteMode === "photo" ? "default" : "outline"}
+                      size="sm"
+                      className="gap-1.5"
+                      onClick={() => setNoteMode("photo")}
+                    >
+                      <Camera className="w-3.5 h-3.5" />
+                      Foto
+                    </Button>
+                  </div>
+
+                  {noteMode === "text" && (
+                    <Textarea
+                      placeholder="Escribe tus notas clínicas aquí..."
+                      value={notesText}
+                      onChange={(e) => setNotesText(e.target.value)}
+                      className="min-h-48 resize-none"
+                    />
+                  )}
+
+                  {noteMode === "photo" && (
+                    <div className="space-y-3">
+                      <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary/50 transition-colors">
+                        {uploadingImage ? (
+                          <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+                        ) : (
+                          <>
+                            <Upload className="w-8 h-8 text-muted-foreground mb-2" />
+                            <span className="text-sm text-muted-foreground">Subir foto de nota</span>
+                          </>
+                        )}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleImageUpload(file);
+                          }}
+                        />
+                      </label>
+
+                      {clinicalNotes?.image_url && (
+                        <div className="space-y-2">
+                          <img
+                            src={clinicalNotes.image_url}
+                            alt="Nota clínica"
+                            className="rounded-lg max-h-64 object-contain border border-border"
+                          />
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="gap-1.5"
+                            onClick={handleTranscribe}
+                            disabled={transcribing}
+                          >
+                            {transcribing ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <Sparkles className="w-3.5 h-3.5" />
+                            )}
+                            {transcribing ? "Transcribiendo..." : "Transcribir con IA"}
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  {!clinicalNotes?.note_text && !clinicalNotes?.image_url ? (
+                    <EmptyState message="No hay notas para esta sesión. Haz clic en Editar para agregar." />
+                  ) : (
+                    <div className="space-y-4">
+                      {clinicalNotes?.note_text && (
+                        <p className="text-sm leading-relaxed whitespace-pre-wrap">{clinicalNotes.note_text}</p>
+                      )}
+                      {clinicalNotes?.image_url && (
+                        <img
+                          src={clinicalNotes.image_url}
+                          alt="Nota clínica"
+                          className="rounded-lg max-h-64 object-contain border border-border"
+                        />
+                      )}
+                    </div>
+                  )}
+                </>
               )}
             </CardContent>
           </Card>
