@@ -20,9 +20,9 @@ const Auth = () => {
   const { signIn, signUp, user, role: authRole, loading } = useAuth();
   const navigate = useNavigate();
 
-  // Redirect if already logged in — wait for role to be set
+  // Redirect only if user was ALREADY logged in when visiting /auth (not after a fresh login/signup)
   useEffect(() => {
-    if (!loading && user && authRole) {
+    if (!loading && user && authRole && !isSubmitting) {
       if (authRole === "admin") {
         navigate("/admin/dashboard", { replace: true });
       } else if (authRole === "marketing") {
@@ -33,7 +33,7 @@ const Auth = () => {
         navigate("/portal", { replace: true });
       }
     }
-  }, [user, authRole, loading, navigate]);
+  }, [user, authRole, loading, navigate, isSubmitting]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
