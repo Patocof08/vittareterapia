@@ -1,14 +1,11 @@
-User-agent: Googlebot
-Allow: /
-
-User-agent: Bingbot
-Allow: /
-
-User-agent: Twitterbot
-Allow: /
-
-User-agent: facebookexternalhit
-Allow: /
-
 User-agent: *
 Allow: /
+
+Sitemap: https://vittareterapia.com/sitemap.xml
+
+Disallow: /portal/
+Disallow: /therapist/
+Disallow: /admin/
+Disallow: /marketing/
+Disallow: /session/
+Disallow: /onboarding-psicologo
