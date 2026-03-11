@@ -162,7 +162,10 @@ export default function AdminFinancials() {
   const filteredTransactions =
     selectedPsychId === "all"
       ? transactions
-      : transactions.filter((tx) => tx.psychologist_id === selectedPsychId);
+      : transactions.filter((tx) => {
+          const key = tx.psychologist_id ?? tx.psychologist_name ?? "eliminado";
+          return key === selectedPsychId;
+        });
 
   // Comisiones tab derived values
   const feeTotal = summary?.platform_fee_total ?? 0;
@@ -462,11 +465,14 @@ export default function AdminFinancials() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Todos los psicólogos</SelectItem>
-                      {psychSummary.map((p) => (
-                        <SelectItem key={p.psychologist_id} value={p.psychologist_id}>
-                          {p.psychologist_name}
-                        </SelectItem>
-                      ))}
+                      {psychSummary.map((p) => {
+                        const key = p.psychologist_id ?? p.psychologist_name ?? "eliminado";
+                        return (
+                          <SelectItem key={key} value={key}>
+                            {p.psychologist_name}
+                          </SelectItem>
+                        );
+                      })}
                     </SelectContent>
                   </Select>
                 </div>
@@ -591,7 +597,7 @@ export default function AdminFinancials() {
                     </TableHeader>
                     <TableBody>
                       {psychSummary.map((row) => (
-                        <TableRow key={row.psychologist_id}>
+                        <TableRow key={row.psychologist_id ?? row.psychologist_name}>
                           <TableCell className="text-xs font-medium pl-4">{row.psychologist_name}</TableCell>
                           <TableCell className="text-xs text-right">{row.sessions_count}</TableCell>
                           <TableCell className="text-xs text-right font-semibold">${fmx(row.gross_income)}</TableCell>
