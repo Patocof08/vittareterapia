@@ -475,7 +475,7 @@ export default function TherapistSettings() {
       }
 
       toast.success("Tu cuenta ha sido eliminada exitosamente");
-      
+
       // Sign out and redirect
       await signOut();
       navigate("/");

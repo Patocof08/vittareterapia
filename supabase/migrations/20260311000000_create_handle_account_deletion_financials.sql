@@ -13,9 +13,11 @@ DECLARE
   _admin_balance_before NUMERIC;
   _admin_balance_after NUMERIC;
   _admin_wallet_id UUID;
+  _psych_full_name TEXT;
 BEGIN
   -- Check if user is a psychologist with a wallet
-  SELECT pp.id INTO _psych_profile_id
+  SELECT pp.id, pp.first_name || ' ' || pp.last_name
+  INTO _psych_profile_id, _psych_full_name
   FROM psychologist_profiles pp
   WHERE pp.user_id = _user_id
   LIMIT 1;
@@ -34,11 +36,12 @@ BEGIN
 
       _admin_balance_after := COALESCE(_admin_balance_before, 0);
 
-      -- Record psychologist side: close balance to zero
+      -- Record closing transaction — store name so it persists after profile deletion
       INSERT INTO wallet_transactions (
         transaction_type,
         wallet_type,
         psychologist_id,
+        psychologist_name,
         amount,
         balance_before,
         balance_after,
@@ -47,6 +50,7 @@ BEGIN
         'account_deletion',
         'psychologist',
         _psych_profile_id,
+        _psych_full_name,
         _psych_balance,
         _psych_balance,
         0,
