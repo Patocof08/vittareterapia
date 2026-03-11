@@ -191,6 +191,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         if (roleError) throw roleError;
 
+        // Set role in context BEFORE navigating so ProtectedRoute sees it immediately
+        setRole(selectedRole);
+
         // Redirect based on role
         if (selectedRole === "psicologo") {
           navigate("/onboarding-psicologo");

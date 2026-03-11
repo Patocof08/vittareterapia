@@ -16,6 +16,7 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [role, setRole] = useState<"psicologo" | "cliente" | "">("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
 
