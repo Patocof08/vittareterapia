@@ -12,19 +12,17 @@ export const ProtectedRoute = ({ children, allowedRole }: ProtectedRouteProps) =
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!loading) {
+    if (!loading && role !== null) {
       if (!user) {
-        // No hay usuario, redirigir a home
         navigate("/", { replace: true });
       } else if (role !== allowedRole) {
-        // El usuario no tiene el rol correcto, redirigir a home
         navigate("/", { replace: true });
       }
     }
   }, [user, role, loading, allowedRole, navigate]);
 
-  // Mostrar nada mientras carga
-  if (loading) {
+  // Mostrar spinner mientras carga el auth O mientras el usuario existe pero el rol aún no llegó
+  if (loading || (user && role === null)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
@@ -32,7 +30,6 @@ export const ProtectedRoute = ({ children, allowedRole }: ProtectedRouteProps) =
     );
   }
 
-  // Si no hay usuario o el rol no coincide, no mostrar nada (el useEffect redirigirá)
   if (!user || role !== allowedRole) {
     return null;
   }

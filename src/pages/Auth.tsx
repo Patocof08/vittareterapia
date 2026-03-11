@@ -65,6 +65,11 @@ const Auth = () => {
       } else {
         await signUp(email, password, name, role as "psicologo" | "cliente");
         toast.success("¡Cuenta creada!");
+        if (role === "psicologo") {
+          navigate("/onboarding-psicologo");
+        } else if (role === "cliente") {
+          navigate("/portal/onboarding");
+        }
       }
     } catch (error: any) {
       toast.error(error.message || "Ocurrió un error. Por favor intenta de nuevo.");
