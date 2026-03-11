@@ -29,7 +29,9 @@ const Auth = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
+    if (isSubmitting) return;
+
     if (!email || !password) {
       toast.error("Por favor completa todos los campos");
       return;
@@ -40,25 +42,25 @@ const Auth = () => {
         toast.error("Por favor ingresa tu nombre");
         return;
       }
-      
+
       if (!role) {
         toast.error("Por favor selecciona tu rol");
         return;
       }
     }
 
+    setIsSubmitting(true);
     try {
       if (isLogin) {
         await signIn(email, password);
         toast.success("¡Bienvenido! Has iniciado sesión correctamente");
-        navigate('/therapists');
       } else {
         await signUp(email, password, name, role as "psicologo" | "cliente");
         toast.success("¡Cuenta creada! Tu cuenta ha sido creada exitosamente");
-        // The signUp function will handle navigation based on role
       }
     } catch (error: any) {
       toast.error(error.message || "Ocurrió un error. Por favor intenta de nuevo.");
+      setIsSubmitting(false);
     }
   };
 
@@ -156,8 +158,15 @@ const Auth = () => {
               </button>
             )}
 
-            <Button type="submit" className="w-full" size="lg">
-              {isLogin ? "Iniciar sesión" : "Crear cuenta"}
+            <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <span className="flex items-center gap-2">
+                  <span className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                  {isLogin ? "Iniciando sesión..." : "Creando cuenta..."}
+                </span>
+              ) : (
+                isLogin ? "Iniciar sesión" : "Crear cuenta"
+              )}
             </Button>
 
             <div className="text-center text-sm text-muted-foreground">
