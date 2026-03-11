@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Video, Search, Filter } from "lucide-react";
+import { Video, Search, Filter, Sparkles } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -22,6 +23,10 @@ export default function TherapistSessions() {
   const [searchTerm, setSearchTerm] = useState("");
   const [sessions, setSessions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [briefLoading, setBriefLoading] = useState<string | null>(null);
+  const [briefData, setBriefData] = useState<{ text: string; sources: Record<string, boolean> } | null>(null);
+  const [briefDialogOpen, setBriefDialogOpen] = useState(false);
+  const [briefPatientName, setBriefPatientName] = useState("");
 
   useEffect(() => {
     if (user) {
@@ -157,6 +162,39 @@ export default function TherapistSessions() {
     } catch (err) {
       console.error(err);
       toast.error("Error al actualizar sesión");
+    }
+  };
+
+  const handleGenerateBrief = async (appointmentId: string, patientName: string) => {
+    setBriefLoading(appointmentId);
+    setBriefPatientName(patientName);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error("No autenticado");
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-session-brief`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${session.access_token}`,
+            "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({ appointment_id: appointmentId }),
+        }
+      );
+
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Error generando resumen");
+
+      setBriefData({ text: result.brief, sources: result.sources || {} });
+      setBriefDialogOpen(true);
+    } catch (error: any) {
+      console.error("Brief error:", error);
+      toast.error(error.message || "Error al generar el resumen");
+    } finally {
+      setBriefLoading(null);
     }
   };
 
@@ -297,6 +335,18 @@ export default function TherapistSessions() {
                   )}
 
                   <div className="flex flex-wrap gap-2">
+                    {(session.status === "pending" || session.status === "confirmed" || session.status === "scheduled") && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleGenerateBrief(session.id, session.profile?.full_name || "Paciente")}
+                        disabled={briefLoading === session.id}
+                        className="gap-1.5"
+                      >
+                        <Sparkles className={`w-3.5 h-3.5 ${briefLoading === session.id ? "animate-pulse" : ""}`} />
+                        {briefLoading === session.id ? "Preparando..." : "Preparar sesión"}
+                      </Button>
+                    )}
                     {(session.status === "pending" || session.status === "confirmed") && canJoinCall(session.start_time) && (
                       <Button
                         onClick={() => navigate(`/session/${session.id}`)}
@@ -335,6 +385,60 @@ export default function TherapistSessions() {
           ))
         )}
       </div>
+
+      <Dialog open={briefDialogOpen} onOpenChange={setBriefDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-primary" />
+              Resumen pre-sesión — {briefPatientName}
+            </DialogTitle>
+          </DialogHeader>
+          {briefData && (
+            <div className="space-y-4">
+              <div className="prose prose-sm max-w-none">
+                <div className="text-sm leading-relaxed whitespace-pre-wrap">
+                  {briefData.text}
+                </div>
+              </div>
+
+              {/* Sources used */}
+              <div className="flex flex-wrap gap-2 pt-4 border-t border-border">
+                <span className="text-xs text-muted-foreground">Fuentes:</span>
+                {briefData.sources.ai_summaries && (
+                  <span className="px-2 py-0.5 rounded-full text-xs bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    Resúmenes IA
+                  </span>
+                )}
+                {briefData.sources.clinical_notes && (
+                  <span className="px-2 py-0.5 rounded-full text-xs bg-indigo-50 text-indigo-700 border border-indigo-200">
+                    Tus notas
+                  </span>
+                )}
+                {briefData.sources.tasks && (
+                  <span className="px-2 py-0.5 rounded-full text-xs bg-yellow-50 text-yellow-700 border border-yellow-200">
+                    Tareas
+                  </span>
+                )}
+                {briefData.sources.preferences && (
+                  <span className="px-2 py-0.5 rounded-full text-xs bg-blue-50 text-blue-700 border border-blue-200">
+                    Perfil del paciente
+                  </span>
+                )}
+                {briefData.sources.first_session && (
+                  <span className="px-2 py-0.5 rounded-full text-xs bg-gray-50 text-gray-700 border border-gray-200">
+                    Primera sesión
+                  </span>
+                )}
+              </div>
+
+              <p className="text-[10px] text-muted-foreground">
+                Este resumen es generado por IA como apoyo. No sustituye tu criterio clínico.
+              </p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
