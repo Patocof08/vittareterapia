@@ -172,6 +172,15 @@ export default function ClientSettings() {
   };
 
   const handlePasswordChange = async () => {
+    if (!passwordData.currentPassword) {
+      toast({
+        title: "Error",
+        description: "Ingresa tu contraseña actual",
+        variant: "destructive"
+      });
+      return;
+    }
+
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       toast({
         title: "Error",
@@ -181,7 +190,6 @@ export default function ClientSettings() {
       return;
     }
 
-    // Validate password strength using the same schema as registration
     const passwordValidation = passwordSchema.safeParse(passwordData.newPassword);
     if (!passwordValidation.success) {
       toast({
@@ -194,6 +202,21 @@ export default function ClientSettings() {
 
     setLoading(true);
     try {
+      // Verificar contraseña actual haciendo re-login
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user?.email || "",
+        password: passwordData.currentPassword,
+      });
+
+      if (signInError) {
+        toast({
+          title: "Error",
+          description: "La contraseña actual es incorrecta",
+          variant: "destructive"
+        });
+        return;
+      }
+
       const { error } = await supabase.auth.updateUser({
         password: passwordData.newPassword
       });
@@ -213,7 +236,7 @@ export default function ClientSettings() {
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message,
+        description: error.message || "Error al cambiar la contraseña",
         variant: "destructive"
       });
     } finally {

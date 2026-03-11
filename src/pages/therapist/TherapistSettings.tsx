@@ -16,6 +16,7 @@ import { Upload, User, Shield, FileText, CreditCard, Bell, AlertTriangle, CheckC
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { logger } from "@/lib/logger";
+import { passwordSchema } from "@/lib/validation";
 import { Database } from "@/integrations/supabase/types";
 import { useNavigate } from "react-router-dom";
 
@@ -383,17 +384,35 @@ export default function TherapistSettings() {
   };
 
   const handlePasswordChange = async () => {
+    if (!passwordData.currentPassword) {
+      toast.error("Ingresa tu contraseña actual");
+      return;
+    }
+
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       toast.error("Las contraseñas no coinciden");
       return;
     }
 
-    if (passwordData.newPassword.length < 6) {
-      toast.error("La contraseña debe tener al menos 6 caracteres");
+    const passwordValidation = passwordSchema.safeParse(passwordData.newPassword);
+    if (!passwordValidation.success) {
+      toast.error(passwordValidation.error.errors[0].message);
       return;
     }
 
+    setLoading(true);
     try {
+      // Verificar contraseña actual haciendo re-login
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user?.email || "",
+        password: passwordData.currentPassword,
+      });
+
+      if (signInError) {
+        toast.error("La contraseña actual es incorrecta");
+        return;
+      }
+
       const { error } = await supabase.auth.updateUser({
         password: passwordData.newPassword,
       });
@@ -406,9 +425,11 @@ export default function TherapistSettings() {
         newPassword: "",
         confirmPassword: "",
       });
-    } catch (error) {
+    } catch (error: any) {
       logger.error("Error changing password:", error);
-      toast.error("Error al cambiar la contraseña");
+      toast.error(error.message || "Error al cambiar la contraseña");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -909,6 +930,18 @@ export default function TherapistSettings() {
               <CardDescription>Actualiza tu contraseña regularmente para mayor seguridad</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="current-password">Contraseña Actual</Label>
+                <Input
+                  id="current-password"
+                  type="password"
+                  value={passwordData.currentPassword}
+                  onChange={(e) =>
+                    setPasswordData({ ...passwordData, currentPassword: e.target.value })
+                  }
+                  placeholder="Tu contraseña actual"
+                />
+              </div>
               <div>
                 <Label>Nueva Contraseña</Label>
                 <Input
