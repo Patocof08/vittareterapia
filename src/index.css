@@ -8,44 +8,44 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Plataforma de terapia - Azules calmantes y profesionales */
+    /* Plataforma de terapia - Verdes calmantes y profesionales */
     --background: 0 0% 100%;
-    --foreground: 210 20% 20%;
+    --foreground: 140 20% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 210 20% 20%;
+    --card-foreground: 140 20% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 210 20% 20%;
+    --popover-foreground: 140 20% 15%;
 
-    /* Azul calmante - color primario */
-    --primary: 200 65% 45%;
+    /* Verde calmante - color primario */
+    --primary: 145 55% 38%;
     --primary-foreground: 0 0% 100%;
-    --primary-light: 200 60% 70%;
-    --primary-dark: 200 70% 32%;
+    --primary-light: 145 50% 62%;
+    --primary-dark: 145 60% 26%;
 
-    /* Teal suave para CTAs y acentos */
-    --secondary: 175 55% 42%;
+    /* Verde suave para CTAs y acentos */
+    --secondary: 158 48% 38%;
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 200 25% 96%;
-    --muted-foreground: 200 15% 45%;
+    --muted: 140 20% 96%;
+    --muted-foreground: 140 12% 42%;
 
-    --accent: 200 30% 92%;
-    --accent-foreground: 200 50% 25%;
+    --accent: 140 25% 92%;
+    --accent-foreground: 145 45% 22%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 200 20% 88%;
-    --input: 200 20% 88%;
-    --ring: 200 65% 45%;
+    --border: 140 18% 88%;
+    --input: 140 18% 88%;
+    --ring: 145 55% 38%;
 
     --radius: 0.75rem;
 
     /* Gradientes */
-    --gradient-hero: linear-gradient(135deg, hsl(200 65% 45%) 0%, hsl(200 70% 32%) 100%);
-    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(200 25% 98%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(145 55% 38%) 0%, hsl(145 60% 26%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(140 20% 98%) 100%);
     
     /* Sombras */
     --shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.06);
