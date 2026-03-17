@@ -68,10 +68,13 @@ export const Navbar = () => {
   }, [location.pathname]);
 
   const navLinks = [
-    { name: "Cómo funciona", path: "/#como-funciona" },
-    { name: "Psicólogos", path: "/therapists" },
-    { name: "Planes", path: "/pricing" },
+    { name: "Terapeutas", path: "/therapists" },
+    { name: "Nosotros", path: "/sobre-nosotros" },
+    { name: "Precios", path: "/pricing" },
     { name: "Blog", path: "/blog" },
+    { name: "Ayuda", path: "/faq" },
+    { name: "Para psicólogos", path: "/para-psicologos" },
+    { name: "Contacto", path: "/contact" },
   ];
 
   const isActive = (path: string) =>
