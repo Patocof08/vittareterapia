@@ -46,6 +46,7 @@
   },
   "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
-    "stitch"
+    "stitch",
+    "@21st-dev/magic"
   ]
 }
