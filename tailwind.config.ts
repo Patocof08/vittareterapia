@@ -82,10 +82,26 @@ export default {
           foreground: "hsl(var(--card-foreground))",
         },
       },
+      fontSize: {
+        'vittare-h1':    ['3rem',   { lineHeight: '1.1', letterSpacing: '-0.02em' }],
+        'vittare-h2':    ['2.25rem',{ lineHeight: '1.15', letterSpacing: '-0.01em' }],
+        'vittare-h3':    ['1.5rem', { lineHeight: '1.3' }],
+        'vittare-body':  ['1rem',   { lineHeight: '1.6' }],
+        'vittare-quote': ['1.125rem',{ lineHeight: '1.7' }],
+        'vittare-badge': ['0.75rem',{ lineHeight: '1', letterSpacing: '0.02em' }],
+      },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        'vittare-sm':   '0.5rem',
+        'vittare-md':   '1rem',
+        'vittare-lg':   '1.5rem',
+        'vittare-full': '9999px',
+      },
+      boxShadow: {
+        'vittare-card':  '0 2px 12px rgba(31, 77, 46, 0.08)',
+        'vittare-hover': '0 6px 24px rgba(31, 77, 46, 0.14)',
       },
       keyframes: {
         "accordion-down": {

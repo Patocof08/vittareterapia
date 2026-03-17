@@ -21,7 +21,74 @@
   font-display: swap;
 }
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+/* === VITTARE UTILITY CLASSES === */
+@layer components {
+  /* Typography shortcuts */
+  .vittare-title {
+    @apply font-erstoria text-vittare-h1 text-vittare-forest-900;
+  }
+  .vittare-subtitle {
+    @apply font-karla font-bold text-vittare-h3 text-vittare-forest-900;
+  }
+  .vittare-body {
+    @apply font-karla text-vittare-body text-vittare-forest-600;
+  }
+  .vittare-quote {
+    @apply font-karla italic text-vittare-quote text-vittare-forest-600;
+  }
+
+  /* Card base */
+  .vittare-card {
+    @apply bg-white rounded-vittare-md shadow-vittare-card
+           border border-vittare-teal-100/50
+           hover:shadow-vittare-hover transition-shadow duration-300;
+  }
+
+  /* Button variants */
+  .vittare-btn-primary {
+    @apply bg-vittare-green-900 text-white font-karla font-bold
+           rounded-vittare-sm px-6 py-3
+           hover:bg-vittare-green-800 transition-colors duration-200;
+  }
+  .vittare-btn-secondary {
+    @apply bg-transparent text-vittare-forest-900 font-karla font-bold
+           rounded-vittare-sm px-6 py-3
+           border-2 border-vittare-forest-900
+           hover:bg-vittare-forest-900 hover:text-white transition-colors duration-200;
+  }
+  .vittare-btn-ghost {
+    @apply bg-transparent text-vittare-forest-600 font-karla
+           rounded-vittare-sm px-4 py-2
+           hover:bg-vittare-teal-100 transition-colors duration-200;
+  }
+
+  /* Badges */
+  .vittare-badge {
+    @apply font-karla text-vittare-badge bg-vittare-teal-100
+           text-vittare-forest-900 rounded-vittare-full
+           px-3 py-1 inline-block;
+  }
+  .vittare-badge-warm {
+    @apply font-karla text-vittare-badge bg-vittare-rose-100
+           text-vittare-rose-500 rounded-vittare-full
+           px-3 py-1 inline-block;
+  }
+  .vittare-badge-gold {
+    @apply font-karla text-vittare-badge bg-vittare-gold-100
+           text-vittare-gold-500 rounded-vittare-full
+           px-3 py-1 inline-block;
+  }
+
+  /* Section backgrounds */
+  .vittare-bg-warm {
+    @apply bg-gradient-to-br from-vittare-teal-100/30 to-vittare-rose-100/20;
+  }
+  .vittare-bg-calm {
+    @apply bg-vittare-teal-100/40;
+  }
+}
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here.
 All colors MUST be HSL.
 */
 
