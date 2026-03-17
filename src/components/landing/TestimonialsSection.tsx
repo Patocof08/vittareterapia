@@ -9,8 +9,8 @@ const testimonials = [
     text: "Vittare me ayudó a dar el primer paso sin sentirme juzgada. Mi psicóloga es increíble.",
     rating: 5,
     initials: "SR",
-    accent: "#D16484",
-    bg: "#F5C7D1",
+    accent: "#12A357",
+    bg: "#D4F0E2",
   },
   {
     name: "Miguel A.",
@@ -18,7 +18,7 @@ const testimonials = [
     text: "Nunca imaginé que la terapia online fuera tan efectiva. Llevo 3 meses y los cambios son reales.",
     rating: 5,
     initials: "MA",
-    accent: "#12A357",
+    accent: "#6AB7AB",
     bg: "#BFE9E2",
   },
   {
@@ -27,8 +27,8 @@ const testimonials = [
     text: "La facturación CFDI fue clave para mí. Y el proceso de encontrar psicólogo fue muy sencillo.",
     rating: 5,
     initials: "CL",
-    accent: "#6AB7AB",
-    bg: "#BFE9E2",
+    accent: "#2FB06B",
+    bg: "#C8EDD8",
   },
   {
     name: "David T.",
@@ -36,8 +36,8 @@ const testimonials = [
     text: "Tenía mucho miedo de pedir ayuda. En Vittare encontré un espacio sin juicios y con mucho apoyo.",
     rating: 5,
     initials: "DT",
-    accent: "#D9A932",
-    bg: "#F6E4B2",
+    accent: "#7FCFC2",
+    bg: "#BFE9E2",
   },
   {
     name: "Andrea M.",
@@ -45,8 +45,8 @@ const testimonials = [
     text: "Encontré opciones accesibles y de calidad. El acompañamiento desde el inicio fue excepcional.",
     rating: 5,
     initials: "AM",
-    accent: "#D16484",
-    bg: "#F5C7D1",
+    accent: "#12A357",
+    bg: "#D4F0E2",
   },
   {
     name: "Roberto C.",
@@ -54,7 +54,7 @@ const testimonials = [
     text: "En días pude tener mi primera cita. El equipo de soporte siempre estuvo atento.",
     rating: 5,
     initials: "RC",
-    accent: "#2FB06B",
+    accent: "#6AB7AB",
     bg: "#BFE9E2",
   },
 ];

@@ -7,15 +7,6 @@ html {
   scroll-behavior: smooth;
 }
 
-/* Custom cursor — hide default on desktop */
-@media (pointer: fine) {
-  body {
-    cursor: none;
-  }
-  a, button, [role="button"], input, select, textarea, label {
-    cursor: none;
-  }
-}
 
 /* Page fade-in on load */
 #root {

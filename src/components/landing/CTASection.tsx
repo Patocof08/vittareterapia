@@ -79,7 +79,7 @@ export const CTASection = () => {
         className="absolute top-0 left-0 right-0 h-px"
         style={{
           background:
-            "linear-gradient(90deg, transparent, #E7839D, #F5C243, #7FCFC2, #6FCB9C, transparent)",
+            "linear-gradient(90deg, transparent, #7FCFC2, #12A357, #6FCB9C, transparent)",
         }}
       />
 
@@ -143,9 +143,9 @@ export const CTASection = () => {
           >
             {[
               { label: "Psicólogos verificados", color: "#7FCFC2", bg: "#7FCFC215" },
-              { label: "Factura CFDI", color: "#F5C243", bg: "#F5C24315" },
-              { label: "Sin estigmas", color: "#E7839D", bg: "#E7839D15" },
-              { label: "Hecho en México 💚", color: "#6FCB9C", bg: "#6FCB9C15" },
+              { label: "Factura CFDI", color: "#6FCB9C", bg: "#6FCB9C15" },
+              { label: "Sin estigmas", color: "#7FCFC2", bg: "#7FCFC215" },
+              { label: "Hecho en México 💚", color: "#12A357", bg: "#12A35715" },
             ].map((pill) => (
               <span
                 key={pill.label}

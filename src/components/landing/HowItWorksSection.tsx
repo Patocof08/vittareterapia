@@ -8,10 +8,10 @@ const steps = [
     title: "Cuéntanos cómo te sientes",
     description:
       "Completa un breve cuestionario de bienestar. Sin diagnósticos, solo para conocerte mejor y encontrar al profesional ideal para ti.",
-    color: "#D16484",
-    colorLight: "#E7839D",
-    bg: "#F5C7D1",
-    bgLight: "#FDF0F3",
+    color: "#2FB06B",
+    colorLight: "#6FCB9C",
+    bg: "#D4F0E2",
+    bgLight: "#F0FAF5",
   },
   {
     num: "02",
@@ -30,10 +30,10 @@ const steps = [
     title: "Empieza tu primera sesión",
     description:
       "Conéctate por video desde cualquier dispositivo. Sin descargas. Factura CFDI incluida. Tu proceso terapéutico empieza hoy.",
-    color: "#D9A932",
-    colorLight: "#F5C243",
-    bg: "#F6E4B2",
-    bgLight: "#FFFBEF",
+    color: "#12A357",
+    colorLight: "#3DBF73",
+    bg: "#C8EDD8",
+    bgLight: "#EEF9F3",
   },
 ];
 
@@ -58,7 +58,7 @@ export const HowItWorksSection = () => {
       className="py-20 md:py-28 relative overflow-hidden"
       style={{
         background:
-          "linear-gradient(180deg, #FFFFFF 0%, #F0FAF8 30%, #FFFBEF 70%, #FAFAF8 100%)",
+          "linear-gradient(180deg, #FFFFFF 0%, #F0FAF8 40%, #E8F7F3 75%, #F5FAF8 100%)",
       }}
     >
       {/* Decorative big number */}
