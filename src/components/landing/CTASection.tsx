@@ -47,39 +47,34 @@ const MagneticButton = ({ children, to }: { children: React.ReactNode; to: strin
 export const CTASection = () => {
   return (
     <section className="relative py-28 md:py-36 overflow-hidden">
-      {/* Deep forest bg con radial gradient cálido */}
+      {/* Light green bg */}
       <div
         className="absolute inset-0"
         style={{
           background:
-            "radial-gradient(ellipse at 50% 0%, #193F26 0%, #0D1F15 55%, #0A1810 100%)",
+            "linear-gradient(160deg, #E8F7F0 0%, #D4F0E2 35%, #C8EDD8 65%, #E8F7F0 100%)",
         }}
       />
 
-      {/* Multi-color glows — teal, rose, gold */}
+      {/* Green glows */}
       <div
-        className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[280px] pointer-events-none animate-glow-pulse"
-        style={{ background: "radial-gradient(ellipse, rgba(127,207,194,0.14) 0%, transparent 65%)" }}
+        className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[350px] pointer-events-none"
+        style={{ background: "radial-gradient(ellipse, rgba(18,163,87,0.12) 0%, transparent 65%)" }}
       />
       <div
-        className="absolute bottom-0 left-1/4 w-[400px] h-[300px] pointer-events-none"
-        style={{ background: "radial-gradient(circle, rgba(231,131,157,0.10) 0%, transparent 65%)" }}
+        className="absolute bottom-0 left-0 w-[400px] h-[350px] pointer-events-none"
+        style={{ background: "radial-gradient(circle, rgba(127,207,194,0.20) 0%, transparent 65%)" }}
       />
       <div
-        className="absolute bottom-0 right-1/4 w-[350px] h-[250px] pointer-events-none"
-        style={{ background: "radial-gradient(circle, rgba(245,194,67,0.08) 0%, transparent 65%)" }}
-      />
-      <div
-        className="absolute top-1/3 left-0 w-[300px] h-[300px] pointer-events-none"
-        style={{ background: "radial-gradient(circle, rgba(18,163,87,0.07) 0%, transparent 65%)" }}
+        className="absolute top-0 right-0 w-[350px] h-[300px] pointer-events-none"
+        style={{ background: "radial-gradient(circle, rgba(111,203,156,0.15) 0%, transparent 65%)" }}
       />
 
-      {/* Top border — multicolor */}
+      {/* Top border */}
       <div
         className="absolute top-0 left-0 right-0 h-px"
         style={{
-          background:
-            "linear-gradient(90deg, transparent, #7FCFC2, #12A357, #6FCB9C, transparent)",
+          background: "linear-gradient(90deg, transparent, #6AB7AB, #12A357, #6AB7AB, transparent)",
         }}
       />
 
@@ -92,17 +87,17 @@ export const CTASection = () => {
           transition={{ duration: 0.7, ease: [0.25, 0.46, 0.45, 0.94] }}
           className="max-w-3xl mx-auto"
         >
-          {/* Badge — teal */}
+          {/* Badge */}
           <div
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full border text-xs font-karla uppercase tracking-wider mb-10"
-            style={{ background: "#7FCFC215", borderColor: "#7FCFC230", color: "#98D9CF" }}
+            style={{ background: "rgba(18,163,87,0.10)", borderColor: "rgba(18,163,87,0.25)", color: "#12A357" }}
           >
-            <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "#7FCFC2" }} />
+            <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "#12A357" }} />
             Empieza hoy — sin compromiso
           </div>
 
           {/* Headline */}
-          <h2 className="font-erstoria text-[clamp(2.4rem,6vw,4rem)] text-zinc-100 leading-[1.1] tracking-[-0.025em] mb-6">
+          <h2 className="font-erstoria text-[clamp(2.4rem,6vw,4rem)] text-[#1F4D2E] leading-[1.1] tracking-[-0.025em] mb-6">
             Da el primer paso hoy
           </h2>
 
@@ -111,7 +106,7 @@ export const CTASection = () => {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.15, duration: 0.6 }}
-            className="font-karla italic text-xl text-zinc-400 max-w-xl mx-auto mb-12 leading-relaxed"
+            className="font-karla italic text-xl text-[#3A6A4C] max-w-xl mx-auto mb-12 leading-relaxed"
           >
             "Miles de personas en México ya reconectaron consigo mismas."
           </motion.p>
@@ -127,7 +122,7 @@ export const CTASection = () => {
             <Link
               to="/pricing"
               className="font-karla text-sm transition-colors underline underline-offset-4 cursor-pointer"
-              style={{ color: "#6AB7AB", textDecorationColor: "#3A6A4C" }}
+              style={{ color: "#3A6A4C", textDecorationColor: "#6AB7AB" }}
             >
               Ver precios y planes
             </Link>
@@ -142,17 +137,17 @@ export const CTASection = () => {
             className="flex flex-wrap justify-center gap-3 mt-12"
           >
             {[
-              { label: "Psicólogos verificados", color: "#7FCFC2", bg: "#7FCFC215" },
-              { label: "Factura CFDI", color: "#6FCB9C", bg: "#6FCB9C15" },
-              { label: "Sin estigmas", color: "#7FCFC2", bg: "#7FCFC215" },
-              { label: "Hecho en México 💚", color: "#12A357", bg: "#12A35715" },
+              { label: "Psicólogos verificados", color: "#2FB06B", bg: "rgba(47,176,107,0.12)", border: "rgba(47,176,107,0.30)" },
+              { label: "Factura CFDI", color: "#3A6A4C", bg: "rgba(58,106,76,0.10)", border: "rgba(58,106,76,0.25)" },
+              { label: "Sin estigmas", color: "#6AB7AB", bg: "rgba(106,183,171,0.12)", border: "rgba(106,183,171,0.30)" },
+              { label: "Hecho en México 💚", color: "#12A357", bg: "rgba(18,163,87,0.12)", border: "rgba(18,163,87,0.30)" },
             ].map((pill) => (
               <span
                 key={pill.label}
                 className="font-karla text-xs px-3.5 py-1.5 rounded-full border"
                 style={{
                   background: pill.bg,
-                  borderColor: `${pill.color}30`,
+                  borderColor: pill.border,
                   color: pill.color,
                 }}
               >
