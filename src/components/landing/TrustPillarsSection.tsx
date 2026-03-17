@@ -5,8 +5,10 @@ const pillars = [
   {
     key: "HUMANO",
     icon: Heart,
-    color: "#E7839D",
+    color: "#D16484",
+    colorLight: "#E7839D",
     bg: "#F5C7D1",
+    bgLight: "#F5C7D1",
     title: "Humano",
     description:
       "Cada psicólogo es una persona real, con formación y vocación. La relación terapéutica está en el centro de todo.",
@@ -14,8 +16,10 @@ const pillars = [
   {
     key: "CONFIABLE",
     icon: ShieldCheck,
-    color: "#12A357",
+    color: "#2FB06B",
+    colorLight: "#6FCB9C",
     bg: "#BFE9E2",
+    bgLight: "#BFE9E2",
     title: "Confiable",
     description:
       "Verificamos cédula profesional y documentos antes de aprobar cada perfil. Tu seguridad no es opcional.",
@@ -23,8 +27,10 @@ const pillars = [
   {
     key: "ACCESIBLE",
     icon: Banknote,
-    color: "#7FCFC2",
+    color: "#6AB7AB",
+    colorLight: "#7FCFC2",
     bg: "#BFE9E2",
+    bgLight: "#98D9CF",
     title: "Accesible",
     description:
       "Precios transparentes, facturación CFDI y opciones para todos los presupuestos. Sin letras pequeñas.",
@@ -47,11 +53,33 @@ const cardVariants = {
 
 export const TrustPillarsSection = () => {
   return (
-    <section className="bg-white py-20 md:py-28 relative overflow-hidden">
-      {/* Subtle divider */}
-      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#12A357]/15 to-transparent" />
+    /* Fondo con wash rosa muy suave */
+    <section
+      className="py-20 md:py-28 relative overflow-hidden"
+      style={{
+        background:
+          "linear-gradient(180deg, #FFFFFF 0%, #FDF0F3 40%, #FFF8EC 70%, #FFFFFF 100%)",
+      }}
+    >
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#EDADB2] to-transparent" />
 
-      <div className="container mx-auto px-4 md:px-6">
+      {/* Decorative color blobs */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div
+          className="absolute top-0 left-0 w-[350px] h-[350px] opacity-20"
+          style={{ background: "radial-gradient(circle, #F5C7D1 0%, transparent 65%)" }}
+        />
+        <div
+          className="absolute bottom-0 right-0 w-[350px] h-[350px] opacity-20"
+          style={{ background: "radial-gradient(circle, #BFE9E2 0%, transparent 65%)" }}
+        />
+        <div
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] opacity-15"
+          style={{ background: "radial-gradient(circle, #F6E4B2 0%, transparent 65%)" }}
+        />
+      </div>
+
+      <div className="container mx-auto px-4 md:px-6 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -81,55 +109,52 @@ export const TrustPillarsSection = () => {
               variants={cardVariants}
               whileHover={{
                 y: -8,
-                boxShadow: `0 20px 48px ${pillar.color}28`,
+                boxShadow: `0 20px 48px ${pillar.color}30`,
                 transition: { type: "spring", stiffness: 300, damping: 20 },
               }}
-              className="group relative bg-white rounded-3xl p-8 border border-[#1F4D2E]/8 cursor-default overflow-hidden"
-              style={{ boxShadow: "0 2px 16px rgba(31,77,46,0.06)" }}
+              className="group relative bg-white rounded-3xl p-8 border cursor-default overflow-hidden"
+              style={{
+                borderColor: `${pillar.bg}80`,
+                boxShadow: `0 2px 16px ${pillar.color}12`,
+              }}
             >
               {/* Background wash on hover */}
               <div
                 className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-3xl"
                 style={{
-                  background: `radial-gradient(circle at 20% 20%, ${pillar.color}10, transparent 70%)`,
+                  background: `radial-gradient(circle at 15% 15%, ${pillar.bg}60, transparent 65%)`,
                 }}
+              />
+
+              {/* Top color stripe */}
+              <div
+                className="absolute top-0 left-6 right-6 h-0.5 rounded-full opacity-60"
+                style={{ background: `linear-gradient(90deg, transparent, ${pillar.colorLight}, transparent)` }}
               />
 
               {/* Icon */}
               <div
                 className="relative w-14 h-14 rounded-2xl flex items-center justify-center mb-6 transition-transform duration-300 group-hover:scale-110"
-                style={{ background: `${pillar.color}18` }}
+                style={{ background: pillar.bg }}
               >
-                <pillar.icon
-                  className="w-6 h-6"
-                  style={{ color: pillar.color }}
-                />
+                <pillar.icon className="w-6 h-6" style={{ color: pillar.color }} />
               </div>
 
-              {/* Key word pill */}
+              {/* Keyword pill */}
               <div
                 className="inline-block font-karla text-[10px] font-bold uppercase tracking-[0.15em] px-3 py-1 rounded-full mb-4"
-                style={{
-                  background: `${pillar.color}15`,
-                  color: pillar.color,
-                }}
+                style={{ background: `${pillar.bg}80`, color: pillar.color }}
               >
                 {pillar.key}
               </div>
 
-              <h3 className="font-karla font-bold text-xl text-[#1F4D2E] mb-3">
-                {pillar.title}
-              </h3>
-              <p className="font-karla text-[#6D8F7A] text-sm leading-relaxed">
-                {pillar.description}
-              </p>
+              <h3 className="font-karla font-bold text-xl text-[#1F4D2E] mb-3">{pillar.title}</h3>
+              <p className="font-karla text-[#6D8F7A] text-sm leading-relaxed">{pillar.description}</p>
 
               {/* Bottom accent */}
               <div
                 className="absolute bottom-0 left-6 right-6 h-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                style={{
-                  background: `linear-gradient(90deg, transparent, ${pillar.color}60, transparent)`,
-                }}
+                style={{ background: `linear-gradient(90deg, transparent, ${pillar.colorLight}80, transparent)` }}
               />
             </motion.div>
           ))}

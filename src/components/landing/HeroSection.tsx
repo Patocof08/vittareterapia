@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, Leaf } from "lucide-react";
+import { ArrowRight, Sparkles } from "lucide-react";
 
 const headline = "Un espacio seguro para reconectar contigo";
 
@@ -28,91 +28,33 @@ const fadeUp = {
   }),
 };
 
-/* Organic leaf SVG for decorative use */
-const LeafDecor = ({
-  className,
-  color = "#12A357",
-  opacity = 0.15,
-}: {
-  className?: string;
-  color?: string;
-  opacity?: number;
-}) => (
-  <svg
-    viewBox="0 0 60 80"
-    fill="none"
-    className={className}
-    aria-hidden="true"
-  >
-    <path
-      d="M30 75C30 75 5 55 5 30C5 10 15 2 30 2C45 2 55 10 55 30C55 55 30 75 30 75Z"
-      fill={color}
-      opacity={opacity}
-    />
-    <path
-      d="M30 75C30 75 30 40 30 10"
-      stroke={color}
-      strokeWidth="1"
-      opacity={opacity * 1.5}
-    />
-    <path
-      d="M30 50C20 42 12 32 12 24"
-      stroke={color}
-      strokeWidth="0.8"
-      opacity={opacity}
-    />
-    <path
-      d="M30 50C40 42 48 32 48 24"
-      stroke={color}
-      strokeWidth="0.8"
-      opacity={opacity}
-    />
-  </svg>
-);
+const stats = [
+  { value: "500+", label: "Sesiones", color: "#7FCFC2", bg: "#BFE9E2" },
+  { value: "4.9★", label: "Calificación", color: "#D9A932", bg: "#F6E4B2" },
+  { value: "100%", label: "Verificados", color: "#6FCB9C", bg: "#BFE9E2" },
+];
 
 export const HeroSection = () => {
   const words = headline.split(" ");
 
   return (
     <section className="relative bg-[#FAFAF8] overflow-hidden min-h-[90vh] flex items-center">
-      {/* Nature texture background */}
+      {/* Background color washes */}
       <div className="absolute inset-0 pointer-events-none">
-        {/* Soft gradient washes */}
+        {/* Teal top-right */}
         <div
-          className="absolute top-0 right-0 w-[600px] h-[600px] opacity-30"
-          style={{
-            background:
-              "radial-gradient(circle, #BFE9E2 0%, transparent 65%)",
-          }}
+          className="absolute -top-20 -right-20 w-[550px] h-[550px] opacity-35"
+          style={{ background: "radial-gradient(circle, #BFE9E2 0%, transparent 65%)" }}
         />
+        {/* Rose bottom-left */}
         <div
-          className="absolute bottom-0 left-0 w-[400px] h-[400px] opacity-20"
-          style={{
-            background:
-              "radial-gradient(circle, #F5C7D1 0%, transparent 65%)",
-          }}
+          className="absolute -bottom-10 -left-10 w-[400px] h-[400px] opacity-25"
+          style={{ background: "radial-gradient(circle, #F5C7D1 0%, transparent 65%)" }}
         />
-
-        {/* Decorative leaves */}
-        <LeafDecor
-          className="absolute top-12 right-[10%] w-32 h-44 animate-leaf-sway"
-          color="#12A357"
-          opacity={0.12}
-        />
-        <LeafDecor
-          className="absolute top-1/3 right-[5%] w-20 h-28 animate-leaf-sway [animation-delay:1s]"
-          color="#7FCFC2"
-          opacity={0.15}
-        />
-        <LeafDecor
-          className="absolute bottom-20 right-[18%] w-16 h-22 animate-leaf-sway [animation-delay:2s]"
-          color="#6FCB9C"
-          opacity={0.1}
-        />
-        <LeafDecor
-          className="absolute top-1/4 left-[3%] w-24 h-32 -rotate-45 animate-leaf-sway [animation-delay:0.5s]"
-          color="#12A357"
-          opacity={0.08}
+        {/* Gold center hint */}
+        <div
+          className="absolute top-1/2 left-1/3 w-[300px] h-[300px] opacity-15 -translate-y-1/2"
+          style={{ background: "radial-gradient(circle, #F6E4B2 0%, transparent 60%)" }}
         />
       </div>
 
@@ -120,20 +62,21 @@ export const HeroSection = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center py-20 md:py-28">
           {/* Left — copy */}
           <div className="max-w-xl">
-            {/* Trust badge */}
+            {/* Trust badge — gold */}
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#12A357]/10 border border-[#12A357]/20 mb-8"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full border mb-8"
+              style={{ background: "#F6E4B2", borderColor: "#F5C243", color: "#D9A932" }}
             >
-              <Leaf className="w-3.5 h-3.5 text-[#12A357]" />
-              <span className="font-karla text-sm text-[#1F4D2E] font-medium">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span className="font-karla text-sm font-semibold">
                 +500 psicólogos verificados en México
               </span>
             </motion.div>
 
-            {/* Headline — word-by-word */}
+            {/* Headline */}
             <motion.h1
               className="font-erstoria text-[clamp(2.4rem,5.5vw,4rem)] text-[#1F4D2E] leading-[1.12] tracking-[-0.02em] mb-6"
               variants={containerVariants}
@@ -151,7 +94,6 @@ export const HeroSection = () => {
               ))}
             </motion.h1>
 
-            {/* Subheadline */}
             <motion.p
               custom={0.6}
               variants={fadeUp}
@@ -162,7 +104,6 @@ export const HeroSection = () => {
               Psicólogos verificados. Sesiones desde donde estés. Sin estigmas.
             </motion.p>
 
-            {/* Italic tagline */}
             <motion.p
               custom={0.75}
               variants={fadeUp}
@@ -183,16 +124,12 @@ export const HeroSection = () => {
             >
               <Link to="/therapists">
                 <motion.button
-                  whileHover={{
-                    scale: 1.02,
-                    boxShadow: "0 8px 32px rgba(18,163,87,0.30)",
-                  }}
+                  whileHover={{ scale: 1.02, boxShadow: "0 8px 32px rgba(18,163,87,0.28)" }}
                   whileTap={{ scale: 0.97 }}
                   className="group relative px-7 py-4 bg-[#12A357] text-white font-karla font-bold text-base rounded-2xl overflow-hidden cursor-pointer transition-colors hover:bg-[#0F8A4A] flex items-center gap-2"
                 >
                   Encuentra tu psicólogo
                   <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-                  {/* Shimmer */}
                   <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/15 to-transparent transition-transform duration-700" />
                 </motion.button>
               </Link>
@@ -201,143 +138,132 @@ export const HeroSection = () => {
                 <motion.button
                   whileHover={{ scale: 1.01 }}
                   whileTap={{ scale: 0.97 }}
-                  className="px-7 py-4 bg-transparent text-[#1F4D2E] font-karla font-bold text-base rounded-2xl border-2 border-[#12A357]/40 hover:border-[#12A357] hover:bg-[#12A357]/5 transition-all duration-300 cursor-pointer"
+                  className="px-7 py-4 bg-transparent text-[#1F4D2E] font-karla font-bold text-base rounded-2xl border-2 hover:bg-[#BFE9E2]/30 transition-all duration-300 cursor-pointer"
+                  style={{ borderColor: "#7FCFC2" }}
                 >
                   ¿Cómo funciona?
                 </motion.button>
               </Link>
             </motion.div>
 
-            {/* Stats strip */}
+            {/* Stats — cada uno con su color */}
             <motion.div
               custom={1.1}
               variants={fadeUp}
               initial="hidden"
               animate="visible"
-              className="flex items-center gap-6 mt-10 pt-8 border-t border-[#12A357]/12"
+              className="flex items-center gap-5 mt-10 pt-8"
+              style={{ borderTop: "1px solid #BFE9E2" }}
             >
-              {[
-                { value: "500+", label: "Sesiones" },
-                { value: "4.9★", label: "Calificación" },
-                { value: "100%", label: "Verificados" },
-              ].map((stat) => (
-                <div key={stat.label} className="text-center">
-                  <div className="font-karla font-bold text-xl text-[#1F4D2E]">
-                    {stat.value}
+              {stats.map((stat, i) => (
+                <div key={i} className="flex items-center gap-2.5">
+                  <div
+                    className="w-8 h-8 rounded-xl flex items-center justify-center text-xs font-karla font-bold flex-shrink-0"
+                    style={{ background: stat.bg, color: stat.color }}
+                  >
+                    {stat.value.replace("+", "").replace("★", "").replace("%", "")}
                   </div>
-                  <div className="font-karla text-xs text-[#6D8F7A] mt-0.5">
-                    {stat.label}
+                  <div>
+                    <div className="font-karla font-bold text-sm text-[#1F4D2E]">
+                      {stat.value}
+                    </div>
+                    <div className="font-karla text-[11px] text-[#6D8F7A]">{stat.label}</div>
                   </div>
                 </div>
               ))}
             </motion.div>
           </div>
 
-          {/* Right — organic visual */}
+          {/* Right — organic blob visual */}
           <motion.div
             initial={{ opacity: 0, scale: 0.92, x: 30 }}
             animate={{ opacity: 1, scale: 1, x: 0 }}
             transition={{ duration: 0.9, ease: [0.25, 0.46, 0.45, 0.94], delay: 0.3 }}
             className="hidden lg:flex justify-center relative"
           >
-            {/* Main organic blob */}
+            {/* Main organic blob — rosa → teal → gold */}
             <div
               className="relative w-[420px] h-[500px] animate-blob-morph overflow-hidden"
               style={{
                 borderRadius: "60% 40% 70% 30% / 50% 60% 40% 50%",
-                background:
-                  "linear-gradient(145deg, #BFE9E2 0%, #98D9CF 25%, #7FCFC2 50%, #6FCB9C 75%, #2FB06B 100%)",
+                background: "linear-gradient(145deg, #EDADB2 0%, #F5C7D1 18%, #BFE9E2 40%, #7FCFC2 60%, #F7CF69 82%, #F6E4B2 100%)",
               }}
             >
-              {/* Interior botanical pattern */}
+              {/* Interior botanical */}
               <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
-                <svg
-                  viewBox="0 0 400 480"
-                  className="w-full h-full opacity-30"
-                  fill="none"
-                >
-                  {/* Large leaf center */}
+                <svg viewBox="0 0 400 480" className="w-full h-full opacity-25" fill="none">
                   <path
                     d="M200 460C200 460 80 380 80 260C80 160 130 100 200 100C270 100 320 160 320 260C320 380 200 460 200 460Z"
                     fill="#1F4D2E"
-                    opacity="0.4"
-                  />
-                  <path
-                    d="M200 460C200 460 200 280 200 120"
-                    stroke="#1F4D2E"
-                    strokeWidth="2"
                     opacity="0.5"
                   />
+                  <path d="M200 460C200 460 200 280 200 120" stroke="#1F4D2E" strokeWidth="2" opacity="0.4" />
                   {[1, 2, 3, 4].map((i) => (
                     <path
-                      key={i}
-                      d={`M200 ${460 - i * 70}C${200 - i * 30} ${460 - i * 70 - 30} ${
-                        200 - i * 50
-                      } ${460 - i * 70 - 60} ${200 - i * 60} ${460 - i * 70 - 80}`}
-                      stroke="#1F4D2E"
-                      strokeWidth="1.5"
-                      opacity="0.35"
+                      key={`l${i}`}
+                      d={`M200 ${460 - i * 70}C${200 - i * 30} ${460 - i * 70 - 30} ${200 - i * 50} ${460 - i * 70 - 60} ${200 - i * 60} ${460 - i * 70 - 80}`}
+                      stroke="#1F4D2E" strokeWidth="1.5" opacity="0.3"
                     />
                   ))}
                   {[1, 2, 3, 4].map((i) => (
                     <path
-                      key={i}
-                      d={`M200 ${460 - i * 70}C${200 + i * 30} ${460 - i * 70 - 30} ${
-                        200 + i * 50
-                      } ${460 - i * 70 - 60} ${200 + i * 60} ${460 - i * 70 - 80}`}
-                      stroke="#1F4D2E"
-                      strokeWidth="1.5"
-                      opacity="0.35"
+                      key={`r${i}`}
+                      d={`M200 ${460 - i * 70}C${200 + i * 30} ${460 - i * 70 - 30} ${200 + i * 50} ${460 - i * 70 - 60} ${200 + i * 60} ${460 - i * 70 - 80}`}
+                      stroke="#1F4D2E" strokeWidth="1.5" opacity="0.3"
                     />
                   ))}
                 </svg>
               </div>
-
-              {/* Warm overlay */}
+              {/* Color overlays */}
               <div
                 className="absolute inset-0 opacity-20"
-                style={{
-                  background:
-                    "radial-gradient(circle at 30% 70%, #F5C243 0%, transparent 50%)",
-                }}
+                style={{ background: "radial-gradient(circle at 75% 75%, #F5C243 0%, transparent 50%)" }}
+              />
+              <div
+                className="absolute inset-0 opacity-15"
+                style={{ background: "radial-gradient(circle at 20% 20%, #E7839D 0%, transparent 40%)" }}
               />
             </div>
 
-            {/* Floating badges */}
+            {/* Floating badge — rose */}
             <motion.div
               animate={{ y: [0, -8, 0] }}
               transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
-              className="absolute -bottom-4 -left-8 bg-white rounded-2xl px-5 py-4 shadow-[0_8px_32px_rgba(31,77,46,0.12)] border border-[#12A357]/10"
+              className="absolute -bottom-4 -left-8 bg-white rounded-2xl px-5 py-4 border"
+              style={{
+                boxShadow: "0 8px 32px rgba(231,131,157,0.15)",
+                borderColor: "#EDADB2",
+              }}
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-[#12A357]/15 flex items-center justify-center">
-                  <span className="text-lg">✓</span>
+                <div
+                  className="w-10 h-10 rounded-full flex items-center justify-center text-lg"
+                  style={{ background: "#F5C7D1" }}
+                >
+                  ✓
                 </div>
                 <div>
-                  <div className="font-karla font-bold text-sm text-[#1F4D2E]">
-                    Psicólogo verificado
-                  </div>
-                  <div className="font-karla text-xs text-[#6D8F7A]">
-                    Cédula comprobada
-                  </div>
+                  <div className="font-karla font-bold text-sm text-[#1F4D2E]">Psicólogo verificado</div>
+                  <div className="font-karla text-xs" style={{ color: "#D16484" }}>Cédula comprobada</div>
                 </div>
               </div>
             </motion.div>
 
+            {/* Floating badge — teal */}
             <motion.div
               animate={{ y: [0, 8, 0] }}
               transition={{ repeat: Infinity, duration: 5, ease: "easeInOut", delay: 1 }}
-              className="absolute top-8 -right-6 bg-white rounded-2xl px-4 py-3 shadow-[0_8px_32px_rgba(31,77,46,0.10)] border border-[#7FCFC2]/20"
+              className="absolute top-8 -right-6 bg-white rounded-2xl px-4 py-3 border"
+              style={{
+                boxShadow: "0 8px 32px rgba(127,207,194,0.18)",
+                borderColor: "#98D9CF",
+              }}
             >
-              <div className="font-karla text-xs text-[#6D8F7A]">Próxima cita</div>
-              <div className="font-karla font-bold text-sm text-[#1F4D2E] mt-0.5">
-                Hoy · 6:00 PM
-              </div>
+              <div className="font-karla text-xs" style={{ color: "#6AB7AB" }}>Próxima cita</div>
+              <div className="font-karla font-bold text-sm text-[#1F4D2E] mt-0.5">Hoy · 6:00 PM</div>
               <div className="flex items-center gap-1 mt-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#12A357] animate-pulse" />
-                <span className="font-karla text-[10px] text-[#12A357]">
-                  Video sesión activa
-                </span>
+                <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "#7FCFC2" }} />
+                <span className="font-karla text-[10px]" style={{ color: "#6AB7AB" }}>Video sesión activa</span>
               </div>
             </motion.div>
           </motion.div>

@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Check, Zap } from "lucide-react";
+import { Check } from "lucide-react";
 import { useState } from "react";
 
 const plans = [
@@ -18,7 +18,11 @@ const plans = [
       "Notas de sesión",
     ],
     cta: "Reservar sesión",
-    accent: "#7FCFC2",
+    // Teal theme
+    accent: "#6AB7AB",
+    accentLight: "#7FCFC2",
+    bg: "#BFE9E2",
+    bgLight: "#F0FAF8",
     featured: false,
   },
   {
@@ -37,7 +41,11 @@ const plans = [
       "Reagenda sin costo",
     ],
     cta: "Comenzar ahora",
-    accent: "#12A357",
+    // Rose-to-teal gradient border, green CTA
+    accent: "#D16484",
+    accentLight: "#E7839D",
+    bg: "#F5C7D1",
+    bgLight: "#FDF0F3",
     featured: true,
   },
 ];
@@ -60,15 +68,28 @@ export const PricingSection = () => {
   const [currency, setCurrency] = useState<"MXN" | "USD">("MXN");
 
   return (
-    <section className="bg-white py-20 md:py-28 relative overflow-hidden">
-      {/* Subtle bg */}
-      <div
-        className="absolute bottom-0 right-0 w-[400px] h-[400px] pointer-events-none opacity-30"
-        style={{
-          background:
-            "radial-gradient(circle, #BFE9E2 0%, transparent 65%)",
-        }}
-      />
+    <section
+      className="py-20 md:py-28 relative overflow-hidden"
+      style={{
+        background:
+          "linear-gradient(180deg, #FAFAF8 0%, #FFF8EC 40%, #F0FAF8 80%, #FFFFFF 100%)",
+      }}
+    >
+      {/* Color blobs */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div
+          className="absolute bottom-0 left-0 w-[400px] h-[400px] opacity-25"
+          style={{ background: "radial-gradient(circle, #F5C7D1 0%, transparent 65%)" }}
+        />
+        <div
+          className="absolute top-0 right-0 w-[400px] h-[400px] opacity-20"
+          style={{ background: "radial-gradient(circle, #BFE9E2 0%, transparent 65%)" }}
+        />
+        <div
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[300px] opacity-15"
+          style={{ background: "radial-gradient(ellipse, #F6E4B2 0%, transparent 65%)" }}
+        />
+      </div>
 
       <div className="container mx-auto px-4 md:px-6 relative z-10">
         {/* Header */}
@@ -82,23 +103,27 @@ export const PricingSection = () => {
           <h2 className="font-erstoria text-[clamp(1.8rem,4vw,2.75rem)] text-[#1F4D2E] leading-[1.15] tracking-[-0.02em] mb-4">
             Precios claros,
             <br />
-            <span className="text-[#12A357]">sin sorpresas</span>
+            <span style={{ color: "#D9A932" }}>sin sorpresas</span>
           </h2>
           <p className="font-karla text-base text-[#6D8F7A] leading-relaxed mb-8">
-            Elige el plan que mejor se adapte a tu momento. Puedes cambiar cuando quieras.
+            Elige el plan que mejor se adapte a tu momento.
           </p>
 
           {/* Currency toggle */}
-          <div className="inline-flex items-center bg-[#FAFAF8] rounded-xl p-1 border border-[#1F4D2E]/10">
+          <div
+            className="inline-flex items-center rounded-xl p-1 border"
+            style={{ background: "#FAFAF8", borderColor: "#BFE9E2" }}
+          >
             {(["MXN", "USD"] as const).map((c) => (
               <button
                 key={c}
                 onClick={() => setCurrency(c)}
-                className={`px-5 py-2 rounded-lg font-karla text-sm font-semibold transition-all duration-200 cursor-pointer ${
+                className="px-5 py-2 rounded-lg font-karla text-sm font-semibold transition-all duration-200 cursor-pointer"
+                style={
                   currency === c
-                    ? "bg-[#12A357] text-white shadow-sm"
-                    : "text-[#6D8F7A] hover:text-[#1F4D2E]"
-                }`}
+                    ? { background: "#7FCFC2", color: "#1F4D2E" }
+                    : { color: "#6D8F7A" }
+                }
               >
                 {c}
               </button>
@@ -124,13 +149,13 @@ export const PricingSection = () => {
               }}
               className="relative"
             >
-              {/* Featured gradient border */}
+              {/* Featured gradient border — rosa → teal → gold */}
               {plan.featured && (
                 <div
-                  className="absolute -inset-[1px] rounded-[28px]"
+                  className="absolute -inset-[1.5px] rounded-[28px]"
                   style={{
                     background:
-                      "linear-gradient(135deg, #12A357, #7FCFC2, #12A357)",
+                      "linear-gradient(135deg, #E7839D, #F5C243, #7FCFC2, #E7839D)",
                     backgroundSize: "200% 200%",
                     animation: "gradient-shift 4s ease infinite",
                   }}
@@ -138,83 +163,89 @@ export const PricingSection = () => {
               )}
 
               <div
-                className={`relative rounded-3xl p-7 overflow-hidden ${
-                  plan.featured ? "bg-white" : "bg-white border border-[#1F4D2E]/8"
-                }`}
+                className="relative rounded-3xl p-7 overflow-hidden bg-white"
                 style={
                   plan.featured
-                    ? { boxShadow: "0 8px 32px rgba(18,163,87,0.15)" }
-                    : { boxShadow: "0 2px 16px rgba(31,77,46,0.05)" }
+                    ? { boxShadow: `0 8px 40px ${plan.accent}20` }
+                    : {
+                        border: `1px solid ${plan.bg}`,
+                        boxShadow: `0 2px 16px ${plan.accent}12`,
+                      }
                 }
               >
-                {plan.featured && (
-                  <div className="flex items-center gap-2 mb-4">
-                    <Zap className="w-3.5 h-3.5 text-[#12A357]" />
-                    <span className="font-karla text-xs font-bold uppercase tracking-wide text-[#12A357]">
-                      Más popular
+                {/* Top color wash */}
+                <div
+                  className="absolute top-0 left-0 right-0 h-24 opacity-30 rounded-t-3xl"
+                  style={{
+                    background: `linear-gradient(180deg, ${plan.bg} 0%, transparent 100%)`,
+                  }}
+                />
+
+                <div className="relative z-10">
+                  {plan.featured && (
+                    <div
+                      className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-karla font-bold uppercase tracking-wide mb-4"
+                      style={{ background: plan.bg, color: plan.accent }}
+                    >
+                      ✦ Más popular
+                    </div>
+                  )}
+
+                  <h3 className="font-karla font-bold text-xl text-[#1F4D2E] mb-1">{plan.name}</h3>
+                  <p className="font-karla text-sm text-[#6D8F7A] mb-6">{plan.description}</p>
+
+                  {/* Price */}
+                  <div className="flex items-baseline gap-2 mb-6">
+                    <span
+                      className="font-karla font-bold text-4xl"
+                      style={{ color: plan.featured ? plan.accent : "#6AB7AB" }}
+                    >
+                      {currency === "MXN"
+                        ? `$${plan.priceMXN.toLocaleString("es-MX")}`
+                        : `$${plan.priceUSD}`}
+                    </span>
+                    <span className="font-karla text-sm text-[#6D8F7A]">
+                      {currency} · {plan.period}
                     </span>
                   </div>
-                )}
 
-                <h3 className="font-karla font-bold text-xl text-[#1F4D2E] mb-1">
-                  {plan.name}
-                </h3>
-                <p className="font-karla text-sm text-[#6D8F7A] mb-6">
-                  {plan.description}
-                </p>
+                  {/* Features */}
+                  <ul className="space-y-3 mb-8">
+                    {plan.features.map((f) => (
+                      <li key={f} className="flex items-center gap-3">
+                        <div
+                          className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
+                          style={{ background: plan.bg }}
+                        >
+                          <Check className="w-3 h-3" style={{ color: plan.accent }} strokeWidth={2.5} />
+                        </div>
+                        <span className="font-karla text-sm text-[#3A6A4C]">{f}</span>
+                      </li>
+                    ))}
+                  </ul>
 
-                {/* Price */}
-                <div className="flex items-baseline gap-2 mb-6">
-                  <span className="font-karla font-bold text-4xl text-[#1F4D2E]">
-                    {currency === "MXN"
-                      ? `$${plan.priceMXN.toLocaleString("es-MX")}`
-                      : `$${plan.priceUSD}`}
-                  </span>
-                  <span className="font-karla text-sm text-[#6D8F7A]">
-                    {currency} · {plan.period}
-                  </span>
+                  {/* CTA */}
+                  <Link to="/therapists">
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.97 }}
+                      className="w-full py-3.5 rounded-2xl font-karla font-bold text-sm transition-all cursor-pointer"
+                      style={
+                        plan.featured
+                          ? {
+                              background: "#12A357",
+                              color: "white",
+                            }
+                          : {
+                              background: plan.bg,
+                              color: plan.accent,
+                            }
+                      }
+                    >
+                      {plan.cta}
+                    </motion.button>
+                  </Link>
                 </div>
-
-                {/* Features */}
-                <ul className="space-y-3 mb-8">
-                  {plan.features.map((f) => (
-                    <li key={f} className="flex items-center gap-3">
-                      <div
-                        className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
-                        style={{ background: `${plan.accent}20` }}
-                      >
-                        <Check
-                          className="w-3 h-3"
-                          style={{ color: plan.accent }}
-                          strokeWidth={2.5}
-                        />
-                      </div>
-                      <span className="font-karla text-sm text-[#3A6A4C]">
-                        {f}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-
-                {/* CTA */}
-                <Link to="/therapists">
-                  <motion.button
-                    whileHover={{
-                      scale: 1.02,
-                      boxShadow: plan.featured
-                        ? "0 6px 24px rgba(18,163,87,0.30)"
-                        : "0 4px 16px rgba(31,77,46,0.15)",
-                    }}
-                    whileTap={{ scale: 0.97 }}
-                    className={`w-full py-3.5 rounded-2xl font-karla font-bold text-sm transition-colors cursor-pointer ${
-                      plan.featured
-                        ? "bg-[#12A357] text-white hover:bg-[#0F8A4A]"
-                        : "bg-[#FAFAF8] text-[#1F4D2E] border border-[#1F4D2E]/15 hover:bg-[#F0F7F3]"
-                    }`}
-                  >
-                    {plan.cta}
-                  </motion.button>
-                </Link>
               </div>
             </motion.div>
           ))}
@@ -228,10 +259,8 @@ export const PricingSection = () => {
           className="text-center font-karla text-xs text-[#6D8F7A] mt-8"
         >
           Sin tarjeta de crédito requerida · Cancela cuando quieras ·{" "}
-          <Link
-            to="/pricing"
-            className="text-[#12A357] underline underline-offset-2 hover:text-[#0F8A4A]"
-          >
+          <Link to="/pricing" className="underline underline-offset-2 hover:text-[#1F4D2E]"
+            style={{ color: "#6AB7AB" }}>
             Ver todos los planes
           </Link>
         </motion.p>
