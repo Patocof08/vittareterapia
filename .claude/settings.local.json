@@ -39,11 +39,12 @@
       "Read(//c/Users/patoc/OneDrive/Documentos/Vittare/lovable dev/vittareterapia/$HOME/.supabase/**)",
       "Read(//c/Users/patoc/OneDrive/Documentos/Vittare/lovable dev/vittareterapia/$APPDATA/supabase/**)",
       "Bash(SUPABASE_ACCESS_TOKEN=sbp_478d06f35f824b307f7f32410e345415ccef7d23 npx supabase:*)",
-      "Bash(SUPABASE_ACCESS_TOKEN=sbp_0f6ebc2cee32caaa6cc034dbf470408e8348a6c7 npx supabase:*)"
+      "Bash(SUPABASE_ACCESS_TOKEN=sbp_0f6ebc2cee32caaa6cc034dbf470408e8348a6c7 npx supabase:*)",
+      "Bash(cmd /c npx -y @21st-dev/cli@latest install cline --api-key \"db671684b0627b32948fa1f05b3979f531974a3ae0c47ccaf7c05e3619abf0d3\")"
     ]
   },
+  "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "stitch"
-  ],
-  "enableAllProjectMcpServers": true
+  ]
 }
