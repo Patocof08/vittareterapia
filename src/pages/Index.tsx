@@ -2,14 +2,15 @@ import { useEffect, useState } from "react";
 import { fetchPublicProfiles } from "@/lib/psychologistQueries";
 import { supabase } from "@/integrations/supabase/client";
 import { Navbar } from "@/components/Navbar";
-import { Footer } from "@/components/Footer";
+import { CustomCursor } from "@/components/CustomCursor";
 import { HeroSection } from "@/components/landing/HeroSection";
-import { TrustBarSection } from "@/components/landing/TrustBarSection";
-import { FeaturesSection } from "@/components/landing/FeaturesSection";
+import { TrustPillarsSection } from "@/components/landing/TrustPillarsSection";
 import { HowItWorksSection } from "@/components/landing/HowItWorksSection";
-import { TestimonialsSection } from "@/components/landing/TestimonialsSection";
 import { FeaturedTherapistsSection } from "@/components/landing/FeaturedTherapistsSection";
+import { TestimonialsSection } from "@/components/landing/TestimonialsSection";
+import { PricingSection } from "@/components/landing/PricingSection";
 import { CTASection } from "@/components/landing/CTASection";
+import { LandingFooter } from "@/components/landing/LandingFooter";
 
 type Therapist = {
   id: string;
@@ -33,7 +34,7 @@ const Index = () => {
       try {
         const data = await fetchPublicProfiles();
         if (data) {
-          setFeaturedTherapists(data.slice(0, 2));
+          setFeaturedTherapists(data.slice(0, 3));
           // @ts-ignore - Types will regenerate automatically
           const { data: ratingsData } = await supabase
             .from("psychologist_ratings")
@@ -60,21 +61,26 @@ const Index = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#0A1A10]">
-      <Navbar />
-      <HeroSection />
-      <TrustBarSection />
-      <FeaturesSection />
-      <HowItWorksSection />
-      <FeaturedTherapistsSection
-        therapists={featuredTherapists}
-        ratingsMap={ratingsMap}
-        loading={loading}
-      />
-      <TestimonialsSection />
-      <CTASection />
-      <Footer />
-    </div>
+    <>
+      <CustomCursor />
+      <div className="min-h-screen">
+        <Navbar />
+        <main>
+          <HeroSection />
+          <TrustPillarsSection />
+          <HowItWorksSection />
+          <FeaturedTherapistsSection
+            therapists={featuredTherapists}
+            ratingsMap={ratingsMap}
+            loading={loading}
+          />
+          <TestimonialsSection />
+          <PricingSection />
+          <CTASection />
+        </main>
+        <LandingFooter />
+      </div>
+    </>
   );
 };
 

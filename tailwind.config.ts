@@ -136,6 +136,20 @@ export default {
           "0%": { opacity: "0", transform: "translateY(12px)" },
           "100%": { opacity: "1", transform: "translateY(0)" },
         },
+        "blob-morph": {
+          "0%, 100%": { borderRadius: "60% 40% 70% 30% / 50% 60% 40% 50%" },
+          "25%": { borderRadius: "40% 60% 50% 50% / 60% 40% 60% 40%" },
+          "50%": { borderRadius: "50% 50% 40% 60% / 40% 50% 60% 50%" },
+          "75%": { borderRadius: "70% 30% 55% 45% / 45% 65% 35% 55%" },
+        },
+        "spin-slow": {
+          "0%": { transform: "rotate(0deg)" },
+          "100%": { transform: "rotate(360deg)" },
+        },
+        "leaf-sway": {
+          "0%, 100%": { transform: "rotate(-3deg)" },
+          "50%": { transform: "rotate(3deg)" },
+        },
         "accordion-down": {
           from: {
             height: "0",
@@ -165,9 +179,13 @@ export default {
         "shimmer": "shimmer 2.5s ease-in-out infinite",
         "count-up": "count-up 0.6s ease-out forwards",
         "fade-in": "fade-in 0.7s cubic-bezier(0.16,1,0.3,1) forwards",
+        "blob-morph": "blob-morph 12s ease-in-out infinite",
+        "spin-slow": "spin-slow 20s linear infinite",
+        "leaf-sway": "leaf-sway 4s ease-in-out infinite",
       },
       fontFamily: {
-        erstoria: ['Erstoria', 'DM Serif Display', 'Georgia', 'serif'],
+        erstoria: ['Erstoria', 'Playfair Display', 'DM Serif Display', 'Georgia', 'serif'],
+        display: ['Playfair Display', 'Erstoria', 'Georgia', 'serif'],
         karla: ['Karla', 'system-ui', 'sans-serif'],
       },
     },

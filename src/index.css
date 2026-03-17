@@ -2,6 +2,30 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Smooth scroll global */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom cursor — hide default on desktop */
+@media (pointer: fine) {
+  body {
+    cursor: none;
+  }
+  a, button, [role="button"], input, select, textarea, label {
+    cursor: none;
+  }
+}
+
+/* Page fade-in on load */
+#root {
+  animation: page-load 0.4s ease forwards;
+}
+@keyframes page-load {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
 /* Erstoria — place font files in /public/fonts/ */
 @font-face {
   font-family: 'Erstoria';
