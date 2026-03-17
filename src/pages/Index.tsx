@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { fetchPublicProfiles } from "@/lib/psychologistQueries";
 import { supabase } from "@/integrations/supabase/client";
 import { Navbar } from "@/components/Navbar";
-import { CustomCursor } from "@/components/CustomCursor";
 import { HeroSection } from "@/components/landing/HeroSection";
 import { TrustPillarsSection } from "@/components/landing/TrustPillarsSection";
 import { HowItWorksSection } from "@/components/landing/HowItWorksSection";
@@ -62,7 +61,6 @@ const Index = () => {
 
   return (
     <>
-      <CustomCursor />
       <div className="min-h-screen">
         <Navbar />
         <main>

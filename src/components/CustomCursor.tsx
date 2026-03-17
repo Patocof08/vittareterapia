@@ -1,76 +1,95 @@
-"use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, useMotionValue, useSpring } from "framer-motion";
 
 export const CustomCursor = () => {
-  const cursorX = useMotionValue(-100);
-  const cursorY = useMotionValue(-100);
-  const [isHovering, setIsHovering] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
+  const [isHovering, setIsHovering] = useState(false);
 
-  const springConfig = { stiffness: 500, damping: 30, mass: 0.5 };
-  const springX = useSpring(cursorX, springConfig);
-  const springY = useSpring(cursorY, springConfig);
+  // Aura — lento, lag suave
+  const auraX = useMotionValue(-100);
+  const auraY = useMotionValue(-100);
+  const springAuraX = useSpring(auraX, { stiffness: 80, damping: 20, mass: 1 });
+  const springAuraY = useSpring(auraY, { stiffness: 80, damping: 20, mass: 1 });
 
-  // Dot (instant)
+  // Dot — inmediato
   const dotX = useMotionValue(-100);
   const dotY = useMotionValue(-100);
 
   useEffect(() => {
-    // Only show on pointer-fine devices (desktop)
     if (!window.matchMedia("(pointer: fine)").matches) return;
 
-    const move = (e: MouseEvent) => {
-      cursorX.set(e.clientX - 16);
-      cursorY.set(e.clientY - 16);
-      dotX.set(e.clientX - 3);
-      dotY.set(e.clientY - 3);
+    const onMove = (e: MouseEvent) => {
+      // Aura centered on cursor (48px / 2 = 24)
+      auraX.set(e.clientX - 24);
+      auraY.set(e.clientY - 24);
+      // Dot centered (4px / 2 = 2)
+      dotX.set(e.clientX - 2);
+      dotY.set(e.clientY - 2);
       if (!isVisible) setIsVisible(true);
     };
 
-    const enter = () => setIsHovering(true);
-    const leave = () => setIsHovering(false);
+    const onEnter = () => setIsHovering(true);
+    const onLeave = () => setIsHovering(false);
 
-    window.addEventListener("mousemove", move);
+    window.addEventListener("mousemove", onMove);
 
-    const interactiveSelectors =
-      "a, button, [role='button'], input, select, textarea, label, [data-cursor-hover]";
-
-    const attachHover = () => {
-      document.querySelectorAll<HTMLElement>(interactiveSelectors).forEach((el) => {
-        el.addEventListener("mouseenter", enter);
-        el.addEventListener("mouseleave", leave);
-      });
+    const attach = () => {
+      document
+        .querySelectorAll<HTMLElement>(
+          "a, button, [role='button'], input, select, textarea, label, [data-cursor-hover]"
+        )
+        .forEach((el) => {
+          el.addEventListener("mouseenter", onEnter);
+          el.addEventListener("mouseleave", onLeave);
+        });
     };
 
-    attachHover();
-    const observer = new MutationObserver(attachHover);
+    attach();
+    const observer = new MutationObserver(attach);
     observer.observe(document.body, { childList: true, subtree: true });
 
     return () => {
-      window.removeEventListener("mousemove", move);
+      window.removeEventListener("mousemove", onMove);
       observer.disconnect();
     };
-  }, [cursorX, cursorY, dotX, dotY, isVisible]);
+  }, [auraX, auraY, dotX, dotY, isVisible]);
 
   if (!isVisible) return null;
 
   return (
     <>
-      {/* Ring */}
+      {/* Aura — círculo suave que flota */}
       <motion.div
-        className="fixed top-0 left-0 z-[9999] pointer-events-none w-8 h-8 rounded-full border border-[#12A357] mix-blend-multiply"
-        style={{ x: springX, y: springY }}
-        animate={{
-          scale: isHovering ? 1.8 : 1,
-          opacity: isHovering ? 0.6 : 0.5,
+        className="fixed top-0 left-0 z-[9998] pointer-events-none rounded-full"
+        style={{
+          x: springAuraX,
+          y: springAuraY,
+          width: 48,
+          height: 48,
+          background: "radial-gradient(circle, rgba(18,163,87,0.18) 0%, rgba(18,163,87,0) 70%)",
         }}
-        transition={{ duration: 0.2 }}
+        animate={{
+          scale: isHovering ? 2.2 : 1,
+          opacity: isHovering ? 1 : 0.8,
+        }}
+        transition={{ duration: 0.35, ease: "easeOut" }}
       />
-      {/* Dot */}
+
+      {/* Dot preciso */}
       <motion.div
-        className="fixed top-0 left-0 z-[9999] pointer-events-none w-1.5 h-1.5 rounded-full bg-[#12A357]"
-        style={{ x: dotX, y: dotY }}
+        className="fixed top-0 left-0 z-[9999] pointer-events-none rounded-full"
+        style={{
+          x: dotX,
+          y: dotY,
+          width: 4,
+          height: 4,
+          backgroundColor: "#12A357",
+        }}
+        animate={{
+          scale: isHovering ? 0 : 1,
+          opacity: isHovering ? 0 : 1,
+        }}
+        transition={{ duration: 0.15 }}
       />
     </>
   );
