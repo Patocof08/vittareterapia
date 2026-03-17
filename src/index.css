@@ -2,6 +2,25 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Erstoria — place font files in /public/fonts/ */
+@font-face {
+  font-family: 'Erstoria';
+  src: url('/fonts/Erstoria.woff2') format('woff2'),
+       url('/fonts/Erstoria.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Erstoria';
+  src: url('/fonts/Erstoria-Bold.woff2') format('woff2'),
+       url('/fonts/Erstoria-Bold.woff') format('woff');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
 All colors MUST be HSL.
 */

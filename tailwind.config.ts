@@ -14,6 +14,38 @@ export default {
     },
     extend: {
       colors: {
+        vittare: {
+          green: {
+            900: '#12A357',
+            800: '#0F8A4A',
+            700: '#2FB06B',
+            500: '#6FCB9C',
+          },
+          forest: {
+            900: '#1F4D2E',
+            800: '#193F26',
+            600: '#3A6A4C',
+            400: '#6D8F7A',
+          },
+          teal: {
+            600: '#7FCFC2',
+            500: '#6AB7AB',
+            300: '#98D9CF',
+            100: '#BFE9E2',
+          },
+          rose: {
+            600: '#E7839D',
+            500: '#D16484',
+            300: '#EDADB2',
+            100: '#F5C7D1',
+          },
+          gold: {
+            600: '#F5C243',
+            500: '#D9A932',
+            300: '#F7CF69',
+            100: '#F6E4B2',
+          },
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
@@ -76,6 +108,10 @@ export default {
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+      },
+      fontFamily: {
+        erstoria: ['Erstoria', 'Georgia', 'serif'],
+        karla: ['Karla', 'system-ui', 'sans-serif'],
       },
     },
   },
