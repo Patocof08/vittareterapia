@@ -41,5 +41,9 @@
       "Bash(SUPABASE_ACCESS_TOKEN=sbp_478d06f35f824b307f7f32410e345415ccef7d23 npx supabase:*)",
       "Bash(SUPABASE_ACCESS_TOKEN=sbp_0f6ebc2cee32caaa6cc034dbf470408e8348a6c7 npx supabase:*)"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "stitch"
+  ],
+  "enableAllProjectMcpServers": true
 }
