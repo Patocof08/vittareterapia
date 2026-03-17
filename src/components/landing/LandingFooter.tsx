@@ -60,7 +60,12 @@ const itemVariants = {
 
 export const LandingFooter = () => {
   return (
-    <footer className="bg-[#0D1F15] border-t border-white/[0.06]">
+    <footer
+      style={{
+        background: "linear-gradient(180deg, #F0FAF8 0%, #E8F7F3 50%, #F0FAF8 100%)",
+        borderTop: "1px solid #BFE9E2",
+      }}
+    >
       <div className="container mx-auto px-4 md:px-6 pt-16 pb-8">
         <motion.div
           variants={containerVariants}
@@ -74,15 +79,15 @@ export const LandingFooter = () => {
             <Link to="/" className="flex items-center gap-2.5 mb-5">
               <VittaraLogo />
               <div>
-                <div className="font-display text-zinc-100 text-xl leading-none">
+                <div className="font-display text-[#1F4D2E] text-xl leading-none">
                   vittare
                 </div>
-                <div className="font-karla text-[8px] text-[#6D8F7A] uppercase tracking-[0.18em] leading-none mt-0.5">
+                <div className="font-karla text-[8px] text-[#6AB7AB] uppercase tracking-[0.18em] leading-none mt-0.5">
                   Reconecta Contigo
                 </div>
               </div>
             </Link>
-            <p className="font-karla text-sm text-zinc-500 leading-relaxed max-w-xs mb-6">
+            <p className="font-karla text-sm text-[#6D8F7A] leading-relaxed max-w-xs mb-6">
               Hacemos la terapia psicológica más accesible, humana y libre de
               estigmas en México.
             </p>
@@ -98,7 +103,22 @@ export const LandingFooter = () => {
                   key={label}
                   href={href}
                   aria-label={label}
-                  className="w-9 h-9 rounded-xl bg-white/[0.06] hover:bg-[#12A357]/20 flex items-center justify-center text-zinc-500 hover:text-[#12A357] transition-all duration-200 cursor-pointer"
+                  className="w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 cursor-pointer"
+                  style={{
+                    background: "#BFE9E240",
+                    color: "#6AB7AB",
+                    border: "1px solid #BFE9E2",
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.background = "#12A35720";
+                    (e.currentTarget as HTMLElement).style.color = "#12A357";
+                    (e.currentTarget as HTMLElement).style.borderColor = "#12A35740";
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.background = "#BFE9E240";
+                    (e.currentTarget as HTMLElement).style.color = "#6AB7AB";
+                    (e.currentTarget as HTMLElement).style.borderColor = "#BFE9E2";
+                  }}
                 >
                   <Icon className="w-4 h-4" />
                 </a>
@@ -109,7 +129,7 @@ export const LandingFooter = () => {
           {/* Link columns */}
           {footerLinks.map((col) => (
             <motion.div key={col.title} variants={itemVariants}>
-              <h4 className="font-karla font-bold text-xs text-zinc-400 uppercase tracking-widest mb-4">
+              <h4 className="font-karla font-bold text-xs text-[#3A6A4C] uppercase tracking-widest mb-4">
                 {col.title}
               </h4>
               <ul className="space-y-2.5">
@@ -117,7 +137,7 @@ export const LandingFooter = () => {
                   <li key={link.href}>
                     <Link
                       to={link.href}
-                      className="font-karla text-sm text-zinc-500 hover:text-zinc-200 transition-colors duration-200 cursor-pointer"
+                      className="font-karla text-sm text-[#6D8F7A] hover:text-[#1F4D2E] transition-colors duration-200 cursor-pointer"
                     >
                       {link.name}
                     </Link>
@@ -129,33 +149,39 @@ export const LandingFooter = () => {
         </motion.div>
 
         {/* Contact strip */}
-        <div className="flex flex-wrap gap-6 py-6 border-t border-white/[0.06] mb-6">
+        <div
+          className="flex flex-wrap gap-6 py-6 mb-6"
+          style={{ borderTop: "1px solid #BFE9E2" }}
+        >
           <a
             href="mailto:contacto@vittareterapia.com"
-            className="flex items-center gap-2 font-karla text-xs text-zinc-600 hover:text-zinc-300 transition-colors cursor-pointer"
+            className="flex items-center gap-2 font-karla text-xs text-[#6D8F7A] hover:text-[#1F4D2E] transition-colors cursor-pointer"
           >
             <Mail className="w-3.5 h-3.5 text-[#12A357]" />
             contacto@vittareterapia.com
           </a>
-          <span className="flex items-center gap-2 font-karla text-xs text-zinc-600">
+          <span className="flex items-center gap-2 font-karla text-xs text-[#6D8F7A]">
             <MapPin className="w-3.5 h-3.5 text-[#12A357]" />
             Ciudad de México, México
           </span>
         </div>
 
         {/* Bottom bar */}
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-6 border-t border-white/[0.05]">
-          <p className="font-karla text-xs text-zinc-700">
+        <div
+          className="flex flex-col md:flex-row items-center justify-between gap-4 pt-6"
+          style={{ borderTop: "1px solid #BFE9E280" }}
+        >
+          <p className="font-karla text-xs text-[#6D8F7A]">
             © {new Date().getFullYear()} Vittare. Todos los derechos reservados.
           </p>
-          <p className="font-karla italic text-xs text-zinc-700">
+          <p className="font-karla italic text-xs text-[#6AB7AB]">
             "Reconecta Contigo"
           </p>
-          <p className="font-karla text-xs text-zinc-800">
+          <p className="font-karla text-xs text-[#6D8F7A]">
             En emergencias: Línea de la Vida{" "}
             <a
               href="tel:8009112000"
-              className="text-[#12A357] hover:text-[#6FCB9C] transition-colors"
+              className="text-[#12A357] hover:text-[#0F8A4A] transition-colors"
             >
               800 911 2000
             </a>

@@ -1,4 +1,4 @@
-import { motion, useAnimationFrame, useMotionValue, useTransform } from "framer-motion";
+import { motion, useAnimationFrame, useMotionValue } from "framer-motion";
 import { useRef, useState } from "react";
 import { Star } from "lucide-react";
 
@@ -9,7 +9,8 @@ const testimonials = [
     text: "Vittare me ayudó a dar el primer paso sin sentirme juzgada. Mi psicóloga es increíble.",
     rating: 5,
     initials: "SR",
-    accent: "#E7839D",
+    accent: "#D16484",
+    bg: "#F5C7D1",
   },
   {
     name: "Miguel A.",
@@ -18,6 +19,7 @@ const testimonials = [
     rating: 5,
     initials: "MA",
     accent: "#12A357",
+    bg: "#BFE9E2",
   },
   {
     name: "Carmen L.",
@@ -25,7 +27,8 @@ const testimonials = [
     text: "La facturación CFDI fue clave para mí. Y el proceso de encontrar psicólogo fue muy sencillo.",
     rating: 5,
     initials: "CL",
-    accent: "#7FCFC2",
+    accent: "#6AB7AB",
+    bg: "#BFE9E2",
   },
   {
     name: "David T.",
@@ -33,7 +36,8 @@ const testimonials = [
     text: "Tenía mucho miedo de pedir ayuda. En Vittare encontré un espacio sin juicios y con mucho apoyo.",
     rating: 5,
     initials: "DT",
-    accent: "#F5C243",
+    accent: "#D9A932",
+    bg: "#F6E4B2",
   },
   {
     name: "Andrea M.",
@@ -41,7 +45,8 @@ const testimonials = [
     text: "Encontré opciones accesibles y de calidad. El acompañamiento desde el inicio fue excepcional.",
     rating: 5,
     initials: "AM",
-    accent: "#E7839D",
+    accent: "#D16484",
+    bg: "#F5C7D1",
   },
   {
     name: "Roberto C.",
@@ -49,7 +54,8 @@ const testimonials = [
     text: "En días pude tener mi primera cita. El equipo de soporte siempre estuvo atento.",
     rating: 5,
     initials: "RC",
-    accent: "#12A357",
+    accent: "#2FB06B",
+    bg: "#BFE9E2",
   },
 ];
 
@@ -90,7 +96,8 @@ const InfiniteScroller = ({
         {[...items, ...items].map((t, i) => (
           <div
             key={i}
-            className="flex-shrink-0 w-[300px] md:w-[320px] bg-[#0D1F15]/70 rounded-3xl p-6 border border-white/8 backdrop-blur-sm"
+            className="flex-shrink-0 w-[300px] md:w-[320px] bg-white rounded-3xl p-6 border shadow-sm"
+            style={{ borderColor: `${t.accent}25`, boxShadow: `0 2px 16px ${t.accent}0A` }}
           >
             {/* Stars */}
             <div className="flex gap-1 mb-4">
@@ -99,7 +106,13 @@ const InfiniteScroller = ({
               ))}
             </div>
 
-            <p className="font-karla italic text-zinc-300 text-sm leading-relaxed mb-5">
+            {/* Top accent line */}
+            <div
+              className="w-8 h-0.5 rounded-full mb-3 opacity-60"
+              style={{ background: t.accent }}
+            />
+
+            <p className="font-karla italic text-[#3A6A4C] text-sm leading-relaxed mb-5">
               "{t.text}"
             </p>
 
@@ -107,18 +120,18 @@ const InfiniteScroller = ({
               <div
                 className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-karla font-bold flex-shrink-0"
                 style={{
-                  background: `${t.accent}25`,
+                  background: t.bg,
                   color: t.accent,
-                  border: `1px solid ${t.accent}40`,
+                  border: `1px solid ${t.accent}30`,
                 }}
               >
                 {t.initials}
               </div>
               <div>
-                <div className="font-karla font-bold text-sm text-zinc-200">
+                <div className="font-karla font-bold text-sm text-[#1F4D2E]">
                   {t.name}
                 </div>
-                <div className="font-karla text-xs text-zinc-600">{t.role}</div>
+                <div className="font-karla text-xs text-[#6D8F7A]">{t.role}</div>
               </div>
             </div>
           </div>
@@ -130,15 +143,31 @@ const InfiniteScroller = ({
 
 export const TestimonialsSection = () => {
   return (
-    <section className="bg-[#0D1F15] py-20 md:py-28 overflow-hidden relative">
-      {/* Warm glow */}
-      <div
-        className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[200px] pointer-events-none"
-        style={{
-          background:
-            "radial-gradient(ellipse, rgba(18,163,87,0.15) 0%, transparent 70%)",
-        }}
-      />
+    <section
+      className="py-20 md:py-28 overflow-hidden relative"
+      style={{
+        background:
+          "linear-gradient(180deg, #F0FAF8 0%, #FAFAF8 35%, #FDF0F3 70%, #FFFBEF 100%)",
+      }}
+    >
+      {/* Top border */}
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#7FCFC2] to-transparent opacity-40" />
+
+      {/* Color blobs */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div
+          className="absolute top-0 right-0 w-[400px] h-[350px] opacity-20"
+          style={{ background: "radial-gradient(circle, #BFE9E2 0%, transparent 65%)" }}
+        />
+        <div
+          className="absolute bottom-0 left-0 w-[350px] h-[300px] opacity-15"
+          style={{ background: "radial-gradient(circle, #F5C7D1 0%, transparent 65%)" }}
+        />
+        <div
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[300px] opacity-10"
+          style={{ background: "radial-gradient(ellipse, #F6E4B2 0%, transparent 65%)" }}
+        />
+      </div>
 
       <div className="container mx-auto px-4 md:px-6 mb-14 relative z-10">
         <motion.div
@@ -148,23 +177,20 @@ export const TestimonialsSection = () => {
           transition={{ duration: 0.6 }}
           className="text-center max-w-2xl mx-auto"
         >
-          <h2 className="font-erstoria text-[clamp(1.8rem,4vw,2.75rem)] text-zinc-100 leading-[1.15] tracking-[-0.02em] mb-4">
+          <div
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-karla uppercase tracking-wide mb-5"
+            style={{ background: "#BFE9E2", color: "#6AB7AB" }}
+          >
+            Testimonios
+          </div>
+          <h2 className="font-erstoria text-[clamp(1.8rem,4vw,2.75rem)] text-[#1F4D2E] leading-[1.15] tracking-[-0.02em] mb-4">
             Historias de{" "}
-            <span
-              style={{
-                background: "linear-gradient(135deg, #7FCFC2, #12A357)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
-              }}
-            >
-              transformación
-            </span>
+            <span style={{ color: "#6AB7AB" }}>transformación</span>
           </h2>
-          <p className="font-karla italic text-zinc-400 text-lg">
+          <p className="font-karla italic text-[#6D8F7A] text-lg">
             "Miles de personas en México ya reconectaron consigo mismas."
           </p>
-          <p className="font-karla text-xs text-zinc-600 mt-2">
+          <p className="font-karla text-xs text-[#6D8F7A]/60 mt-2">
             Testimonios ilustrativos de nuestra comunidad
           </p>
         </motion.div>
@@ -177,7 +203,7 @@ export const TestimonialsSection = () => {
       </div>
 
       {/* Bottom divider */}
-      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#12A357]/20 to-transparent" />
+      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#BFE9E2] to-transparent" />
     </section>
   );
 };
