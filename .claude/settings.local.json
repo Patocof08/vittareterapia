@@ -43,7 +43,11 @@
       "Bash(cmd /c npx -y @21st-dev/cli@latest install cline --api-key \"db671684b0627b32948fa1f05b3979f531974a3ae0c47ccaf7c05e3619abf0d3\")",
       "Bash(npx:*)",
       "mcp__stitch__list_projects",
-      "Bash(claude mcp:*)"
+      "Bash(claude mcp:*)",
+      "mcp__nano-banana__get_configuration_status",
+      "mcp__stitch__list_screens",
+      "WebFetch(domain:contribution.usercontent.google.com)",
+      "mcp__nano-banana__generate_image"
     ]
   },
   "enableAllProjectMcpServers": true,

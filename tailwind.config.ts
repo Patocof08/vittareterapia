@@ -104,6 +104,38 @@ export default {
         'vittare-hover': '0 6px 24px rgba(31, 77, 46, 0.14)',
       },
       keyframes: {
+        "gradient-shift": {
+          "0%, 100%": { backgroundPosition: "0% 50%" },
+          "50%": { backgroundPosition: "100% 50%" },
+        },
+        "aurora": {
+          "0%, 100%": { backgroundPosition: "0% 50%", backgroundSize: "200% 200%" },
+          "50%": { backgroundPosition: "100% 50%", backgroundSize: "250% 250%" },
+        },
+        "ticker": {
+          "0%": { transform: "translateX(0)" },
+          "100%": { transform: "translateX(-50%)" },
+        },
+        "float": {
+          "0%, 100%": { transform: "translateY(0px)" },
+          "50%": { transform: "translateY(-12px)" },
+        },
+        "glow-pulse": {
+          "0%, 100%": { opacity: "0.4" },
+          "50%": { opacity: "0.8" },
+        },
+        "shimmer": {
+          "0%": { transform: "translateX(-100%)" },
+          "100%": { transform: "translateX(100%)" },
+        },
+        "count-up": {
+          "0%": { opacity: "0", transform: "translateY(8px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        "fade-in": {
+          "0%": { opacity: "0", transform: "translateY(12px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
         "accordion-down": {
           from: {
             height: "0",
@@ -124,6 +156,15 @@ export default {
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "gradient-shift": "gradient-shift 5s ease infinite",
+        "aurora": "aurora 8s ease infinite",
+        "ticker": "ticker 30s linear infinite",
+        "ticker-slow": "ticker 45s linear infinite",
+        "float": "float 6s ease-in-out infinite",
+        "glow-pulse": "glow-pulse 3s ease-in-out infinite",
+        "shimmer": "shimmer 2.5s ease-in-out infinite",
+        "count-up": "count-up 0.6s ease-out forwards",
+        "fade-in": "fade-in 0.7s cubic-bezier(0.16,1,0.3,1) forwards",
       },
       fontFamily: {
         erstoria: ['Erstoria', 'DM Serif Display', 'Georgia', 'serif'],

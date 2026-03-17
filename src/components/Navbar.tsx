@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X, User } from "lucide-react";
@@ -9,33 +9,83 @@ export const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showAuthPopup, setShowAuthPopup] = useState(false);
   const [authMode, setAuthMode] = useState<"login" | "signup">("login");
+  const [scrolled, setScrolled] = useState(false);
+  const [scrollProgress, setScrollProgress] = useState(0);
   const location = useLocation();
   const { user, role } = useAuth();
+  const isLanding = location.pathname === "/";
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollY = window.scrollY;
+      setScrolled(scrollY > 20);
+
+      const doc = document.documentElement;
+      const scrollTop = scrollY;
+      const scrollHeight = doc.scrollHeight - doc.clientHeight;
+      setScrollProgress(scrollHeight > 0 ? (scrollTop / scrollHeight) * 100 : 0);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Close mobile menu on route change
+  useEffect(() => {
+    setIsMenuOpen(false);
+  }, [location.pathname]);
 
   const navLinks = [
-    { name: "Inicio", path: "/" },
     { name: "Terapeutas", path: "/therapists" },
-    { name: "Nosotros", path: "/sobre-nosotros" },
     { name: "Precios", path: "/pricing" },
     { name: "Blog", path: "/blog" },
-    { name: "Ayuda", path: "/faq" },
     { name: "Para psicólogos", path: "/para-psicologos" },
-    { name: "Contacto", path: "/contact" },
+    { name: "Ayuda", path: "/faq" },
   ];
 
   const isActive = (path: string) => location.pathname === path;
 
+  const navBg = isLanding
+    ? scrolled
+      ? "bg-[#0A1A10]/90 backdrop-blur-xl border-b border-white/[0.06]"
+      : "bg-transparent border-b border-transparent"
+    : "bg-background/95 backdrop-blur-sm border-b border-border shadow-soft";
+
+  const linkBase = isLanding
+    ? "text-zinc-400 hover:text-zinc-100"
+    : "text-muted-foreground hover:text-foreground";
+
+  const linkActive = isLanding
+    ? "text-zinc-100 bg-white/[0.06]"
+    : "bg-accent text-accent-foreground";
+
+  const logoTextColor = isLanding ? "text-zinc-100" : "text-foreground";
+
   return (
     <>
-      <nav className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border shadow-soft">
+      {/* Scroll progress bar */}
+      <div className="fixed top-0 left-0 right-0 z-[60] h-[2px] bg-transparent pointer-events-none">
+        <div
+          className="h-full bg-gradient-to-r from-[#12A357] via-[#7FCFC2] to-[#12A357] transition-[width] duration-150"
+          style={{ width: `${scrollProgress}%` }}
+        />
+      </div>
+
+      <nav
+        className={`sticky top-0 z-50 transition-all duration-300 ${navBg}`}
+      >
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
-            <Link to="/" className="flex items-center space-x-2">
-              <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-xl">V</span>
+            <Link to="/" className="flex items-center space-x-2 group">
+              <div className="w-9 h-9 bg-[#12A357] rounded-lg flex items-center justify-center shadow-[0_0_12px_rgba(18,163,87,0.35)] group-hover:shadow-[0_0_20px_rgba(18,163,87,0.5)] transition-shadow duration-300">
+                <span className="text-white font-bold text-lg font-karla">
+                  V
+                </span>
               </div>
-              <span className="font-bold text-xl text-foreground">Vittare</span>
+              <span className={`font-karla font-bold text-xl ${logoTextColor}`}>
+                Vittare
+              </span>
             </Link>
 
             {/* Desktop Navigation */}
@@ -44,10 +94,8 @@ export const Navbar = () => {
                 <Link
                   key={link.path}
                   to={link.path}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    isActive(link.path)
-                      ? "bg-accent text-accent-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                  className={`px-3.5 py-2 rounded-lg text-sm font-medium font-karla transition-all duration-200 ${
+                    isActive(link.path) ? linkActive : linkBase
                   }`}
                 >
                   {link.name}
@@ -55,102 +103,115 @@ export const Navbar = () => {
               ))}
             </div>
 
-            {/* Desktop Auth Buttons */}
+            {/* Desktop Auth */}
             <div className="hidden lg:flex items-center gap-3">
               {user ? (
-                <Button
-                  variant="default"
-                  size="default"
-                  asChild
-                >
-                  <Link to={
-                    role === "admin"
-                      ? "/admin/dashboard"
-                      : role === "marketing"
-                      ? "/marketing/dashboard"
-                      : role === "psicologo"
-                      ? "/therapist/dashboard"
-                      : "/portal"
-                  }>
+                <Button variant="default" size="default" asChild>
+                  <Link
+                    to={
+                      role === "admin"
+                        ? "/admin/dashboard"
+                        : role === "marketing"
+                        ? "/marketing/dashboard"
+                        : role === "psicologo"
+                        ? "/therapist/dashboard"
+                        : "/portal"
+                    }
+                  >
                     <User className="w-4 h-4 mr-2" />
-                    {role === "admin" ? "Panel Admin" : role === "marketing" ? "Marketing" : role === "psicologo" ? "Mi Panel" : "Mi Portal"}
+                    {role === "admin"
+                      ? "Panel Admin"
+                      : role === "marketing"
+                      ? "Marketing"
+                      : role === "psicologo"
+                      ? "Mi Panel"
+                      : "Mi Portal"}
                   </Link>
                 </Button>
               ) : (
                 <>
-                  <Button
-                    variant="outline"
-                    size="default"
+                  <button
                     onClick={() => {
                       setAuthMode("login");
                       setShowAuthPopup(true);
                     }}
+                    className={`px-4 py-2 rounded-lg text-sm font-karla font-medium transition-all duration-200 cursor-pointer ${
+                      isLanding
+                        ? "text-zinc-300 hover:text-zinc-100 hover:bg-white/[0.06]"
+                        : "text-muted-foreground hover:text-foreground border border-border hover:border-foreground/20"
+                    }`}
                   >
                     Iniciar sesión
-                  </Button>
-                  <Button
-                    variant="default"
-                    size="default"
+                  </button>
+                  <button
                     onClick={() => {
                       setAuthMode("signup");
                       setShowAuthPopup(true);
                     }}
+                    className="relative px-5 py-2 bg-[#12A357] text-white text-sm font-karla font-bold rounded-lg overflow-hidden cursor-pointer transition-all duration-200 hover:bg-[#0F8A4A] shadow-[0_0_18px_rgba(18,163,87,0.25)] hover:shadow-[0_0_28px_rgba(18,163,87,0.4)] active:scale-[0.97] group"
                   >
-                    Regístrate
-                  </Button>
+                    <span className="relative z-10">Comenzar</span>
+                    <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/15 to-transparent transition-transform duration-600" />
+                  </button>
                 </>
               )}
             </div>
 
-            {/* Mobile Menu Button */}
+            {/* Mobile menu toggle */}
             <button
-              className="lg:hidden p-2 rounded-lg hover:bg-accent"
+              className={`lg:hidden p-2 rounded-lg transition-colors cursor-pointer ${
+                isLanding ? "text-zinc-300 hover:bg-white/[0.06]" : "hover:bg-accent"
+              }`}
               onClick={() => setIsMenuOpen(!isMenuOpen)}
+              aria-label="Toggle menu"
             >
-              {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+              {isMenuOpen ? <X size={22} /> : <Menu size={22} />}
             </button>
           </div>
 
           {/* Mobile Navigation */}
-          {isMenuOpen && (
-            <div className="lg:hidden py-4 border-t border-border">
-              <div className="flex flex-col space-y-2">
+          <div
+            className={`lg:hidden overflow-hidden transition-all duration-300 ease-in-out ${
+              isMenuOpen ? "max-h-[480px] opacity-100" : "max-h-0 opacity-0"
+            }`}
+          >
+            <div
+              className={`py-4 border-t ${
+                isLanding ? "border-white/[0.06]" : "border-border"
+              }`}
+            >
+              <div className="flex flex-col space-y-1">
                 {navLinks.map((link) => (
                   <Link
                     key={link.path}
                     to={link.path}
                     onClick={() => setIsMenuOpen(false)}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      isActive(link.path)
-                        ? "bg-accent text-accent-foreground"
-                        : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                    className={`px-4 py-2.5 rounded-lg text-sm font-karla font-medium transition-colors cursor-pointer ${
+                      isActive(link.path) ? linkActive : linkBase
                     }`}
                   >
                     {link.name}
                   </Link>
                 ))}
                 {user ? (
-                  <Button
-                    variant="default"
-                    className="mt-4"
-                    asChild
-                  >
-                    <Link to={
-                      role === "admin" 
-                        ? "/admin/dashboard" 
-                        : role === "psicologo" 
-                        ? "/therapist/dashboard" 
-                        : "/portal"
-                    }>
+                  <Button variant="default" className="mt-4" asChild>
+                    <Link
+                      to={
+                        role === "admin"
+                          ? "/admin/dashboard"
+                          : role === "psicologo"
+                          ? "/therapist/dashboard"
+                          : "/portal"
+                      }
+                    >
                       <User className="w-4 h-4 mr-2" />
-                      {role === "admin" ? "Panel Admin" : role === "marketing" ? "Marketing" : role === "psicologo" ? "Mi Panel" : "Mi Portal"}
+                      {role === "psicologo" ? "Mi Panel" : "Mi Portal"}
                     </Link>
                   </Button>
                 ) : (
-                  <div className="mt-4 space-y-2">
-                    <Button
-                      variant="outline"
-                      className="w-full"
+                  <div className="mt-4 space-y-2 pt-2 border-t border-white/[0.06]">
+                    <button
+                      className={`w-full text-left px-4 py-2.5 rounded-lg text-sm font-karla font-medium transition-colors cursor-pointer ${linkBase}`}
                       onClick={() => {
                         setAuthMode("login");
                         setShowAuthPopup(true);
@@ -158,28 +219,27 @@ export const Navbar = () => {
                       }}
                     >
                       Iniciar sesión
-                    </Button>
-                    <Button
-                      variant="default"
-                      className="w-full"
+                    </button>
+                    <button
+                      className="w-full px-4 py-3 bg-[#12A357] text-white rounded-lg text-sm font-karla font-bold transition-colors hover:bg-[#0F8A4A] cursor-pointer"
                       onClick={() => {
                         setAuthMode("signup");
                         setShowAuthPopup(true);
                         setIsMenuOpen(false);
                       }}
                     >
-                      Regístrate
-                    </Button>
+                      Comenzar gratis
+                    </button>
                   </div>
                 )}
               </div>
             </div>
-          )}
+          </div>
         </div>
       </nav>
 
-      <AuthPopup 
-        isOpen={showAuthPopup} 
+      <AuthPopup
+        isOpen={showAuthPopup}
         onClose={() => setShowAuthPopup(false)}
         initialMode={authMode}
       />

@@ -1,229 +1,78 @@
-import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Navbar } from "@/components/Navbar";
-import { Footer } from "@/components/Footer";
-import { TherapistCard } from "@/components/TherapistCard";
-import { Shield, Clock, FileText, DollarSign, CheckCircle, ArrowRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { fetchPublicProfiles } from "@/lib/psychologistQueries";
 import { supabase } from "@/integrations/supabase/client";
+import { Navbar } from "@/components/Navbar";
+import { Footer } from "@/components/Footer";
+import { HeroSection } from "@/components/landing/HeroSection";
+import { TrustBarSection } from "@/components/landing/TrustBarSection";
+import { FeaturesSection } from "@/components/landing/FeaturesSection";
+import { HowItWorksSection } from "@/components/landing/HowItWorksSection";
+import { TestimonialsSection } from "@/components/landing/TestimonialsSection";
+import { FeaturedTherapistsSection } from "@/components/landing/FeaturedTherapistsSection";
+import { CTASection } from "@/components/landing/CTASection";
+
+type Therapist = {
+  id: string;
+  first_name: string;
+  last_name: string;
+  specialties?: string[];
+  profile_photo_url?: string;
+  therapeutic_approaches?: string[];
+  languages?: string[];
+};
+
+type RatingsMap = Record<string, { avg_rating: number; review_count: number }>;
 
 const Index = () => {
-  const [featuredTherapists, setFeaturedTherapists] = useState<any[]>([]);
-  const [ratingsMap, setRatingsMap] = useState<Record<string, { avg_rating: number; review_count: number }>>({});
+  const [featuredTherapists, setFeaturedTherapists] = useState<Therapist[]>([]);
+  const [ratingsMap, setRatingsMap] = useState<RatingsMap>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadFeaturedTherapists = async () => {
+    const load = async () => {
       try {
-        // Fetch public profiles securely (excludes email/phone)
         const data = await fetchPublicProfiles();
-
         if (data) {
-          // Limit to 2 featured therapists
           setFeaturedTherapists(data.slice(0, 2));
-
-          // Load ratings for featured therapists
           // @ts-ignore - Types will regenerate automatically
           const { data: ratingsData } = await supabase
             .from("psychologist_ratings")
             .select("psychologist_id, avg_rating, review_count");
           if (ratingsData) {
-            const map: Record<string, { avg_rating: number; review_count: number }> = {};
+            const map: RatingsMap = {};
             ratingsData.forEach((r: any) => {
-              map[r.psychologist_id] = { avg_rating: Number(r.avg_rating), review_count: r.review_count };
+              map[r.psychologist_id] = {
+                avg_rating: Number(r.avg_rating),
+                review_count: r.review_count,
+              };
             });
             setRatingsMap(map);
           }
         }
-      } catch (error) {
-        console.error("Error loading therapists:", error);
+      } catch (err) {
+        console.error("Error loading therapists:", err);
       } finally {
         setLoading(false);
       }
     };
 
-    loadFeaturedTherapists();
+    load();
   }, []);
-  const benefits = [
-    {
-      icon: Shield,
-      title: "100% Confidencial",
-      description: "Tu privacidad está protegida con conexiones seguras y datos cifrados",
-    },
-    {
-      icon: Clock,
-      title: "Horarios Flexibles",
-      description: "Agenda sesiones que se ajusten a tu rutina, 7 días a la semana",
-    },
-    {
-      icon: FileText,
-      title: "Recibos y Facturación",
-      description: "Emitimos facturas fiscales (CFDI) para todos los servicios",
-    },
-    {
-      icon: DollarSign,
-      title: "Precios Transparentes",
-      description: "Sin costos ocultos. Conoce el precio desde el inicio",
-    },
-    {
-      icon: CheckCircle,
-      title: "Terapeutas Certificados",
-      description: "Todos nuestros profesionales están certificados y verificados",
-    },
-  ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-[#0A1A10]">
       <Navbar />
-
-      {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-primary to-primary-dark text-primary-foreground">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDEzNGMwLTYuNjI3LTUuMzczLTEyLTEyLTEyczEyIDUuMzczIDEyIDEyIDUuMzczIDEyIDEyIDEyIDEyLTUuMzczIDEyLTEyIDUuMzczLTEyIDEyLTEyLTUuMzczLTEyLTEyLTEyek0xMyAxMzRjMC02LjYyNy01LjM3My0xMi0xMi0xMnMxMiA1LjM3MyAxMiAxMiA1LjM3MyAxMiAxMiAxMiAxMi01LjM3MyAxMi0xMiA1LjM3My0xMiAxMi0xMi01LjM3My0xMi0xMi0xMnoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-10"></div>
-        
-        <div className="container mx-auto px-4 py-20 relative z-10">
-          <div className="max-w-3xl mx-auto text-center">
-            <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
-              Terapia en línea segura y sencilla
-            </h1>
-            <p className="text-xl md:text-2xl mb-8 opacity-90">
-              Conecta con terapeutas profesionales desde la comodidad de tu hogar. Tu bienestar mental empieza aquí.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link to="/therapists">
-                <Button variant="hero" size="lg" className="w-full sm:w-auto">
-                  Agendar sesión
-                  <ArrowRight className="ml-2 w-5 h-5" />
-                </Button>
-              </Link>
-              <Link to="/therapists">
-                <Button variant="secondary" size="lg" className="w-full sm:w-auto">
-                  Conoce a los terapeutas
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Benefits Section */}
-      <section className="py-20 bg-muted/30">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">¿Por qué elegir Vittare?</h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Hacemos que cuidar de tu salud mental sea fácil, accesible y profesional
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            {benefits.map((benefit, index) => (
-              <div
-                key={index}
-                className="bg-card rounded-xl shadow-soft p-6 hover:shadow-medium transition-all border border-border"
-              >
-                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
-                  <benefit.icon className="w-6 h-6 text-primary" />
-                </div>
-                <h3 className="text-xl font-semibold mb-2">{benefit.title}</h3>
-                <p className="text-muted-foreground">{benefit.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Featured Therapists */}
-      <section className="py-20">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Nuestros terapeutas destacados</h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Profesionales certificados y con amplia experiencia listos para ayudarte
-            </p>
-          </div>
-
-          {loading ? (
-            <div className="flex justify-center items-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-            </div>
-          ) : featuredTherapists.length > 0 ? (
-            <>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-6xl mx-auto mb-8">
-                {featuredTherapists.map((therapist) => (
-                  <TherapistCard 
-                    key={therapist.id} 
-                    id={therapist.id}
-                    name={`${therapist.first_name} ${therapist.last_name}`}
-                    specialty={therapist.specialties?.[0] || "Psicología"}
-                    photo={therapist.profile_photo_url || "https://images.unsplash.com/photo-1594824476967-48c8b964273f?w=400&h=400&fit=crop"}
-                    rating={ratingsMap[therapist.id]?.avg_rating || 0}
-                    reviews={ratingsMap[therapist.id]?.review_count || 0}
-                    price={0}
-                    approaches={therapist.therapeutic_approaches || []}
-                    languages={therapist.languages || []}
-                    availability="Disponible"
-                  />
-                ))}
-              </div>
-              <div className="text-center">
-                <Link to="/therapists">
-                  <Button variant="default" size="lg">
-                    Ver todos los terapeutas
-                    <ArrowRight className="ml-2 w-5 h-5" />
-                  </Button>
-                </Link>
-              </div>
-            </>
-          ) : (
-            <div className="text-center py-12">
-              <p className="text-lg text-muted-foreground mb-4">
-                Pronto encontrarás profesionales disponibles aquí.
-              </p>
-              <p className="text-muted-foreground">
-                Estamos revisando nuevos perfiles.
-              </p>
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* Reviews Section - Hidden until we have real reviews */}
-      {/* <section className="py-20 bg-muted/30">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Lo que dicen nuestros pacientes</h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Ayudamos a personas a alcanzar su bienestar mental
-            </p>
-          </div>
-        </div>
-      </section> */}
-
-      {/* Certificaciones — deshabilitado hasta tener avales reales
-      <section className="py-20">
-        ...
-      </section>
-      */}
-
-      {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-br from-primary to-primary-dark text-primary-foreground">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Da el primer paso hacia tu bienestar
-          </h2>
-          <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto">
-            Comienza tu viaje de crecimiento personal con un terapeuta profesional hoy mismo
-          </p>
-          <Link to="/therapists">
-            <Button variant="secondary" size="lg">
-              Agendar primera sesión
-              <ArrowRight className="ml-2 w-5 h-5" />
-            </Button>
-          </Link>
-        </div>
-      </section>
-
+      <HeroSection />
+      <TrustBarSection />
+      <FeaturesSection />
+      <HowItWorksSection />
+      <FeaturedTherapistsSection
+        therapists={featuredTherapists}
+        ratingsMap={ratingsMap}
+        loading={loading}
+      />
+      <TestimonialsSection />
+      <CTASection />
       <Footer />
     </div>
   );
