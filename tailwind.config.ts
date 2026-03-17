@@ -110,7 +110,7 @@ export default {
         "accordion-up": "accordion-up 0.2s ease-out",
       },
       fontFamily: {
-        erstoria: ['Erstoria', 'Georgia', 'serif'],
+        erstoria: ['Erstoria', 'DM Serif Display', 'Georgia', 'serif'],
         karla: ['Karla', 'system-ui', 'sans-serif'],
       },
     },
