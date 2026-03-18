@@ -67,12 +67,7 @@ export const Navbar = () => {
           <div className="flex items-center justify-between h-[68px]">
             {/* Logo */}
             <Link to="/" className="flex items-center gap-2.5 group">
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ repeat: Infinity, duration: 20, ease: "linear" }}
-              >
-                <VittareIsotipo />
-              </motion.div>
+              <VittareIsotipo spin />
               <div>
                 <div className="font-display text-[#1F4D2E] text-xl leading-none tracking-tight">
                   vittare
