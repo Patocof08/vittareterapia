@@ -2,7 +2,8 @@ import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { TherapistSidebar } from "./TherapistSidebar";
 import { TherapistTopbar } from "./TherapistTopbar";
 import { useAuth } from "@/hooks/useAuth";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { VittareLoader, VittareLoadingScreen } from "@/components/VittareLogo";
 import { supabase } from "@/integrations/supabase/client";
 import { Upload, User, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,8 @@ export const TherapistLayout = () => {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const isFirstRender = useRef(true);
 
   useEffect(() => {
     const checkProfileStatus = async () => {
@@ -77,6 +80,18 @@ export const TherapistLayout = () => {
     setMobileMenuOpen(false);
   }, [location.pathname]);
 
+  // Loader de transición en cada navegación (solo después del check inicial de perfil)
+  useEffect(() => {
+    if (loading) return;
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    setIsTransitioning(true);
+    const t = setTimeout(() => setIsTransitioning(false), 500);
+    return () => clearTimeout(t);
+  }, [location.key, loading]);
+
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user || !psychologistId) return;
@@ -126,11 +141,7 @@ export const TherapistLayout = () => {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    );
+    return <VittareLoadingScreen />;
   }
 
   if (needsPhoto) {
@@ -194,7 +205,14 @@ export const TherapistLayout = () => {
 
         <main className="flex-1 overflow-y-auto">
           <div className="container mx-auto p-4 lg:p-6 max-w-7xl">
-            <Outlet key={location.pathname} />
+            {isTransitioning && (
+              <div className="flex items-center justify-center h-64">
+                <VittareLoader size={72} />
+              </div>
+            )}
+            <div className={isTransitioning ? "hidden" : ""}>
+              <Outlet key={location.key} />
+            </div>
           </div>
         </main>
       </div>
