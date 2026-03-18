@@ -1,4 +1,5 @@
 import { NavLink, Link } from "react-router-dom";
+import { VittareLogo } from "@/components/ui/VittareLogo";
 import {
   LayoutDashboard,
   Calendar,
@@ -94,17 +95,12 @@ export const TherapistSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClos
   const sidebarContent = (isMobile: boolean) => (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className={`border-b border-[#E5E7EB] relative ${collapsed && !isMobile ? "px-2 py-4" : "p-5"}`}>
-        <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-          <div className="w-10 h-10 bg-gradient-to-br from-[#12A357] to-[#0A7A3E] rounded-xl flex items-center justify-center flex-shrink-0 shadow-md shadow-[#12A357]/20">
-            <span className="font-erstoria text-white font-bold text-xl leading-none">V</span>
-          </div>
-          {(!collapsed || isMobile) && (
-            <div>
-              <h1 className="font-erstoria text-lg text-[#1F4D2E] leading-tight">Vittare</h1>
-              <p className="text-xs text-[#6B7280]">Panel de Terapeuta</p>
-            </div>
-          )}
+      <div className={`border-b border-[#E5E7EB] relative ${collapsed && !isMobile ? "px-2 py-4 flex justify-center" : "p-4"}`}>
+        <Link to="/" className="hover:opacity-80 transition-opacity inline-flex">
+          <VittareLogo
+            variant={collapsed && !isMobile ? "icon-only" : "default"}
+            size="sm"
+          />
         </Link>
         {isMobile && (
           <button onClick={onMobileClose} className="absolute top-4 right-4 p-2 rounded-lg hover:bg-[#F0FBF5]">
