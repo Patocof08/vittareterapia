@@ -133,10 +133,10 @@ export default function TherapistDashboard() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-foreground">
+        <h1 className="text-3xl font-bold text-[#1F4D2E]" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>
           Bienvenid{profile?.first_name?.endsWith('a') ? 'a' : 'o'} de vuelta, {profile?.first_name || ""}
         </h1>
-        <p className="text-muted-foreground mt-1">
+        <p className="text-[#6B7280] mt-1">
           Aquí está tu resumen del día
         </p>
       </div>
@@ -174,59 +174,59 @@ export default function TherapistDashboard() {
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
+        <Card className="border-[#E5E7EB] hover:border-[#12A357]/30 hover:shadow-md transition-all">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className="text-sm font-medium text-[#1F4D2E]">
               Sesiones esta semana
             </CardTitle>
-            <Video className="h-4 w-4 text-muted-foreground" />
+            <Video className="h-4 w-4 text-[#12A357]" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{weekSessions.length}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-2xl font-bold text-[#1F4D2E]">{weekSessions.length}</div>
+            <p className="text-xs text-[#6B7280]">
               {weekSessions.length === 0 ? "Sin sesiones programadas aún" : `${weekSessions.length} sesión${weekSessions.length !== 1 ? 'es' : ''} programada${weekSessions.length !== 1 ? 's' : ''}`}
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-[#E5E7EB] hover:border-[#6AB7AB]/40 hover:shadow-md transition-all">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className="text-sm font-medium text-[#1F4D2E]">
               Tasa de asistencia
             </CardTitle>
-            <CheckCircle className="h-4 w-4 text-muted-foreground" />
+            <CheckCircle className="h-4 w-4 text-[#6AB7AB]" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">--</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-2xl font-bold text-[#1F4D2E]">--</div>
+            <p className="text-xs text-[#6B7280]">
               Sin datos aún
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-[#E5E7EB] hover:border-[#D9A932]/40 hover:shadow-md transition-all">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className="text-sm font-medium text-[#1F4D2E]">
               Balance acumulado
             </CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <DollarSign className="h-4 w-4 text-[#D9A932]" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${walletBalance.toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground">MXN en tu wallet</p>
+            <div className="text-2xl font-bold text-[#1F4D2E]">${walletBalance.toFixed(2)}</div>
+            <p className="text-xs text-[#6B7280]">MXN en tu wallet</p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-[#E5E7EB] hover:border-[#E7839D]/40 hover:shadow-md transition-all">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className="text-sm font-medium text-[#1F4D2E]">
               Mensajes sin leer
             </CardTitle>
-            <MessageSquare className="h-4 w-4 text-muted-foreground" />
+            <MessageSquare className="h-4 w-4 text-[#E7839D]" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{unreadMessagesCount}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-2xl font-bold text-[#1F4D2E]">{unreadMessagesCount}</div>
+            <p className="text-xs text-[#6B7280]">
               {unreadMessagesCount === 0 ? "Sin mensajes pendientes" : `${unreadMessagesCount} mensaje${unreadMessagesCount !== 1 ? 's' : ''} sin leer`}
             </p>
           </CardContent>
@@ -236,49 +236,50 @@ export default function TherapistDashboard() {
       {/* Main Content Grid */}
       <div className="grid gap-6 md:grid-cols-2">
         {/* Sesiones de hoy */}
-        <Card>
+        <Card className="border-[#E5E7EB]">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="w-5 h-5" />
+            <CardTitle className="flex items-center gap-2 text-[#1F4D2E]">
+              <Calendar className="w-5 h-5 text-[#12A357]" />
               Sesiones de hoy
             </CardTitle>
           </CardHeader>
           <CardContent>
             {loading ? (
-              <p className="text-muted-foreground text-center py-8">Cargando...</p>
+              <p className="text-[#6B7280] text-center py-8">Cargando...</p>
             ) : todaySessions.length === 0 ? (
-              <p className="text-muted-foreground text-center py-8">
+              <p className="text-[#6B7280] text-center py-8">
                 No tienes sesiones programadas para hoy
               </p>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {todaySessions.map((session) => (
                   <div
                     key={session.id}
-                    className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors"
+                    className="flex items-center justify-between p-4 border border-[#E5E7EB] rounded-xl hover:bg-[#F0FBF5] transition-colors"
                   >
                     <div>
-                      <p className="font-medium text-foreground">
+                      <p className="font-semibold text-[#1F4D2E]">
                         {session.patient?.full_name || "Paciente"}
                       </p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-[#6B7280]">
                         {format(new Date(session.start_time), "HH:mm", { locale: es })} - {format(new Date(session.end_time), "HH:mm", { locale: es })}
                       </p>
-                      <span className={`inline-block mt-1 text-xs px-2 py-1 rounded ${
-                        session.status === "confirmed" ? "bg-green-100 text-green-800" :
-                        session.status === "completed" ? "bg-blue-100 text-blue-800" :
-                        session.status === "cancelled" ? "bg-red-100 text-red-800" :
-                        "bg-yellow-100 text-yellow-800"
+                      <span className={`inline-block mt-1 text-xs px-2 py-1 rounded-full font-medium ${
+                        session.status === "confirmed" ? "bg-[#E8F5EE] text-[#12A357]" :
+                        session.status === "completed" ? "bg-[#EFF6FF] text-[#3B82F6]" :
+                        session.status === "cancelled" ? "bg-red-50 text-red-600" :
+                        "bg-[#FEF9EA] text-[#D9A932]"
                       }`}>
                         {session.status === "confirmed" ? "Confirmada" :
                          session.status === "completed" ? "Completada" :
                          session.status === "cancelled" ? "Cancelada" : "Pendiente"}
                       </span>
                     </div>
-                    <Button 
-                      size="sm" 
+                    <Button
+                      size="sm"
                       variant="outline"
                       onClick={() => navigate("/therapist/sessions")}
+                      className="border-[#E5E7EB] text-[#1F4D2E] hover:bg-[#F0FBF5] hover:border-[#12A357]/40"
                     >
                       Ver detalles
                     </Button>
@@ -290,24 +291,24 @@ export default function TherapistDashboard() {
         </Card>
 
         {/* Mensajes recientes */}
-        <Card>
+        <Card className="border-[#E5E7EB]">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MessageSquare className="w-5 h-5" />
+            <CardTitle className="flex items-center gap-2 text-[#1F4D2E]">
+              <MessageSquare className="w-5 h-5 text-[#E7839D]" />
               Mensajes recientes
             </CardTitle>
           </CardHeader>
           <CardContent>
             {unreadMessages.length === 0 ? (
-              <p className="text-muted-foreground text-center py-8">
+              <p className="text-[#6B7280] text-center py-8">
                 No tienes mensajes sin leer
               </p>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {unreadMessages.slice(0, 3).map((message) => (
                   <div
                     key={message.id}
-                    className="flex items-start gap-3 p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors"
+                    className="flex items-start gap-3 p-4 border border-[#E5E7EB] rounded-xl hover:bg-[#F0FBF5] transition-colors"
                   >
                     <div className="flex-1">
                       <p className="font-medium text-foreground">
