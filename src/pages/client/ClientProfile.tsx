@@ -11,10 +11,10 @@ export default function ClientProfile() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-foreground">
+        <h1 className="text-3xl font-bold text-[#1F4D2E]" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>
           Mi Perfil
         </h1>
-        <p className="text-muted-foreground mt-1">
+        <p className="text-[#6B7280] mt-1">
           Gestiona tu información personal
         </p>
       </div>
@@ -22,8 +22,8 @@ export default function ClientProfile() {
       {/* Información Personal */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <User className="w-5 h-5" />
+          <CardTitle className="flex items-center gap-2 text-[#1F4D2E]">
+            <User className="w-5 h-5 text-[#6AB7AB]" />
             Información Personal
           </CardTitle>
         </CardHeader>
@@ -54,8 +54,8 @@ export default function ClientProfile() {
       {/* Seguridad */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Lock className="w-5 h-5" />
+          <CardTitle className="flex items-center gap-2 text-[#1F4D2E]">
+            <Lock className="w-5 h-5 text-[#6B7280]" />
             Seguridad
           </CardTitle>
         </CardHeader>
@@ -94,10 +94,10 @@ export default function ClientProfile() {
       {/* Privacidad */}
       <Card>
         <CardHeader>
-          <CardTitle>Privacidad y Datos</CardTitle>
+          <CardTitle className="text-[#1F4D2E]">Privacidad y Datos</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-[#6B7280]">
             Tus datos están protegidos y solo se utilizan para proporcionar el servicio de terapia.
           </p>
           <div className="flex gap-2">

@@ -367,8 +367,8 @@ export default function ClientSessions() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Mis Sesiones</h1>
-          <p className="text-muted-foreground mt-1">Cargando...</p>
+          <h1 className="text-3xl font-bold text-[#1F4D2E]" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>Mis Sesiones</h1>
+          <p className="text-[#6B7280] mt-1">Cargando...</p>
         </div>
       </div>
     );
@@ -377,10 +377,10 @@ export default function ClientSessions() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-foreground">
+        <h1 className="text-3xl font-bold text-[#1F4D2E]" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>
           Mis Sesiones
         </h1>
-        <p className="text-muted-foreground mt-1">
+        <p className="text-[#6B7280] mt-1">
           Historial y próximas citas
         </p>
       </div>
@@ -388,32 +388,32 @@ export default function ClientSessions() {
       {/* Próximas Sesiones */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="w-5 h-5" />
+          <CardTitle className="flex items-center gap-2 text-[#1F4D2E]">
+            <Calendar className="w-5 h-5 text-[#12A357]" />
             Próximas Sesiones
           </CardTitle>
         </CardHeader>
         <CardContent>
           {upcomingSessions.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
+            <div className="text-center py-8 text-[#6B7280]">
               No tienes sesiones programadas
             </div>
           ) : (
             <div className="space-y-4">
               {upcomingSessions.map((session) => (
-                <div key={session.id} className="p-4 border border-border rounded-lg">
+                <div key={session.id} className="p-4 border border-[#E5E7EB] rounded-xl hover:bg-[#F0FBF5] transition-colors">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <p className="font-medium text-foreground">
+                      <p className="font-medium text-[#1F2937]">
                         {session.psychologist_profiles.first_name} {session.psychologist_profiles.last_name}
                       </p>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
+                      <div className="flex items-center gap-2 text-sm text-[#6B7280] mt-2">
                         <Clock className="w-4 h-4" />
                         <span>
                           {format(new Date(session.start_time), "dd/MM/yyyy - HH:mm", { locale: es })}
                         </span>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1">
+                      <p className="text-xs text-[#6B7280] mt-1">
                         Videollamada
                       </p>
                     </div>
@@ -449,26 +449,26 @@ export default function ClientSessions() {
       {/* Historial */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Video className="w-5 h-5" />
+          <CardTitle className="flex items-center gap-2 text-[#1F4D2E]">
+            <Video className="w-5 h-5 text-[#12A357]" />
             Historial de Sesiones
           </CardTitle>
         </CardHeader>
         <CardContent>
           {pastSessions.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
+            <div className="text-center py-8 text-[#6B7280]">
               No tienes sesiones completadas
             </div>
           ) : (
             <div className="space-y-4">
               {pastSessions.map((session) => (
-                <div key={session.id} className="p-4 border border-border rounded-lg">
+                <div key={session.id} className="p-4 border border-[#E5E7EB] rounded-xl hover:bg-[#F0FBF5] transition-colors">
                   <div className="flex items-start justify-between">
                     <div>
-                      <p className="font-medium text-foreground">
+                      <p className="font-medium text-[#1F2937]">
                         {session.psychologist_profiles.first_name} {session.psychologist_profiles.last_name}
                       </p>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
+                      <div className="flex items-center gap-2 text-sm text-[#6B7280] mt-2">
                         <Clock className="w-4 h-4" />
                         <span>
                           {format(new Date(session.start_time), "dd/MM/yyyy - HH:mm", { locale: es })}
@@ -577,7 +577,7 @@ export default function ClientSessions() {
           </DialogHeader>
           {selectedReviewSession && (
             <div className="space-y-4 py-2">
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-[#6B7280]">
                 Sesión con {selectedReviewSession.psychologist_profiles?.first_name} {selectedReviewSession.psychologist_profiles?.last_name} —{" "}
                 {format(new Date(selectedReviewSession.start_time), "dd/MM/yyyy", { locale: es })}
               </p>

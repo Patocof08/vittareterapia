@@ -102,8 +102,8 @@ export default function ClientTasks() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-3xl font-bold text-foreground">Mis tareas</h1>
-        <p className="text-muted-foreground">Cargando...</p>
+        <h1 className="text-3xl font-bold text-[#1F4D2E]" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>Mis tareas</h1>
+        <p className="text-[#6B7280]">Cargando...</p>
       </div>
     );
   }
@@ -113,8 +113,8 @@ export default function ClientTasks() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Mis tareas</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="text-3xl font-bold text-[#1F4D2E]" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>Mis tareas</h1>
+          <p className="text-[#6B7280] mt-1">
             Tareas y ejercicios asignados por tu terapeuta
           </p>
         </div>
@@ -144,8 +144,8 @@ export default function ClientTasks() {
         {filteredTasks.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
-              <CheckCircle className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">
+              <CheckCircle className="w-12 h-12 text-[#D9A932] mx-auto mb-4" />
+              <p className="text-[#6B7280]">
                 {tasks.length === 0
                   ? "No tienes tareas asignadas todavía"
                   : "No hay tareas con el filtro seleccionado"}
@@ -171,7 +171,7 @@ export default function ClientTasks() {
                       {task.status === "completed" ? (
                         <CheckCircle className="w-6 h-6 text-green-500" />
                       ) : (
-                        <Circle className="w-6 h-6 text-muted-foreground" />
+                        <Circle className="w-6 h-6 text-[#6B7280]" />
                       )}
                     </div>
 
@@ -180,7 +180,7 @@ export default function ClientTasks() {
                       <div className="flex items-center gap-2 mb-1">
                         <h3
                           className={`font-semibold text-lg ${
-                            task.status === "completed" ? "line-through text-muted-foreground" : ""
+                            task.status === "completed" ? "line-through text-[#6B7280]" : ""
                           }`}
                         >
                           {task.title}
@@ -190,11 +190,11 @@ export default function ClientTasks() {
                         )}
                       </div>
                       {task.description && (
-                        <p className="text-sm text-muted-foreground mb-3 whitespace-pre-wrap">
+                        <p className="text-sm text-[#6B7280] mb-3 whitespace-pre-wrap">
                           {task.description}
                         </p>
                       )}
-                      <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                      <div className="flex flex-wrap gap-4 text-sm text-[#6B7280]">
                         <span>De: {task.psychologist_name}</span>
                         {task.due_date && (
                           <span className={`flex items-center gap-1 ${isOverdue ? "text-destructive" : ""}`}>

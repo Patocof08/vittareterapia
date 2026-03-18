@@ -136,8 +136,8 @@ export default function TherapistProfile() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Mi Perfil</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="text-3xl font-bold text-[#1F4D2E]" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>Mi Perfil</h1>
+          <p className="text-[#6B7280] mt-1">
             Gestiona tu información profesional
           </p>
         </div>
@@ -196,7 +196,7 @@ export default function TherapistProfile() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Información Personal</CardTitle>
+          <CardTitle className="text-[#1F4D2E]">Información Personal</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
@@ -243,8 +243,8 @@ export default function TherapistProfile() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Información Profesional</CardTitle>
-          <p className="text-sm text-muted-foreground mt-1">
+          <CardTitle className="text-[#1F4D2E]">Información Profesional</CardTitle>
+          <p className="text-sm text-[#6B7280] mt-1">
             Los cambios en esta sección requieren revisión del equipo
           </p>
         </CardHeader>

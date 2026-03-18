@@ -51,8 +51,8 @@ export default function TherapistSupport() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Soporte</h1>
-        <p className="text-muted-foreground mt-1">
+        <h1 className="text-3xl font-bold text-[#1F4D2E]" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>Soporte</h1>
+        <p className="text-[#6B7280] mt-1">
           Encuentra ayuda o contacta con nuestro equipo
         </p>
       </div>
@@ -61,8 +61,8 @@ export default function TherapistSupport() {
         {/* Preguntas frecuentes */}
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <HelpCircle className="w-5 h-5" />
+            <CardTitle className="flex items-center gap-2 text-[#1F4D2E]">
+              <HelpCircle className="w-5 h-5 text-[#6B7280]" />
               Preguntas frecuentes para terapeutas
             </CardTitle>
           </CardHeader>
@@ -73,7 +73,7 @@ export default function TherapistSupport() {
                   <AccordionTrigger className="text-left">
                     {faq.question}
                   </AccordionTrigger>
-                  <AccordionContent className="text-muted-foreground">
+                  <AccordionContent className="text-[#6B7280]">
                     {faq.answer}
                   </AccordionContent>
                 </AccordionItem>
@@ -85,7 +85,7 @@ export default function TherapistSupport() {
         {/* Formulario de contacto */}
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Enviar ticket de soporte</CardTitle>
+            <CardTitle className="text-[#1F4D2E]">Enviar ticket de soporte</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">

@@ -222,8 +222,8 @@ export default function TherapistSessions() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Sesiones</h1>
-          <p className="text-muted-foreground mt-1">Cargando...</p>
+          <h1 className="text-3xl font-bold text-[#1F4D2E]" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>Sesiones</h1>
+          <p className="text-[#6B7280] mt-1">Cargando...</p>
         </div>
       </div>
     );
@@ -232,8 +232,8 @@ export default function TherapistSessions() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Sesiones</h1>
-        <p className="text-muted-foreground mt-1">
+        <h1 className="text-3xl font-bold text-[#1F4D2E]" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>Sesiones</h1>
+        <p className="text-[#6B7280] mt-1">
           Gestiona y revisa todas tus sesiones
         </p>
       </div>
@@ -243,7 +243,7 @@ export default function TherapistSessions() {
         <CardContent className="pt-6">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B7280]" />
               <Input
                 placeholder="Buscar por paciente..."
                 className="pl-9"
@@ -273,22 +273,22 @@ export default function TherapistSessions() {
         {filteredSessions.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
-              <Video className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">
+              <Video className="w-12 h-12 mx-auto text-[#12A357] mb-4" />
+              <p className="text-[#6B7280]">
                 No se encontraron sesiones con los filtros seleccionados
               </p>
             </CardContent>
           </Card>
         ) : (
           filteredSessions.map((session) => (
-            <Card key={session.id}>
+            <Card key={session.id} className="border-[#E5E7EB] hover:border-[#12A357]/30 hover:shadow-md transition-all">
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div>
-                    <CardTitle className="text-xl">
+                    <CardTitle className="text-xl text-[#1F4D2E]">
                       {session.profile?.full_name || "Paciente"}
                     </CardTitle>
-                    <p className="text-muted-foreground mt-1">
+                    <p className="text-[#6B7280] mt-1">
                       {new Date(session.start_time).toLocaleDateString("es-MX", {
                         weekday: "long",
                         year: "numeric",
@@ -304,14 +304,14 @@ export default function TherapistSessions() {
                   <span
                     className={`px-3 py-1 rounded text-sm font-medium ${
                       (session.status === "pending" || session.status === "confirmed")
-                        ? "bg-secondary/10 text-secondary"
+                        ? "bg-[#FEF9EA] text-[#D9A932]"
                         : session.status === "completed"
-                        ? "bg-accent text-accent-foreground"
+                        ? "bg-[#EFF6FF] text-[#3B82F6]"
                         : session.status === "cancelled"
-                        ? "bg-destructive/10 text-destructive"
+                        ? "bg-red-50 text-red-600"
                         : session.status === "no_show"
-                        ? "bg-muted text-muted-foreground"
-                        : "bg-muted text-muted-foreground"
+                        ? "bg-gray-50 text-gray-600"
+                        : "bg-gray-50 text-gray-600"
                     }`}
                   >
                     {(session.status === "pending" || session.status === "confirmed") ? "pendiente" :
@@ -325,10 +325,10 @@ export default function TherapistSessions() {
                 <div className="space-y-4">
                   {session.session_notes && (
                     <div>
-                      <p className="text-sm font-medium text-foreground mb-1">
+                      <p className="text-sm font-medium text-[#1F4D2E] mb-1">
                         Notas de la sesión:
                       </p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-[#6B7280]">
                         {session.session_notes}
                       </p>
                     </div>
@@ -390,7 +390,7 @@ export default function TherapistSessions() {
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-primary" />
+              <Sparkles className="w-5 h-5 text-[#12A357]" />
               Resumen pre-sesión — {briefPatientName}
             </DialogTitle>
           </DialogHeader>
@@ -404,7 +404,7 @@ export default function TherapistSessions() {
 
               {/* Sources used */}
               <div className="flex flex-wrap gap-2 pt-4 border-t border-border">
-                <span className="text-xs text-muted-foreground">Fuentes:</span>
+                <span className="text-xs text-[#6B7280]">Fuentes:</span>
                 {briefData.sources.ai_summaries && (
                   <span className="px-2 py-0.5 rounded-full text-xs bg-emerald-50 text-emerald-700 border border-emerald-200">
                     Resúmenes IA
@@ -432,7 +432,7 @@ export default function TherapistSessions() {
                 )}
               </div>
 
-              <p className="text-[10px] text-muted-foreground">
+              <p className="text-[10px] text-[#6B7280]">
                 Este resumen es generado por IA como apoyo. No sustituye tu criterio clínico.
               </p>
             </div>

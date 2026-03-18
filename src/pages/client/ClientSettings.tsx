@@ -334,10 +334,10 @@ export default function ClientSettings() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-foreground">
+        <h1 className="text-3xl font-bold text-[#1F4D2E]" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>
           Ajustes
         </h1>
-        <p className="text-muted-foreground mt-1">
+        <p className="text-[#6B7280] mt-1">
           Gestiona tu cuenta y preferencias
         </p>
       </div>
@@ -358,8 +358,8 @@ export default function ClientSettings() {
         <TabsContent value="profile" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="w-5 h-5" />
+              <CardTitle className="flex items-center gap-2 text-[#1F4D2E]">
+                <User className="w-5 h-5 text-[#6AB7AB]" />
                 Información Personal
               </CardTitle>
               <CardDescription>
@@ -381,7 +381,7 @@ export default function ClientSettings() {
                   )}
                 </div>
                 <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-[#6B7280]">
                     Sube una foto de perfil para personalizar tu cuenta
                   </p>
                   <div className="relative">
@@ -451,8 +451,8 @@ export default function ClientSettings() {
         <TabsContent value="security" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Lock className="w-5 h-5" />
+              <CardTitle className="flex items-center gap-2 text-[#1F4D2E]">
+                <Lock className="w-5 h-5 text-[#6B7280]" />
                 Cambiar Contraseña
               </CardTitle>
               <CardDescription>
@@ -504,8 +504,8 @@ export default function ClientSettings() {
         <TabsContent value="payment-methods" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CreditCard className="w-5 h-5" />
+              <CardTitle className="flex items-center gap-2 text-[#1F4D2E]">
+                <CreditCard className="w-5 h-5 text-[#D9A932]" />
                 Métodos de Pago
               </CardTitle>
               <CardDescription>
@@ -513,7 +513,7 @@ export default function ClientSettings() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-[#6B7280]">
                 Desde el portal de pagos puedes actualizar tu tarjeta, ver tus recibos y gestionar tus suscripciones activas.
               </p>
               <Button
@@ -570,7 +570,7 @@ export default function ClientSettings() {
                 <CreditCard className="w-4 h-4 mr-2" />
                 {loading ? "Abriendo..." : "Gestionar métodos de pago"}
               </Button>
-              <p className="text-xs text-center text-muted-foreground">
+              <p className="text-xs text-center text-[#6B7280]">
                 Serás redirigido al portal seguro de Stripe
               </p>
             </CardContent>
@@ -586,8 +586,8 @@ export default function ClientSettings() {
         <TabsContent value="notifications" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Bell className="w-5 h-5" />
+              <CardTitle className="flex items-center gap-2 text-[#1F4D2E]">
+                <Bell className="w-5 h-5 text-[#6B7280]" />
                 Preferencias de Notificaciones
               </CardTitle>
               <CardDescription>
@@ -598,7 +598,7 @@ export default function ClientSettings() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium">Recordatorios de Sesiones</p>
-                  <p className="text-sm text-muted-foreground">Recibe notificaciones antes de tus sesiones programadas</p>
+                  <p className="text-sm text-[#6B7280]">Recibe notificaciones antes de tus sesiones programadas</p>
                 </div>
                 <Switch
                   checked={notifPrefs.email_session_reminder}
@@ -609,7 +609,7 @@ export default function ClientSettings() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium">Nuevos Mensajes</p>
-                  <p className="text-sm text-muted-foreground">Notificaciones cuando recibas mensajes de tu terapeuta</p>
+                  <p className="text-sm text-[#6B7280]">Notificaciones cuando recibas mensajes de tu terapeuta</p>
                 </div>
                 <Switch
                   checked={notifPrefs.email_new_message}
@@ -620,7 +620,7 @@ export default function ClientSettings() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium">Tareas Asignadas</p>
-                  <p className="text-sm text-muted-foreground">Avisos sobre nuevas tareas o ejercicios</p>
+                  <p className="text-sm text-[#6B7280]">Avisos sobre nuevas tareas o ejercicios</p>
                 </div>
                 <Switch
                   checked={notifPrefs.email_task_assigned}
@@ -631,7 +631,7 @@ export default function ClientSettings() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium">Confirmaciones de Pago</p>
-                  <p className="text-sm text-muted-foreground">Recibos y confirmaciones de transacciones</p>
+                  <p className="text-sm text-[#6B7280]">Recibos y confirmaciones de transacciones</p>
                 </div>
                 <Switch
                   checked={notifPrefs.email_payment_update}
@@ -642,7 +642,7 @@ export default function ClientSettings() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium">Cancelaciones</p>
-                  <p className="text-sm text-muted-foreground">Notificación cuando se cancele una sesión</p>
+                  <p className="text-sm text-[#6B7280]">Notificación cuando se cancele una sesión</p>
                 </div>
                 <Switch
                   checked={notifPrefs.email_cancellation}
@@ -653,7 +653,7 @@ export default function ClientSettings() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium">Inasistencias</p>
-                  <p className="text-sm text-muted-foreground">Notificación si se registra una inasistencia</p>
+                  <p className="text-sm text-[#6B7280]">Notificación si se registra una inasistencia</p>
                 </div>
                 <Switch
                   checked={notifPrefs.email_no_show}
@@ -664,7 +664,7 @@ export default function ClientSettings() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium">Boletín y Promociones</p>
-                  <p className="text-sm text-muted-foreground">Consejos de bienestar y ofertas especiales</p>
+                  <p className="text-sm text-[#6B7280]">Consejos de bienestar y ofertas especiales</p>
                 </div>
                 <Switch
                   checked={notifPrefs.email_newsletter}
@@ -690,7 +690,7 @@ export default function ClientSettings() {
             <CardContent className="space-y-4">
               <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
                 <h4 className="font-semibold mb-2 text-destructive">Antes de eliminar tu cuenta:</h4>
-                <ul className="space-y-1 text-sm text-muted-foreground">
+                <ul className="space-y-1 text-sm text-[#6B7280]">
                   <li>• Se cancelarán todas tus sesiones programadas</li>
                   <li>• Perderás acceso a tu historial de sesiones</li>
                   <li>• Se eliminarán todos tus mensajes y datos</li>

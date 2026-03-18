@@ -221,7 +221,7 @@ export default function ClientSubscriptions() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <p className="text-muted-foreground">Cargando...</p>
+        <p className="text-[#6B7280]">Cargando...</p>
       </div>
     );
   }
@@ -233,8 +233,8 @@ export default function ClientSubscriptions() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Mis Créditos y Suscripciones</h1>
-        <p className="text-muted-foreground mt-1">
+        <h1 className="text-3xl font-bold text-[#1F4D2E]" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>Mis Créditos y Suscripciones</h1>
+        <p className="text-[#6B7280] mt-1">
           Gestiona tus paquetes mensuales y créditos disponibles
         </p>
       </div>
@@ -245,13 +245,13 @@ export default function ClientSubscriptions() {
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Package className="w-4 h-4 text-primary" />
+                <Package className="w-4 h-4 text-[#12A357]" />
                 Suscripciones Activas
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{subscriptions.length}</div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-[#6B7280]">
                 {subscriptions.reduce((sum, s) => sum + s.sessions_remaining, 0)} sesiones disponibles
               </p>
             </CardContent>
@@ -260,13 +260,13 @@ export default function ClientSubscriptions() {
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Coins className="w-4 h-4 text-primary" />
+                <Coins className="w-4 h-4 text-[#D9A932]" />
                 Créditos Individuales
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{credits.length}</div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-[#6B7280]">
                 {credits.length === 1 ? 'sesión disponible como crédito' : 'sesiones disponibles como crédito'}
               </p>
             </CardContent>
@@ -286,11 +286,11 @@ export default function ClientSubscriptions() {
         {!hasSubscriptions ? (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12">
-              <Package className="h-16 w-16 text-muted-foreground mb-4" />
-              <p className="text-lg font-medium text-foreground mb-2">
+              <Package className="h-16 w-16 text-[#6AB7AB] mb-4" />
+              <p className="text-lg font-medium text-[#1F2937] mb-2">
                 No tienes suscripciones activas
               </p>
-              <p className="text-sm text-muted-foreground text-center mb-4">
+              <p className="text-sm text-[#6B7280] text-center mb-4">
                 Compra un paquete de sesiones con tu terapeuta favorito para obtener descuentos
               </p>
               <Button onClick={() => navigate('/therapists')}>Explorar Terapeutas</Button>
@@ -315,8 +315,8 @@ export default function ClientSubscriptions() {
                             className="w-16 h-16 rounded-full object-cover"
                           />
                         ) : (
-                          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-                            <span className="text-2xl font-bold text-primary">
+                          <div className="w-16 h-16 rounded-full bg-[#E8F5EE] flex items-center justify-center">
+                            <span className="text-2xl font-bold text-[#12A357]">
                               {subscription.psychologist_profiles.first_name[0]}
                               {subscription.psychologist_profiles.last_name[0]}
                             </span>
@@ -352,7 +352,7 @@ export default function ClientSubscriptions() {
                     <div className="grid gap-6 md:grid-cols-1">
                       {/* Sesiones */}
                       <div>
-                        <h3 className="text-sm font-medium text-muted-foreground mb-3">
+                        <h3 className="text-sm font-medium text-[#6B7280] mb-3">
                           Sesiones Disponibles
                         </h3>
                         <div className="space-y-3">
@@ -362,23 +362,23 @@ export default function ClientSubscriptions() {
                           </div>
                           <div className="flex items-center justify-between">
                             <span className="text-sm">Sesiones usadas</span>
-                            <span className="font-medium text-muted-foreground">
+                            <span className="font-medium text-[#6B7280]">
                               {subscription.sessions_used}
                             </span>
                           </div>
                           <div className="flex items-center justify-between">
                             <span className="text-sm">Sesiones restantes</span>
-                            <span className="font-bold text-primary">
+                            <span className="font-bold text-[#12A357]">
                               {subscription.sessions_remaining}
                             </span>
                           </div>
                           {rolloverDisplay && (
                             <div className="flex items-center justify-between pt-2 border-t">
                               <span className="text-sm flex items-center gap-1">
-                                <TrendingUp className="w-4 h-4 text-primary" />
+                                <TrendingUp className="w-4 h-4 text-[#12A357]" />
                                 Rollover del próximo mes
                               </span>
-                              <span className="font-bold text-primary">
+                              <span className="font-bold text-[#12A357]">
                                 {subscription.rollover_sessions.toFixed(1)}
                               </span>
                             </div>
@@ -390,16 +390,16 @@ export default function ClientSubscriptions() {
 
                     {/* Próximo cobro */}
                     {subscription.auto_renew && subscription.next_billing_date && (
-                      <div className="mt-4 p-3 bg-muted rounded-lg flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Calendar className="w-4 h-4" />
+                      <div className="mt-4 p-3 bg-[#F9FAFB] rounded-lg flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-sm text-[#6B7280]">
+                          <Calendar className="w-4 h-4 text-[#12A357]" />
                           <span>Próximo cobro</span>
                         </div>
                         <div className="text-right">
                           <p className="text-sm font-medium">
                             ${calculatePrice(subscription).discounted.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN
                           </p>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-xs text-[#6B7280]">
                             {format(new Date(subscription.next_billing_date), 'dd MMM yyyy', { locale: es })}
                           </p>
                         </div>
@@ -407,14 +407,14 @@ export default function ClientSubscriptions() {
                     )}
 
                     {/* Información de Rollover */}
-                    <div className="mt-6 p-4 bg-primary/10 rounded-lg">
+                    <div className="mt-6 p-4 bg-[#E8F5EE] rounded-lg">
                       <div className="flex gap-2">
-                        <TrendingUp className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                        <TrendingUp className="w-5 h-5 text-[#12A357] flex-shrink-0 mt-0.5" />
                         <div>
-                          <p className="text-sm font-medium text-foreground">
+                          <p className="text-sm font-medium text-[#1F4D2E]">
                             Sistema de Rollover Automático
                           </p>
-                          <p className="text-sm text-muted-foreground mt-1">
+                          <p className="text-sm text-[#6B7280] mt-1">
                             El 25% del total de sesiones ({(subscription.sessions_total * 0.25).toFixed(1)} sesiones)
                             se transferirán automáticamente al siguiente mes si no las utilizas.
                           </p>
@@ -464,8 +464,8 @@ export default function ClientSubscriptions() {
           </h2>
         </div>
 
-        <div className="bg-muted/50 p-4 rounded-lg">
-          <p className="text-sm text-muted-foreground">
+        <div className="bg-[#F0FBF5] p-4 rounded-lg border border-[#BFE9E2]">
+          <p className="text-sm text-[#6B7280]">
             Los créditos se generan cuando cancelas una sesión individual con más de 24 horas de anticipación.
             Cada crédito equivale a <strong>1 sesión</strong> y solo puede usarse con el mismo terapeuta
             con quien la agendaste originalmente.
@@ -475,11 +475,11 @@ export default function ClientSubscriptions() {
         {!hasCredits ? (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12">
-              <Coins className="h-16 w-16 text-muted-foreground mb-4" />
-              <p className="text-lg font-medium text-foreground mb-2">
+              <Coins className="h-16 w-16 text-[#D9A932] mb-4" />
+              <p className="text-lg font-medium text-[#1F2937] mb-2">
                 No tienes créditos disponibles
               </p>
-              <p className="text-sm text-muted-foreground text-center">
+              <p className="text-sm text-[#6B7280] text-center">
                 Los créditos se generan al cancelar sesiones individuales con anticipación
               </p>
             </CardContent>
@@ -498,8 +498,8 @@ export default function ClientSubscriptions() {
                           className="w-12 h-12 rounded-full object-cover"
                         />
                       ) : (
-                        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                          <span className="text-lg font-bold text-primary">
+                        <div className="w-12 h-12 rounded-full bg-[#E8F5EE] flex items-center justify-center">
+                          <span className="text-lg font-bold text-[#12A357]">
                             {credit.psychologist_profiles.first_name[0]}
                             {credit.psychologist_profiles.last_name[0]}
                           </span>
@@ -509,18 +509,18 @@ export default function ClientSubscriptions() {
                         <p className="font-medium">
                           {credit.psychologist_profiles.first_name} {credit.psychologist_profiles.last_name}
                         </p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs text-[#6B7280]">
                           Válido solo con este terapeuta
                         </p>
-                        <p className="text-xs text-muted-foreground mt-0.5">
+                        <p className="text-xs text-[#6B7280] mt-0.5">
                           Generado el {format(new Date(credit.created_at), 'dd MMM yyyy', { locale: es })}
                         </p>
                       </div>
                     </div>
                     <div className="text-right flex flex-col items-end gap-2">
                       <div className="flex items-center gap-1.5">
-                        <Coins className="w-4 h-4 text-primary" />
-                        <span className="text-xl font-bold text-primary">1 sesión</span>
+                        <Coins className="w-4 h-4 text-[#D9A932]" />
+                        <span className="text-xl font-bold text-[#D9A932]">1 sesión</span>
                       </div>
                       <Badge variant="secondary">Disponible</Badge>
                     </div>

@@ -44,7 +44,7 @@ export const ClientTopbar = ({ onMenuClick }: ClientTopbarProps) => {
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-background border-b border-border">
+    <header className="sticky top-0 z-40 bg-white border-b border-[#E5E7EB]">
       <div className="flex items-center justify-between h-16 px-6">
         {/* Mobile menu button */}
         <Button variant="ghost" size="icon" className="lg:hidden" onClick={onMenuClick}>
@@ -69,8 +69,8 @@ export const ClientTopbar = ({ onMenuClick }: ClientTopbarProps) => {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center aspect-square">
-                  <span className="text-primary font-semibold text-sm leading-none">
+                <div className="w-10 h-10 rounded-full bg-[#E8F5EE] flex items-center justify-center aspect-square">
+                  <span className="text-[#12A357] font-semibold text-sm leading-none">
                     {getInitials()}
                   </span>
                 </div>

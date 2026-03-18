@@ -217,22 +217,22 @@ export default function TherapistDocuments() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Documentos</h1>
-        <p className="text-muted-foreground mt-1">
+        <h1 className="text-3xl font-bold text-[#1F4D2E]" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>Documentos</h1>
+        <p className="text-[#6B7280] mt-1">
           Gestiona tu verificación y documentación
         </p>
       </div>
 
       {/* Información de verificación */}
-      <Card className="border-primary/50 bg-primary/5">
+      <Card className="border-[#BFE9E2] bg-[#F0FBF5]">
         <CardContent className="pt-6">
           <div className="flex gap-3">
-            <FileText className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+            <FileText className="w-5 h-5 text-[#12A357] flex-shrink-0 mt-0.5" />
             <div>
-              <p className="font-medium text-foreground">
+              <p className="font-medium text-[#1F4D2E]">
                 Verificación de identidad (KYC)
               </p>
-              <p className="text-sm text-muted-foreground mt-1">
+              <p className="text-sm text-[#6B7280] mt-1">
                 Para poder recibir pagos y aparecer en el directorio público, es
                 necesario completar la verificación de tu identidad y documentos
                 profesionales.
@@ -245,7 +245,7 @@ export default function TherapistDocuments() {
       {/* Documentos profesionales */}
       <Card>
         <CardHeader>
-          <CardTitle>Documentos profesionales</CardTitle>
+          <CardTitle className="text-[#1F4D2E]">Documentos profesionales</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -255,12 +255,12 @@ export default function TherapistDocuments() {
               return (
                 <div
                   key={docType.type}
-                  className="p-4 border border-border rounded-lg"
+                  className="p-4 border border-[#E5E7EB] rounded-xl"
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <p className="font-medium text-foreground">
+                        <p className="font-medium text-[#1F2937]">
                           {docType.label}
                           {docType.required && (
                             <span className="text-red-500 ml-1">*</span>
@@ -268,7 +268,7 @@ export default function TherapistDocuments() {
                         </p>
                         {doc && getStatusIcon(doc.status)}
                       </div>
-                      <p className="text-sm text-muted-foreground mb-2">
+                      <p className="text-sm text-[#6B7280] mb-2">
                         {docType.description}
                       </p>
 
@@ -276,7 +276,7 @@ export default function TherapistDocuments() {
                         <div className="flex items-center gap-2 flex-wrap">
                           {getStatusBadge(doc.status)}
                           {doc.fileName && (
-                            <span className="text-xs text-muted-foreground">
+                            <span className="text-xs text-[#6B7280]">
                               {doc.fileName}
                             </span>
                           )}

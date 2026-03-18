@@ -94,21 +94,21 @@ export const TherapistSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClos
   const sidebarContent = (isMobile: boolean) => (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className={`border-b border-border relative ${collapsed && !isMobile ? "px-2 py-4" : "p-6"}`}>
+      <div className={`border-b border-white/10 relative ${collapsed && !isMobile ? "px-2 py-4" : "p-6"}`}>
         <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-          <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
-            <span className="text-primary-foreground font-bold text-xl">V</span>
+          <div className="w-10 h-10 bg-[#12A357] rounded-lg flex items-center justify-center flex-shrink-0">
+            <span className="text-white font-bold text-xl">V</span>
           </div>
           {(!collapsed || isMobile) && (
             <div>
-              <h1 className="text-xl font-bold text-primary">Vittare</h1>
-              <p className="text-xs text-muted-foreground">Panel de Terapeuta</p>
+              <h1 className="text-xl font-bold text-white">Vittare</h1>
+              <p className="text-xs text-white/60">Panel de Terapeuta</p>
             </div>
           )}
         </Link>
         {isMobile && (
-          <button onClick={onMobileClose} className="absolute top-4 right-4 p-2 rounded-lg hover:bg-accent">
-            <X className="w-5 h-5" />
+          <button onClick={onMobileClose} className="absolute top-4 right-4 p-2 rounded-lg hover:bg-white/10">
+            <X className="w-5 h-5 text-white/70" />
           </button>
         )}
       </div>
@@ -126,8 +126,8 @@ export const TherapistSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClos
                 "flex items-center gap-3 rounded-lg transition-colors relative",
                 collapsed && !isMobile ? "justify-center px-2 py-3" : "px-4 py-3",
                 isActive
-                  ? "bg-primary/10 text-primary font-medium"
-                  : "text-foreground hover:bg-accent hover:text-accent-foreground"
+                  ? "bg-[#12A357] text-white font-medium"
+                  : "text-white/70 hover:bg-white/10 hover:text-white"
               )
             }
           >
@@ -147,10 +147,10 @@ export const TherapistSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClos
 
       {/* Collapse toggle — solo desktop */}
       {!isMobile && (
-        <div className="border-t border-border p-2">
+        <div className="border-t border-white/10 p-2">
           <button
             onClick={onToggle}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors text-sm"
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-white/70 hover:bg-white/10 hover:text-white transition-colors text-sm"
           >
             {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
             {!collapsed && <span>Colapsar</span>}
@@ -164,7 +164,7 @@ export const TherapistSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClos
     <>
       {/* Desktop sidebar */}
       <aside
-        className={`hidden lg:flex flex-col bg-card border-r border-border h-screen sticky top-0 transition-all duration-300 overflow-hidden ${
+        className={`hidden lg:flex flex-col bg-[#1F4D2E] border-r border-[#1F4D2E] h-screen sticky top-0 transition-all duration-300 overflow-hidden ${
           collapsed ? "w-16" : "w-64"
         }`}
       >
@@ -175,7 +175,7 @@ export const TherapistSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClos
       {mobileOpen && (
         <>
           <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={onMobileClose} />
-          <aside className="fixed inset-y-0 left-0 w-64 bg-card border-r border-border z-50 lg:hidden flex flex-col">
+          <aside className="fixed inset-y-0 left-0 w-64 bg-[#1F4D2E] border-r border-[#1F4D2E] z-50 lg:hidden flex flex-col">
             {sidebarContent(true)}
           </aside>
         </>

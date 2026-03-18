@@ -343,7 +343,7 @@ export default function ClientMessages() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-muted-foreground">Cargando mensajes...</p>
+        <p className="text-[#6B7280]">Cargando mensajes...</p>
       </div>
     );
   }
@@ -352,17 +352,17 @@ export default function ClientMessages() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Mensajes</h1>
-          <p className="text-muted-foreground mt-1">Chat con tus psicólogos</p>
+          <h1 className="text-3xl font-bold text-[#1F4D2E]" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>Mensajes</h1>
+          <p className="text-[#6B7280] mt-1">Chat con tus psicólogos</p>
         </div>
         <Card>
           <CardContent className="py-12">
             <div className="text-center">
-              <MessageSquare className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">
+              <MessageSquare className="w-12 h-12 mx-auto text-[#E7839D] mb-4" />
+              <p className="text-[#6B7280]">
                 Aún no tienes psicólogos asignados
               </p>
-              <p className="text-sm text-muted-foreground mt-2">
+              <p className="text-sm text-[#6B7280] mt-2">
                 Agenda tu primera sesión para comenzar
               </p>
             </div>
@@ -375,15 +375,15 @@ export default function ClientMessages() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Mensajes</h1>
-        <p className="text-muted-foreground mt-1">Chat con tus psicólogos</p>
+        <h1 className="text-3xl font-bold text-[#1F4D2E]" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>Mensajes</h1>
+        <p className="text-[#6B7280] mt-1">Chat con tus psicólogos</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Conversations list */}
         <Card className={`md:col-span-1 ${selectedConversation ? "hidden md:block" : ""}`}>
           <CardHeader>
-            <CardTitle>Conversaciones</CardTitle>
+            <CardTitle className="text-[#1F4D2E]">Conversaciones</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             <ScrollArea className="h-[600px]">
@@ -391,8 +391,8 @@ export default function ClientMessages() {
                 <button
                   key={convo.id}
                   onClick={() => setSelectedConversation(convo)}
-                  className={`w-full p-4 flex items-start gap-3 hover:bg-accent transition-colors ${
-                    selectedConversation?.id === convo.id ? "bg-accent" : ""
+                  className={`w-full p-4 flex items-start gap-3 transition-colors ${
+                    selectedConversation?.id === convo.id ? "bg-[#E8F5EE]" : "hover:bg-[#F0FBF5]"
                   }`}
                 >
                   <Avatar className="w-10 h-10 flex-shrink-0">
@@ -405,12 +405,12 @@ export default function ClientMessages() {
                     <div className="flex items-center justify-between gap-2">
                       <p className="font-semibold truncate">{convo.psychologist_name}</p>
                       {convo.unread_count > 0 && (
-                        <span className="bg-primary text-primary-foreground text-xs rounded-full px-2 py-0.5 flex-shrink-0">
+                        <span className="bg-[#12A357] text-white text-xs rounded-full px-2 py-0.5 flex-shrink-0">
                           {convo.unread_count}
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-muted-foreground truncate mt-1">
+                    <p className="text-sm text-[#6B7280] truncate mt-1">
                       {convo.last_message}
                     </p>
                   </div>
@@ -439,8 +439,8 @@ export default function ClientMessages() {
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <CardTitle>{selectedConversation.psychologist_name}</CardTitle>
-                    <p className="text-sm text-muted-foreground">Tu psicólogo</p>
+                    <CardTitle className="text-[#1F4D2E]">{selectedConversation.psychologist_name}</CardTitle>
+                    <p className="text-sm text-[#6B7280]">Tu psicólogo</p>
                   </div>
                 </div>
               </CardHeader>
@@ -450,7 +450,7 @@ export default function ClientMessages() {
                   <p className="text-sm text-destructive font-medium">
                     ⚠️ Este no es un servicio de emergencias
                   </p>
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className="text-xs text-[#6B7280] mt-1">
                     Si necesitas ayuda inmediata, contacta a los servicios de emergencia o
                     la Línea de la Vida: 800 911 2000
                   </p>
@@ -461,9 +461,9 @@ export default function ClientMessages() {
                   {messages.length === 0 ? (
                     <div className="flex items-center justify-center h-full min-h-[200px]">
                       <div className="text-center">
-                        <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-50 text-muted-foreground" />
-                        <p className="text-muted-foreground">No hay mensajes aún</p>
-                        <p className="text-sm mt-1 text-muted-foreground">
+                        <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-50 text-[#E7839D]" />
+                        <p className="text-[#6B7280]">No hay mensajes aún</p>
+                        <p className="text-sm mt-1 text-[#6B7280]">
                           Inicia una conversación con tu psicólogo
                         </p>
                       </div>
@@ -480,8 +480,8 @@ export default function ClientMessages() {
                             <div
                               className={`max-w-[70%] p-3 rounded-lg ${
                                 isClient
-                                  ? "bg-primary text-primary-foreground"
-                                  : "bg-accent"
+                                  ? "bg-[#12A357] text-white"
+                                  : "bg-[#F0FBF5]"
                               }`}
                             >
                               <p className="text-sm whitespace-pre-wrap break-words">
@@ -490,8 +490,8 @@ export default function ClientMessages() {
                               <p
                                 className={`text-xs mt-1 ${
                                   isClient
-                                    ? "text-primary-foreground/70"
-                                    : "text-muted-foreground"
+                                    ? "text-white/70"
+                                    : "text-[#6B7280]"
                                 }`}
                               >
                                 {format(new Date(message.created_at), "HH:mm", { locale: es })}
@@ -539,8 +539,8 @@ export default function ClientMessages() {
             </>
           ) : (
             <CardContent className="flex-1 flex items-center justify-center">
-              <div className="text-center text-muted-foreground">
-                <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-50" />
+              <div className="text-center text-[#6B7280]">
+                <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-50 text-[#E7839D]" />
                 <p>Selecciona una conversación para comenzar</p>
               </div>
             </CardContent>

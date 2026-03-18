@@ -172,7 +172,7 @@ export default function PatientDetail() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-muted-foreground">Cargando expediente...</p>
+        <p className="text-[#6B7280]">Cargando expediente...</p>
       </div>
     );
   }
@@ -180,7 +180,7 @@ export default function PatientDetail() {
   if (!patient) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-muted-foreground">No se encontró el paciente</p>
+        <p className="text-[#6B7280]">No se encontró el paciente</p>
       </div>
     );
   }
@@ -199,9 +199,9 @@ export default function PatientDetail() {
           <AvatarFallback>{initials}</AvatarFallback>
         </Avatar>
         <div>
-          <h1 className="text-2xl font-bold text-foreground">{patient.full_name}</h1>
+          <h1 className="text-2xl font-bold text-[#1F4D2E]" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>{patient.full_name}</h1>
           {patient.email && (
-            <p className="text-sm text-muted-foreground">{patient.email}</p>
+            <p className="text-sm text-[#6B7280]">{patient.email}</p>
           )}
         </div>
       </div>
@@ -211,12 +211,12 @@ export default function PatientDetail() {
         <Card>
           <CardContent className="pt-5">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 bg-primary/10 rounded-lg flex items-center justify-center">
-                <Users className="w-4 h-4 text-primary" />
+              <div className="w-9 h-9 bg-[#E8F5EE] rounded-lg flex items-center justify-center">
+                <Users className="w-4 h-4 text-[#6AB7AB]" />
               </div>
               <div>
                 <p className="text-2xl font-bold">{stats.total}</p>
-                <p className="text-xs text-muted-foreground">Sesiones</p>
+                <p className="text-xs text-[#6B7280]">Sesiones</p>
               </div>
             </div>
           </CardContent>
@@ -229,7 +229,7 @@ export default function PatientDetail() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{stats.avgDuration > 0 ? `${stats.avgDuration}m` : "--"}</p>
-                <p className="text-xs text-muted-foreground">Promedio</p>
+                <p className="text-xs text-[#6B7280]">Promedio</p>
               </div>
             </div>
           </CardContent>
@@ -242,7 +242,7 @@ export default function PatientDetail() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{stats.withTranscripts}</p>
-                <p className="text-xs text-muted-foreground">Transcr.</p>
+                <p className="text-xs text-[#6B7280]">Transcr.</p>
               </div>
             </div>
           </CardContent>
@@ -252,8 +252,8 @@ export default function PatientDetail() {
       {/* Session list */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="w-5 h-5" />
+          <CardTitle className="flex items-center gap-2 text-[#1F4D2E]">
+            <Calendar className="w-5 h-5 text-[#12A357]" />
             Sesiones completadas
           </CardTitle>
         </CardHeader>
@@ -261,7 +261,7 @@ export default function PatientDetail() {
           {/* Filters */}
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B7280]" />
               <Input
                 placeholder="Buscar en notas..."
                 value={searchText}
@@ -284,7 +284,7 @@ export default function PatientDetail() {
           </div>
 
           {filteredSessions.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
+            <div className="text-center py-12 text-[#6B7280]">
               <Calendar className="w-10 h-10 mx-auto mb-3 opacity-40" />
               <p>No se encontraron sesiones completadas</p>
             </div>
@@ -299,10 +299,10 @@ export default function PatientDetail() {
                 const isProcessing = session.transcript?.status === "transcribing" || session.transcript?.status === "pending";
 
                 return (
-                  <div key={session.id} className="border border-border rounded-lg p-4">
+                  <div key={session.id} className="border border-[#E5E7EB] rounded-xl p-4 hover:bg-[#F0FBF5] transition-colors">
                     {/* Date + badges */}
                     <div className="flex items-start justify-between gap-2 mb-3">
-                      <p className="font-medium text-foreground">
+                      <p className="font-medium text-[#1F2937]">
                         📅 {dateLabel} • {timeLabel}
                       </p>
                     </div>
@@ -331,7 +331,7 @@ export default function PatientDetail() {
                     </div>
 
                     {session.session_notes && (
-                      <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                      <p className="text-sm text-[#6B7280] line-clamp-2 mb-3">
                         {session.session_notes}
                       </p>
                     )}
@@ -396,7 +396,7 @@ export default function PatientDetail() {
               })}
 
               {/* Pagination */}
-              <div className="flex items-center justify-between pt-2 text-sm text-muted-foreground">
+              <div className="flex items-center justify-between pt-2 text-sm text-[#6B7280]">
                 <span>Mostrando {Math.min(pageSize, filteredSessions.length)} de {filteredSessions.length} sesiones</span>
                 {pageSize < filteredSessions.length && (
                   <Button variant="outline" size="sm" onClick={() => setPageSize(p => p + PAGE_SIZE)}>

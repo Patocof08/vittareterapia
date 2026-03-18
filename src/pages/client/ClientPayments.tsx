@@ -176,10 +176,10 @@ export default function ClientPayments() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-foreground">
+        <h1 className="text-3xl font-bold text-[#1F4D2E]" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>
           Pagos
         </h1>
-        <p className="text-muted-foreground mt-1">
+        <p className="text-[#6B7280] mt-1">
           Gestiona tus pagos y recibos
         </p>
       </div>
@@ -188,7 +188,7 @@ export default function ClientPayments() {
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+            <CardTitle className="text-sm font-medium text-[#6B7280]">
               Total Pagado
             </CardTitle>
           </CardHeader>
@@ -201,7 +201,7 @@ export default function ClientPayments() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+            <CardTitle className="text-sm font-medium text-[#6B7280]">
               Sesiones Pagadas
             </CardTitle>
           </CardHeader>
@@ -212,7 +212,7 @@ export default function ClientPayments() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+            <CardTitle className="text-sm font-medium text-[#6B7280]">
               Último Pago
             </CardTitle>
           </CardHeader>
@@ -220,8 +220,8 @@ export default function ClientPayments() {
             <p className="text-2xl font-bold">
               {payments.length > 0 ? `$${Number(payments[0].amount).toFixed(2)}` : "$0.00"}
             </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              {payments.length > 0 
+            <p className="text-xs text-[#6B7280] mt-1">
+              {payments.length > 0
                 ? format(new Date(payments[0].created_at), "dd/MM/yyyy", { locale: es })
                 : "Sin pagos"}
             </p>
@@ -232,16 +232,16 @@ export default function ClientPayments() {
       {/* Historial de Pagos */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CreditCard className="w-5 h-5" />
+          <CardTitle className="flex items-center gap-2 text-[#1F4D2E]">
+            <CreditCard className="w-5 h-5 text-[#D9A932]" />
             Historial de Pagos
           </CardTitle>
         </CardHeader>
         <CardContent>
           {payments.length === 0 ? (
             <div className="text-center py-8">
-              <FileText className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
-              <p className="text-muted-foreground">
+              <FileText className="w-12 h-12 mx-auto text-[#6AB7AB] mb-3" />
+              <p className="text-[#6B7280]">
                 No tienes pagos registrados aún
               </p>
             </div>
@@ -252,18 +252,18 @@ export default function ClientPayments() {
                 return (
                   <div
                     key={payment.id}
-                    className="flex items-center justify-between p-4 border border-border rounded-lg"
+                    className="flex items-center justify-between p-4 border border-[#E5E7EB] rounded-xl hover:bg-[#F0FBF5] transition-colors"
                   >
                     <div className="flex-1">
-                      <p className="font-medium text-foreground">
+                      <p className="font-medium text-[#1F2937]">
                         {getPaymentTypeLabel(payment.payment_type)}
                       </p>
-                      <p className="text-sm text-muted-foreground mt-1">
+                      <p className="text-sm text-[#6B7280] mt-1">
                         {payment.psychologist
                           ? `${payment.psychologist.first_name} ${payment.psychologist.last_name}`
                           : ""}
                       </p>
-                      <p className="text-xs text-muted-foreground mt-1">
+                      <p className="text-xs text-[#6B7280] mt-1">
                         {format(new Date(payment.created_at), "dd 'de' MMMM, yyyy", {
                           locale: es,
                         })}

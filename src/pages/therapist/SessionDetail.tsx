@@ -39,7 +39,7 @@ const TAB_VALUES = ["complete", "highlights", "summary", "notes"] as const;
 // ─── EmptyState ────────────────────────────────────────────────────────────────
 function EmptyState({ message }: { message: string }) {
   return (
-    <div className="text-center py-16 text-muted-foreground">
+    <div className="text-center py-16 text-[#6B7280]">
       <p>{message}</p>
     </div>
   );
@@ -373,7 +373,7 @@ export default function SessionDetail() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-muted-foreground">Cargando sesión...</p>
+        <p className="text-[#6B7280]">Cargando sesión...</p>
       </div>
     );
   }
@@ -390,10 +390,10 @@ export default function SessionDetail() {
           <ArrowLeft className="w-4 h-4" />
         </Button>
         <div>
-          <h1 className="text-2xl font-bold text-foreground">
+          <h1 className="text-2xl font-bold text-[#1F4D2E]" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>
             {appointment?.patient_name ?? "Paciente"}
           </h1>
-          <p className="text-sm text-muted-foreground">{dateLabel}</p>
+          <p className="text-sm text-[#6B7280]">{dateLabel}</p>
         </div>
       </div>
 
@@ -429,7 +429,7 @@ export default function SessionDetail() {
 
       {/* Meta info strip */}
       {transcript && (
-        <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+        <div className="flex flex-wrap gap-4 text-sm text-[#6B7280]">
           {transcript.duration_minutes && (
             <span className="flex items-center gap-1">
               <Clock className="w-4 h-4" />
@@ -494,7 +494,7 @@ export default function SessionDetail() {
                   <CardContent>
                     <div className="flex flex-wrap gap-2">
                       {transcript.ai_key_topics.map((t, i) => (
-                        <span key={i} className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm">{t}</span>
+                        <span key={i} className="px-3 py-1 bg-[#E8F5EE] text-[#12A357] rounded-full text-sm">{t}</span>
                       ))}
                     </div>
                   </CardContent>
@@ -622,13 +622,13 @@ export default function SessionDetail() {
 
                   {noteMode === "photo" && (
                     <div className="space-y-3">
-                      <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary/50 transition-colors">
+                      <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-[#E5E7EB] rounded-lg cursor-pointer hover:border-[#12A357]/50 transition-colors">
                         {uploadingImage ? (
                           <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
                         ) : (
                           <>
-                            <Upload className="w-8 h-8 text-muted-foreground mb-2" />
-                            <span className="text-sm text-muted-foreground">Subir foto de nota</span>
+                            <Upload className="w-8 h-8 text-[#6B7280] mb-2" />
+                            <span className="text-sm text-[#6B7280]">Subir foto de nota</span>
                           </>
                         )}
                         <input

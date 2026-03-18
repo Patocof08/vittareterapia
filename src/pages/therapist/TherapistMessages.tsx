@@ -407,7 +407,7 @@ export default function TherapistMessages() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-muted-foreground">Cargando conversaciones...</p>
+        <p className="text-[#6B7280]">Cargando conversaciones...</p>
       </div>
     );
   }
@@ -415,8 +415,8 @@ export default function TherapistMessages() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Mensajes</h1>
-        <p className="text-muted-foreground mt-1">
+        <h1 className="text-3xl font-bold text-[#1F4D2E]" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>Mensajes</h1>
+        <p className="text-[#6B7280] mt-1">
           Comunícate de forma segura con tus pacientes
         </p>
       </div>
@@ -425,12 +425,12 @@ export default function TherapistMessages() {
       <Card className="border-destructive/50 bg-destructive/5">
         <CardContent className="pt-6">
           <div className="flex gap-3">
-            <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
+            <AlertCircle className="w-5 h-5 text-[#E7839D] flex-shrink-0 mt-0.5" />
             <div>
-              <p className="font-medium text-foreground">
+              <p className="font-medium text-[#1F2937]">
                 No usar para emergencias
               </p>
-              <p className="text-sm text-muted-foreground mt-1">
+              <p className="text-sm text-[#6B7280] mt-1">
                 Este sistema de mensajería no está diseñado para crisis o
                 emergencias. Para situaciones urgentes, contacta a los servicios
                 de emergencia locales o la Línea de la Vida: 800 911 2000.
@@ -451,7 +451,7 @@ export default function TherapistMessages() {
             <ScrollArea className="h-full">
               <div className="space-y-2 pr-4">
                 {conversations.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-8">
+                  <p className="text-[#6B7280] text-center py-8">
                     No hay conversaciones
                   </p>
                 ) : (
@@ -459,10 +459,10 @@ export default function TherapistMessages() {
                     <button
                       key={convo.id}
                       onClick={() => setSelectedConversation(convo)}
-                      className={`w-full p-3 rounded-lg text-left transition-colors ${
+                      className={`w-full p-3 rounded-xl text-left transition-colors ${
                         selectedConversation?.id === convo.id
-                          ? "bg-primary/10 border-primary"
-                          : "hover:bg-accent"
+                          ? "bg-[#E8F5EE] border-[#12A357]/30"
+                          : "hover:bg-[#F0FBF5] border-[#E5E7EB]"
                       } border`}
                     >
                       <div className="flex items-center gap-3 mb-2">
@@ -474,7 +474,7 @@ export default function TherapistMessages() {
                         </Avatar>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between">
-                            <p className="font-medium text-foreground truncate">
+                            <p className="font-medium text-[#1F2937] truncate">
                               {convo.client_name}
                             </p>
                             {convo.unread_count > 0 && (
@@ -485,7 +485,7 @@ export default function TherapistMessages() {
                           </div>
                         </div>
                       </div>
-                      <p className="text-sm text-muted-foreground line-clamp-1 pl-[52px]">
+                      <p className="text-sm text-[#6B7280] line-clamp-1 pl-[52px]">
                         {convo.last_message || "No hay mensajes"}
                       </p>
                     </button>
@@ -525,8 +525,8 @@ export default function TherapistMessages() {
             {!selectedConversation ? (
               <div className="flex-1 flex items-center justify-center">
                 <div className="text-center">
-                  <MessageSquare className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground">
+                  <MessageSquare className="w-12 h-12 mx-auto text-[#E7839D] mb-4" />
+                  <p className="text-[#6B7280]">
                     Selecciona una conversación para comenzar
                   </p>
                 </div>
@@ -540,7 +540,7 @@ export default function TherapistMessages() {
                   onScroll={handleScroll}
                 >
                   {loadingMore && hasMore && (
-                    <p className="text-center text-xs text-muted-foreground mb-2">
+                    <p className="text-center text-xs text-[#6B7280] mb-2">
                       Cargando mensajes anteriores...
                     </p>
                   )}

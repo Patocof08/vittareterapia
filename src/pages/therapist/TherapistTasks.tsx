@@ -219,8 +219,8 @@ export default function TherapistTasks() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-3xl font-bold text-foreground">Tareas</h1>
-        <p className="text-muted-foreground">Cargando...</p>
+        <h1 className="text-3xl font-bold text-[#1F4D2E]" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>Tareas</h1>
+        <p className="text-[#6B7280]">Cargando...</p>
       </div>
     );
   }
@@ -230,8 +230,8 @@ export default function TherapistTasks() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Tareas</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="text-3xl font-bold text-[#1F4D2E]" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>Tareas</h1>
+          <p className="text-[#6B7280] mt-1">
             Asigna tareas y ejercicios a tus pacientes
           </p>
         </div>
@@ -246,7 +246,7 @@ export default function TherapistTasks() {
         <CardContent className="pt-6">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B7280]" />
               <Input
                 placeholder="Buscar por título..."
                 className="pl-9"
@@ -288,8 +288,8 @@ export default function TherapistTasks() {
         {filteredTasks.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
-              <CheckCircle className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">
+              <CheckCircle className="w-12 h-12 text-[#D9A932] mx-auto mb-4" />
+              <p className="text-[#6B7280]">
                 {tasks.length === 0
                   ? "No has asignado tareas todavía"
                   : "No se encontraron tareas con los filtros seleccionados"}
@@ -311,7 +311,7 @@ export default function TherapistTasks() {
                     {task.description && (
                       <p className="text-sm text-muted-foreground mb-2">{task.description}</p>
                     )}
-                    <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                    <div className="flex flex-wrap gap-4 text-sm text-[#6B7280]">
                       <span className="flex items-center gap-1">
                         <User className="w-3.5 h-3.5" />
                         {task.patient_name}
@@ -335,7 +335,7 @@ export default function TherapistTasks() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="text-muted-foreground hover:text-destructive"
+                    className="text-[#6B7280] hover:text-destructive"
                     onClick={() => setDeleteId(task.id)}
                   >
                     <Trash2 className="w-4 h-4" />

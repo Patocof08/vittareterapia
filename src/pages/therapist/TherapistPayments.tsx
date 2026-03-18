@@ -229,38 +229,38 @@ export default function TherapistPayments() {
     if (appointment?.status === "cancelled" && cancelReason.includes("Cancelación tardía")) {
       return {
         label: "Completado (Cancelado tarde)",
-        className: "bg-green-50 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-400 dark:border-green-800"
+        className: "bg-[#E8F5EE] text-[#12A357] border-[#BFE9E2]"
       };
     }
-    
+
     // Cancelado a tiempo (sin cargo)
     if (payment.payment_status === "cancelled" || (appointment?.status === "cancelled" && !cancelReason.includes("Cancelación tardía"))) {
       return {
         label: "Cancelado",
-        className: "bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-950 dark:text-gray-400 dark:border-gray-800"
+        className: "bg-red-50 text-red-600 border-red-200"
       };
     }
-    
+
     // Si la cita está pendiente (no cancelada), mostrar como pendiente
     if (appointment && appointment.status !== "cancelled" && appointment.status !== "completed") {
-      return { 
-        label: "Pendiente", 
-        className: "bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-950 dark:text-yellow-400 dark:border-yellow-800" 
+      return {
+        label: "Pendiente",
+        className: "bg-[#FEF9EA] text-[#D9A932] border-[#D9A932]/30"
       };
     }
-    
+
     // Si la cita está completada o el pago está completado sin cita cancelada
     if (appointment?.status === "completed" || payment.payment_status === "completed") {
-      return { 
-        label: "Completado", 
-        className: "bg-green-50 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-400 dark:border-green-800" 
+      return {
+        label: "Completado",
+        className: "bg-[#EFF6FF] text-[#3B82F6] border-blue-200"
       };
     }
-    
+
     // Default: mostrar el estado del pago
-    return { 
-      label: "Pendiente", 
-      className: "bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-950 dark:text-yellow-400 dark:border-yellow-800" 
+    return {
+      label: "Pendiente",
+      className: "bg-[#FEF9EA] text-[#D9A932] border-[#D9A932]/30"
     };
   };
 
@@ -275,8 +275,8 @@ export default function TherapistPayments() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Pagos e Ingresos</h1>
-        <p className="text-muted-foreground mt-1">
+        <h1 className="text-3xl font-bold text-[#1F4D2E]" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>Pagos e Ingresos</h1>
+        <p className="text-[#6B7280] mt-1">
           Revisa tus ingresos y pagos pendientes
         </p>
       </div>
@@ -285,12 +285,12 @@ export default function TherapistPayments() {
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Ingresos del Mes</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-[#1F4D2E]">Ingresos del Mes</CardTitle>
+            <Calendar className="h-4 w-4 text-[#12A357]" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">${stats.monthlyIncome.toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-[#6B7280]">
               {stats.monthlySessions} sesiones este mes
             </p>
           </CardContent>
@@ -298,12 +298,12 @@ export default function TherapistPayments() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pagos Pendientes</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-[#1F4D2E]">Pagos Pendientes</CardTitle>
+            <DollarSign className="h-4 w-4 text-[#D9A932]" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">${stats.pendingPayments.toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-[#6B7280]">
               {payments.filter(p => p.payment_status === 'pending').length} pagos pendientes
             </p>
           </CardContent>
@@ -311,12 +311,12 @@ export default function TherapistPayments() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Ganancias Totales</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-[#1F4D2E]">Ganancias Totales</CardTitle>
+            <TrendingUp className="h-4 w-4 text-[#12A357]" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">${stats.totalEarnings.toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground">Histórico</p>
+            <p className="text-xs text-[#6B7280]">Histórico</p>
           </CardContent>
         </Card>
       </div>
@@ -325,8 +325,8 @@ export default function TherapistPayments() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <FileText className="w-5 h-5" />
+            <div className="flex items-center gap-2 text-[#1F4D2E]">
+              <FileText className="w-5 h-5 text-[#6AB7AB]" />
               Historial de Pagos
             </div>
             <Select value={statusFilter} onValueChange={applyFilter}>
@@ -346,8 +346,8 @@ export default function TherapistPayments() {
         <CardContent>
           {filteredPayments.length === 0 ? (
             <div className="text-center py-12">
-              <FileText className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
-              <p className="text-muted-foreground">
+              <FileText className="w-12 h-12 mx-auto text-[#6AB7AB] mb-3" />
+              <p className="text-[#6B7280]">
                 {statusFilter === "completed"
                   ? "No hay pagos completados"
                   : statusFilter === "pending"
@@ -364,16 +364,16 @@ export default function TherapistPayments() {
                 return (
                   <div
                     key={payment.id}
-                    className="flex items-center justify-between p-4 border border-border rounded-lg"
+                    className="flex items-center justify-between p-4 border border-[#E5E7EB] rounded-xl"
                   >
                     <div className="flex-1">
-                      <p className="font-medium text-foreground">
+                      <p className="font-medium text-[#1F2937]">
                         {getPaymentTypeLabel(payment.payment_type)}
                       </p>
-                      <p className="text-sm text-muted-foreground mt-1">
+                      <p className="text-sm text-[#6B7280] mt-1">
                         Cliente: {payment.client?.full_name || "N/A"}
                       </p>
-                      <p className="text-xs text-muted-foreground mt-1">
+                      <p className="text-xs text-[#6B7280] mt-1">
                         Fecha de sesión: {payment.appointment?.start_time 
                           ? format(new Date(payment.appointment.start_time), "dd 'de' MMMM, yyyy", { locale: es })
                           : format(new Date(payment.created_at), "dd 'de' MMMM, yyyy", { locale: es })

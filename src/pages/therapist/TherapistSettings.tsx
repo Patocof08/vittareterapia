@@ -546,8 +546,8 @@ export default function TherapistSettings() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Ajustes</h1>
-        <p className="text-muted-foreground mt-1">
+        <h1 className="text-3xl font-bold text-[#1F4D2E]" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>Ajustes</h1>
+        <p className="text-[#6B7280] mt-1">
           Gestiona tu perfil y preferencias
         </p>
       </div>
@@ -586,8 +586,8 @@ export default function TherapistSettings() {
         <TabsContent value="profile" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Información Personal</CardTitle>
-              <CardDescription>Actualiza tu información básica y foto de perfil</CardDescription>
+              <CardTitle className="text-[#1F4D2E]">Información Personal</CardTitle>
+              <CardDescription className="text-[#6B7280]">Actualiza tu información básica y foto de perfil</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Avatar */}
@@ -647,7 +647,7 @@ export default function TherapistSettings() {
                     disabled
                     className="opacity-60 cursor-not-allowed"
                   />
-                  <p className="text-xs text-muted-foreground mt-1">El correo no se puede modificar</p>
+                  <p className="text-xs text-[#6B7280] mt-1">El correo no se puede modificar</p>
                 </div>
                 <div>
                   <Label>Teléfono</Label>
@@ -656,7 +656,7 @@ export default function TherapistSettings() {
                     disabled
                     className="opacity-60 cursor-not-allowed"
                   />
-                  <p className="text-xs text-muted-foreground mt-1">El teléfono no se puede modificar</p>
+                  <p className="text-xs text-[#6B7280] mt-1">El teléfono no se puede modificar</p>
                 </div>
               </div>
 
@@ -713,9 +713,9 @@ export default function TherapistSettings() {
               </div>
 
               {/* Modality Info */}
-              <div className="p-4 bg-muted/50 rounded-lg border border-border">
+              <div className="p-4 bg-[#F0FBF5] rounded-lg border border-[#BFE9E2]">
                 <Label className="mb-2 block">Modalidad de atención</Label>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-[#6B7280]">
                   Todas las sesiones se realizan por <strong>Videollamada</strong>
                 </p>
               </div>
@@ -729,7 +729,7 @@ export default function TherapistSettings() {
                   disabled
                   className="opacity-60 cursor-not-allowed"
                 />
-                <p className="text-xs text-muted-foreground mt-1">
+                <p className="text-xs text-[#6B7280] mt-1">
                   La experiencia se actualiza automáticamente cada año
                 </p>
               </div>
@@ -832,7 +832,7 @@ export default function TherapistSettings() {
               <div>
                 <div className="flex justify-between mb-2">
                   <Label>Biografía corta</Label>
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-sm text-[#6B7280]">
                     {profileData?.bio_short?.length || 0}/400
                   </span>
                 </div>
@@ -851,7 +851,7 @@ export default function TherapistSettings() {
               <div>
                 <div className="flex justify-between mb-2">
                   <Label>Biografía extendida</Label>
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-sm text-[#6B7280]">
                     {profileData?.bio_extended?.length || 0}/1200
                   </span>
                 </div>
@@ -867,9 +867,9 @@ export default function TherapistSettings() {
               </div>
 
               {/* Políticas universales info */}
-              <div className="rounded-lg bg-muted p-4 space-y-2">
-                <p className="text-sm font-medium">Políticas de reserva y sesiones:</p>
-                <ul className="text-sm text-muted-foreground space-y-1">
+              <div className="rounded-lg bg-[#F0FBF5] border border-[#BFE9E2] p-4 space-y-2">
+                <p className="text-sm font-medium text-[#1F4D2E]">Políticas de reserva y sesiones:</p>
+                <ul className="text-sm text-[#6B7280] space-y-1">
                   <li>• Duración de sesión: 50 minutos</li>
                   <li>• Reserva con mínimo 6 horas de anticipación</li>
                   <li>• Cancelaciones: 12 horas antes de la cita</li>
@@ -880,11 +880,11 @@ export default function TherapistSettings() {
               <div className="space-y-2">
                 <Label>Precio por sesión (MXN)</Label>
                 {profileData && (
-                  <div className="rounded-lg bg-muted p-3 mb-2">
-                    <p className="text-sm font-medium">
+                  <div className="rounded-lg bg-[#E8F5EE] p-3 mb-2">
+                    <p className="text-sm font-medium text-[#1F4D2E]">
                       Límite de precio según tu experiencia ({profileData.years_experience || 0} años):
                     </p>
-                    <p className="text-xl font-bold text-primary">
+                    <p className="text-xl font-bold text-[#12A357]">
                       Hasta ${getMaxPrice(profileData.years_experience || 0)} MXN por sesión
                     </p>
                   </div>
@@ -903,7 +903,7 @@ export default function TherapistSettings() {
                     }
                     className="flex-1"
                   />
-                  <span className="text-sm font-medium text-muted-foreground w-16">MXN</span>
+                  <span className="text-sm font-medium text-[#6B7280] w-16">MXN</span>
                 </div>
                 {profileData && profileData.session_price > 0 && profileData.session_price < 500 && (
                   <p className="text-sm text-destructive">
@@ -926,8 +926,8 @@ export default function TherapistSettings() {
         <TabsContent value="security" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Cambiar Contraseña</CardTitle>
-              <CardDescription>Actualiza tu contraseña regularmente para mayor seguridad</CardDescription>
+              <CardTitle className="text-[#1F4D2E]">Cambiar Contraseña</CardTitle>
+              <CardDescription className="text-[#6B7280]">Actualiza tu contraseña regularmente para mayor seguridad</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
@@ -969,15 +969,15 @@ export default function TherapistSettings() {
 
         {/* Documentos Tab */}
         <TabsContent value="documents" className="space-y-6">
-          <Card className="border-primary/50 bg-primary/5">
+          <Card className="border-[#BFE9E2] bg-[#F0FBF5]">
             <CardContent className="pt-6">
               <div className="flex gap-3">
-                <FileText className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                <FileText className="w-5 h-5 text-[#12A357] flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-medium text-foreground">
+                  <p className="font-medium text-[#1F4D2E]">
                     Verificación de identidad (KYC)
                   </p>
-                  <p className="text-sm text-muted-foreground mt-1">
+                  <p className="text-sm text-[#6B7280] mt-1">
                     Para poder recibir pagos y aparecer en el directorio público, es
                     necesario completar la verificación de tu identidad y documentos
                     profesionales.
@@ -989,7 +989,7 @@ export default function TherapistSettings() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Documentos profesionales</CardTitle>
+              <CardTitle className="text-[#1F4D2E]">Documentos profesionales</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -999,12 +999,12 @@ export default function TherapistSettings() {
                   return (
                     <div
                       key={docType.type}
-                      className="p-4 border border-border rounded-lg"
+                      className="p-4 border border-[#E5E7EB] rounded-xl"
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
-                            <p className="font-medium text-foreground">
+                            <p className="font-medium text-[#1F2937]">
                               {docType.label}
                               {docType.required && (
                                 <span className="text-red-500 ml-1">*</span>
@@ -1012,7 +1012,7 @@ export default function TherapistSettings() {
                             </p>
                             {doc && getStatusIcon(doc.status)}
                           </div>
-                          <p className="text-sm text-muted-foreground mb-2">
+                          <p className="text-sm text-[#6B7280] mb-2">
                             {docType.description}
                           </p>
 
@@ -1020,7 +1020,7 @@ export default function TherapistSettings() {
                             <div className="flex items-center gap-2 flex-wrap">
                               {getStatusBadge(doc.status)}
                               {doc.fileName && (
-                                <span className="text-xs text-muted-foreground">
+                                <span className="text-xs text-[#6B7280]">
                                   {doc.fileName}
                                 </span>
                               )}
@@ -1079,8 +1079,8 @@ export default function TherapistSettings() {
         <TabsContent value="payment" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Cuenta Bancaria</CardTitle>
-              <CardDescription>Configura tu cuenta para recibir pagos</CardDescription>
+              <CardTitle className="text-[#1F4D2E]">Cuenta Bancaria</CardTitle>
+              <CardDescription className="text-[#6B7280]">Configura tu cuenta para recibir pagos</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
@@ -1104,8 +1104,8 @@ export default function TherapistSettings() {
         <TabsContent value="notifications" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Preferencias de Notificaciones</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-[#1F4D2E]">Preferencias de Notificaciones</CardTitle>
+              <CardDescription className="text-[#6B7280]">
                 Controla qué emails de notificación quieres recibir
                 {notifLoading && <span className="ml-2 text-xs text-muted-foreground">Guardando...</span>}
               </CardDescription>
@@ -1114,7 +1114,7 @@ export default function TherapistSettings() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium">Nuevas sesiones reservadas</p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-[#6B7280]">
                     Recibe un email cuando un cliente reserve una sesión
                   </p>
                 </div>
@@ -1126,7 +1126,7 @@ export default function TherapistSettings() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium">Recordatorios de sesiones</p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-[#6B7280]">
                     Recibe recordatorios 24 horas antes de cada sesión
                   </p>
                 </div>
@@ -1138,7 +1138,7 @@ export default function TherapistSettings() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium">Mensajes de clientes</p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-[#6B7280]">
                     Notificaciones cuando recibas mensajes nuevos
                   </p>
                 </div>
@@ -1150,7 +1150,7 @@ export default function TherapistSettings() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium">Actualizaciones de pagos</p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-[#6B7280]">
                     Avisos sobre pagos recibidos y transferencias
                   </p>
                 </div>
@@ -1162,7 +1162,7 @@ export default function TherapistSettings() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium">Cancelaciones</p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-[#6B7280]">
                     Notificación cuando un cliente cancele una sesión
                   </p>
                 </div>
@@ -1174,7 +1174,7 @@ export default function TherapistSettings() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium">Inasistencias</p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-[#6B7280]">
                     Notificación cuando se registre una inasistencia
                   </p>
                 </div>
@@ -1198,16 +1198,16 @@ export default function TherapistSettings() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Eliminar Cuenta</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-[#1F4D2E]">Eliminar Cuenta</CardTitle>
+              <CardDescription className="text-[#6B7280]">
                 Elimina permanentemente tu cuenta y todos tus datos
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-[#6B7280]">
                 Antes de eliminar tu cuenta, considera:
               </p>
-              <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
+              <ul className="list-disc list-inside text-sm text-[#6B7280] space-y-1">
                 <li>Perderás acceso a todos tus datos</li>
                 <li>Tus sesiones programadas serán canceladas</li>
                 <li>Los clientes ya no podrán encontrarte en el directorio</li>

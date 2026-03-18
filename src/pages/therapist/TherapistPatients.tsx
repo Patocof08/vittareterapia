@@ -96,20 +96,20 @@ export default function TherapistPatients() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Mis Pacientes</h1>
-        <p className="text-muted-foreground mt-1">
+        <h1 className="text-3xl font-bold text-[#1F4D2E]" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>Mis Pacientes</h1>
+        <p className="text-[#6B7280] mt-1">
           Gestiona la información de tus pacientes
         </p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="w-5 h-5" />
+          <CardTitle className="flex items-center gap-2 text-[#1F4D2E]">
+            <Users className="w-5 h-5 text-[#6AB7AB]" />
             Lista de Pacientes
           </CardTitle>
           <div className="relative mt-4">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#6B7280] w-4 h-4" />
             <Input
               placeholder="Buscar paciente por nombre o email..."
               value={searchTerm}
@@ -121,12 +121,12 @@ export default function TherapistPatients() {
         <CardContent>
           {loading ? (
             <div className="text-center py-12">
-              <p className="text-muted-foreground">Cargando pacientes...</p>
+              <p className="text-[#6B7280]">Cargando pacientes...</p>
             </div>
           ) : filteredPatients.length === 0 ? (
             <div className="text-center py-12">
-              <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">
+              <Users className="w-12 h-12 text-[#6AB7AB] mx-auto mb-4" />
+              <p className="text-[#6B7280]">
                 {searchTerm ? "No se encontraron pacientes" : "No tienes pacientes registrados todavía"}
               </p>
             </div>
@@ -136,7 +136,7 @@ export default function TherapistPatients() {
                 <div
                   key={patient.id}
                   onClick={() => navigate(`/therapist/patients/${patient.id}`)}
-                  className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
+                  className="flex items-center justify-between p-4 border border-[#E5E7EB] rounded-xl hover:bg-[#F0FBF5] transition-colors cursor-pointer"
                 >
                   <div className="flex items-center gap-4">
                     <Avatar>
@@ -146,21 +146,21 @@ export default function TherapistPatients() {
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="font-medium text-foreground">{patient.full_name}</p>
-                      <p className="text-sm text-muted-foreground">{patient.email}</p>
+                      <p className="font-medium text-[#1F2937]">{patient.full_name}</p>
+                      <p className="text-sm text-[#6B7280]">{patient.email}</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-medium text-foreground">
+                    <p className="text-sm font-medium text-[#1F2937]">
                       {patient.sessionCount} sesión{patient.sessionCount !== 1 ? "es" : ""}
                     </p>
                     {(patient as any).transcriptCount > 0 && (
-                      <p className="text-xs text-emerald-600">
+                      <p className="text-xs text-[#12A357]">
                         {(patient as any).transcriptCount} transcripción{(patient as any).transcriptCount !== 1 ? "es" : ""}
                       </p>
                     )}
                     {patient.lastSession && (
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-[#6B7280]">
                         Última: {new Date(patient.lastSession).toLocaleDateString("es-MX")}
                       </p>
                     )}
