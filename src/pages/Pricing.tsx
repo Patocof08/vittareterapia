@@ -327,10 +327,10 @@ const Pricing = () => {
             <h2 className="font-erstoria text-2xl md:text-3xl text-[#1F4D2E] mb-10 text-center">Políticas y condiciones</h2>
             <div className="space-y-4">
               {[
-                { title: "Política de cancelación", text: "Puedes cancelar o reprogramar con al menos 24 horas de anticipación sin cargo. Cancelaciones con menos de 24 horas se cobrarán al 100%.", color: "#12A357", bg: "#D4F0E2" },
-                { title: "Gestión de suscripciones", text: "Cancela cuando quieras desde tu portal. Al cancelar, seguirás con acceso hasta el final del período. Las sesiones no utilizadas se respetan según el sistema de rollover.", color: "#6AB7AB", bg: "#BFE9E2" },
-                { title: "Facturación", text: "Emitimos facturas CFDI para todos los pagos. Solicitala al momento del pago o después desde tu cuenta. Plazo máximo: 72 horas.", color: "#2FB06B", bg: "#C8EDD8" },
-                { title: "Métodos de pago", text: "Aceptamos tarjetas de crédito y débito (Visa, Mastercard, American Express). Pagos procesados de forma segura a través de Stripe.", color: "#6AB7AB", bg: "#BFE9E2" },
+                { title: "Política de cancelación", text: "Puedes cancelar o reprogramar con al menos 24 horas de anticipación sin cargo. Cancelaciones con menos de 24 horas se cobrarán al 100%.", color: "#6AB7AB", bg: "#BFE9E2" },
+                { title: "Gestión de suscripciones", text: "Cancela cuando quieras desde tu portal. Al cancelar, seguirás con acceso hasta el final del período. Las sesiones no utilizadas se respetan según el sistema de rollover.", color: "#12A357", bg: "#D4F0E2" },
+                { title: "Facturación", text: "Emitimos facturas CFDI para todos los pagos. Solicitala al momento del pago o después desde tu cuenta. Plazo máximo: 72 horas.", color: "#D9A932", bg: "#F6E4B2" },
+                { title: "Métodos de pago", text: "Aceptamos tarjetas de crédito y débito (Visa, Mastercard, American Express). Pagos procesados de forma segura a través de Stripe.", color: "#7FCFC2", bg: "#BFE9E2" },
               ].map((policy) => (
                 <div
                   key={policy.title}

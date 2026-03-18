@@ -23,6 +23,8 @@ const NotFound = () => {
             style={{ background: "radial-gradient(circle, #BFE9E2 0%, transparent 65%)" }} />
           <div className="absolute bottom-0 left-0 w-[400px] h-[400px] opacity-20"
             style={{ background: "radial-gradient(circle, #D4F0E2 0%, transparent 65%)" }} />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 w-[300px] h-[300px] opacity-10"
+            style={{ background: "radial-gradient(circle, #F6E4B2 0%, transparent 65%)" }} />
         </div>
 
         <div className="relative z-10 text-center px-4">

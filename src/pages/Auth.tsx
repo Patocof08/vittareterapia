@@ -78,6 +78,8 @@ const Auth = () => {
           style={{ background: "radial-gradient(circle, #BFE9E2 0%, transparent 65%)" }} />
         <div className="absolute -bottom-20 -left-20 w-[400px] h-[400px] opacity-20"
           style={{ background: "radial-gradient(circle, #D4F0E2 0%, transparent 65%)" }} />
+        <div className="absolute top-1/3 right-1/4 w-[250px] h-[250px] opacity-10"
+          style={{ background: "radial-gradient(circle, #F6E4B2 0%, transparent 65%)" }} />
       </div>
 
       {/* Logo */}

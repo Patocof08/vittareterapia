@@ -18,8 +18,8 @@ type ContactFormData = z.infer<typeof contactSchema>;
 const contactInfo = [
   { icon: Mail, label: "Correo electrónico", value: "contacto@vittareterapia.com", href: "mailto:contacto@vittareterapia.com", color: "#12A357", bg: "#D4F0E2" },
   { icon: Phone, label: "Teléfono / WhatsApp", value: "+52 55 1234 5678", href: "tel:+525512345678", color: "#6AB7AB", bg: "#BFE9E2" },
-  { icon: MapPin, label: "Ubicación", value: "Ciudad de México, México", href: null, color: "#2FB06B", bg: "#C8EDD8" },
-  { icon: Clock, label: "Horario de atención", value: "Lun – Vie · 9:00 – 18:00 hrs", href: null, color: "#6AB7AB", bg: "#BFE9E2" },
+  { icon: MapPin, label: "Ubicación", value: "Ciudad de México, México", href: null, color: "#D9A932", bg: "#F6E4B2" },
+  { icon: Clock, label: "Horario de atención", value: "Lun – Vie · 9:00 – 18:00 hrs", href: null, color: "#D16484", bg: "#F5C7D1" },
 ];
 
 const Contact = () => {

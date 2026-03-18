@@ -32,7 +32,11 @@ export const PricingSection = () => {
         />
         <div
           className="absolute top-0 right-0 w-[400px] h-[400px] opacity-20"
-          style={{ background: "radial-gradient(circle, #D4F0E2 0%, transparent 65%)" }}
+          style={{ background: "radial-gradient(circle, #F6E4B2 0%, transparent 65%)" }}
+        />
+        <div
+          className="absolute top-1/2 left-0 w-[300px] h-[300px] opacity-15"
+          style={{ background: "radial-gradient(circle, #BFE9E2 0%, transparent 65%)" }}
         />
       </div>
 
@@ -98,11 +102,14 @@ export const PricingSection = () => {
 
                 {/* Precio */}
                 <div className="mb-5">
-                  <div className="flex items-baseline gap-1">
-                    <span className="font-karla font-bold text-3xl" style={{ color: "#6AB7AB" }}>Desde $500</span>
-                    <span className="font-karla text-sm text-[#6D8F7A]">MXN</span>
+                  <div
+                    className="inline-flex items-baseline gap-1 px-3 py-2 rounded-xl"
+                    style={{ background: "#F6E4B2" }}
+                  >
+                    <span className="font-karla font-bold text-2xl" style={{ color: "#D9A932" }}>Desde $500</span>
+                    <span className="font-karla text-xs font-semibold" style={{ color: "#D9A932" }}>MXN</span>
                   </div>
-                  <p className="font-karla text-[11px] text-[#6D8F7A] mt-1 italic">
+                  <p className="font-karla text-[11px] text-[#6D8F7A] mt-2 italic">
                     El precio varía según el terapeuta
                   </p>
                 </div>

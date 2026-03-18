@@ -8,17 +8,17 @@ import { motion } from "framer-motion";
 
 const benefits = [
   { icon: Calendar, title: "Agenda automatizada", description: "Gestiona tu disponibilidad y sesiones sin complicaciones. Los pacientes agendan directamente contigo.", color: "#12A357", bg: "#D4F0E2" },
-  { icon: CreditCard, title: "Pagos simplificados", description: "Recibe tus pagos de forma segura y automática. Comisión transparente, sin cargos sorpresa.", color: "#6AB7AB", bg: "#BFE9E2" },
-  { icon: Users, title: "Herramientas profesionales", description: "Seguimiento de pacientes, asignación de tareas y expedientes digitales en un solo lugar.", color: "#2FB06B", bg: "#C8EDD8" },
-  { icon: Video, title: "Videollamadas seguras", description: "Plataforma integrada para sesiones virtuales con la mejor calidad y privacidad.", color: "#6AB7AB", bg: "#BFE9E2" },
-  { icon: Shield, title: "Verificación profesional", description: "Tu perfil verificado genera confianza. Nosotros validamos tu cédula y credenciales.", color: "#12A357", bg: "#D4F0E2" },
-  { icon: CheckCircle2, title: "Libertad total", description: "Fija tus horarios, precios y metodología. Tú decides cómo trabajar.", color: "#2FB06B", bg: "#C8EDD8" },
+  { icon: CreditCard, title: "Pagos simplificados", description: "Recibe tus pagos de forma segura y automática. Comisión transparente, sin cargos sorpresa.", color: "#D9A932", bg: "#F6E4B2" },
+  { icon: Users, title: "Herramientas profesionales", description: "Seguimiento de pacientes, asignación de tareas y expedientes digitales en un solo lugar.", color: "#6AB7AB", bg: "#BFE9E2" },
+  { icon: Video, title: "Videollamadas seguras", description: "Plataforma integrada para sesiones virtuales con la mejor calidad y privacidad.", color: "#12A357", bg: "#D4F0E2" },
+  { icon: Shield, title: "Verificación profesional", description: "Tu perfil verificado genera confianza. Nosotros validamos tu cédula y credenciales.", color: "#7FCFC2", bg: "#BFE9E2" },
+  { icon: CheckCircle2, title: "Libertad total", description: "Fija tus horarios, precios y metodología. Tú decides cómo trabajar.", color: "#D16484", bg: "#F5C7D1" },
 ];
 
 const steps = [
-  { num: "01", title: "Regístrate", description: "Completa tu perfil profesional con tu experiencia, especialidades y enfoque terapéutico.", color: "#12A357", bg: "#D4F0E2" },
-  { num: "02", title: "Configura", description: "Sube tus documentos, define tu disponibilidad y establece tus tarifas.", color: "#6AB7AB", bg: "#BFE9E2" },
-  { num: "03", title: "Publica", description: "Una vez verificado, tu perfil estará visible y comenzarás a recibir solicitudes de pacientes.", color: "#2FB06B", bg: "#C8EDD8" },
+  { num: "01", title: "Regístrate", description: "Completa tu perfil profesional con tu experiencia, especialidades y enfoque terapéutico.", color: "#6AB7AB", bg: "#BFE9E2" },
+  { num: "02", title: "Configura", description: "Sube tus documentos, define tu disponibilidad y establece tus tarifas.", color: "#D9A932", bg: "#F6E4B2" },
+  { num: "03", title: "Publica", description: "Una vez verificado, tu perfil estará visible y comenzarás a recibir solicitudes de pacientes.", color: "#12A357", bg: "#D4F0E2" },
 ];
 
 const stats = [
@@ -243,8 +243,8 @@ export default function ParaPsicologos() {
 
             <div className="grid md:grid-cols-2 gap-5">
               {[
-                { title: "Soporte técnico", desc: "Equipo disponible para resolver cualquier duda o problema técnico.", color: "#12A357", bg: "#D4F0E2" },
-                { title: "Red de profesionales", desc: "Próximamente: conecta con otros terapeutas y comparte experiencias.", color: "#6AB7AB", bg: "#BFE9E2" },
+                { title: "Soporte técnico", desc: "Equipo disponible para resolver cualquier duda o problema técnico.", color: "#6AB7AB", bg: "#BFE9E2" },
+                { title: "Red de profesionales", desc: "Próximamente: conecta con otros terapeutas y comparte experiencias.", color: "#D9A932", bg: "#F6E4B2" },
               ].map((item) => (
                 <div
                   key={item.title}

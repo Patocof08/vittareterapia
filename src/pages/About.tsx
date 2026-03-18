@@ -51,6 +51,8 @@ const About = () => {
             style={{ background: "radial-gradient(circle, #BFE9E2 0%, transparent 65%)" }} />
           <div className="absolute bottom-0 left-0 w-[350px] h-[350px] opacity-15"
             style={{ background: "radial-gradient(circle, #D4F0E2 0%, transparent 65%)" }} />
+          <div className="absolute top-1/2 right-1/3 w-[250px] h-[250px] opacity-10"
+            style={{ background: "radial-gradient(circle, #F5C7D1 0%, transparent 65%)" }} />
         </div>
         <div className="container mx-auto px-4 md:px-6 text-center relative z-10">
           <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>

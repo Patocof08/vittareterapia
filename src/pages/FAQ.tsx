@@ -157,8 +157,17 @@ const FAQ = () => {
       </section>
 
       {/* CTA */}
-      <section className="py-16 md:py-20" style={{ background: "#F0FAF8" }}>
+      <section
+        className="py-16 md:py-20"
+        style={{ background: "linear-gradient(160deg, #FFFBEF 0%, #FFF8EC 50%, #F6E4B2 100%)", borderTop: "1px solid #F6E4B280" }}
+      >
         <div className="container mx-auto px-4 text-center">
+          <div
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-karla uppercase tracking-wide mb-5"
+            style={{ background: "#F6E4B2", color: "#D9A932" }}
+          >
+            Soporte
+          </div>
           <h2 className="font-erstoria text-2xl md:text-3xl text-[#1F4D2E] mb-3">¿No encuentras lo que buscas?</h2>
           <p className="font-karla text-[#6D8F7A] mb-8 max-w-lg mx-auto">
             Estamos aquí para ayudarte. Envíanos un mensaje y te responderemos pronto.
