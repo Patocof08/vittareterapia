@@ -13,7 +13,7 @@ const HEART_PATH = "M483.83,298.55c.99.53,4.51,1.99,4.68,2.19.32.37.23,1.37.69,1
 /** Isotipo SVG — logo oficial de campaña de marketing */
 export const VittareIsotipo = ({ className = "", spin = false }: { className?: string; spin?: boolean }) => (
   <svg
-    viewBox="0 0 747.66 767.27"
+    viewBox="-25 -25 797.66 817.27"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
     className={`w-9 h-9 ${className}`}
