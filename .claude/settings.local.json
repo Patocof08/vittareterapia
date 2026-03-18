@@ -48,7 +48,8 @@
       "mcp__stitch__list_screens",
       "WebFetch(domain:contribution.usercontent.google.com)",
       "mcp__nano-banana__generate_image",
-      "Bash(del:*)"
+      "Bash(del:*)",
+      "mcp___21st-dev_magic__21st_magic_component_inspiration"
     ]
   },
   "enableAllProjectMcpServers": true,
