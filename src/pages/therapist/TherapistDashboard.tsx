@@ -179,7 +179,9 @@ export default function TherapistDashboard() {
             <CardTitle className="text-sm font-medium text-[#1F4D2E]">
               Sesiones esta semana
             </CardTitle>
-            <Video className="h-4 w-4 text-[#12A357]" />
+            <span className="p-2 rounded-lg bg-[#E8F5EE]">
+              <Video className="h-4 w-4 text-[#12A357]" />
+            </span>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-[#1F4D2E]">{weekSessions.length}</div>
@@ -194,7 +196,9 @@ export default function TherapistDashboard() {
             <CardTitle className="text-sm font-medium text-[#1F4D2E]">
               Tasa de asistencia
             </CardTitle>
-            <CheckCircle className="h-4 w-4 text-[#6AB7AB]" />
+            <span className="p-2 rounded-lg bg-[#EDF7F5]">
+              <CheckCircle className="h-4 w-4 text-[#6AB7AB]" />
+            </span>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-[#1F4D2E]">--</div>
@@ -209,7 +213,9 @@ export default function TherapistDashboard() {
             <CardTitle className="text-sm font-medium text-[#1F4D2E]">
               Balance acumulado
             </CardTitle>
-            <DollarSign className="h-4 w-4 text-[#D9A932]" />
+            <span className="p-2 rounded-lg bg-[#FEF9EA]">
+              <DollarSign className="h-4 w-4 text-[#D9A932]" />
+            </span>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-[#1F4D2E]">${walletBalance.toFixed(2)}</div>
@@ -222,7 +228,9 @@ export default function TherapistDashboard() {
             <CardTitle className="text-sm font-medium text-[#1F4D2E]">
               Mensajes sin leer
             </CardTitle>
-            <MessageSquare className="h-4 w-4 text-[#E7839D]" />
+            <span className="p-2 rounded-lg bg-[#FDF0F4]">
+              <MessageSquare className="h-4 w-4 text-[#E7839D]" />
+            </span>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-[#1F4D2E]">{unreadMessagesCount}</div>
@@ -239,7 +247,9 @@ export default function TherapistDashboard() {
         <Card className="border-[#E5E7EB]">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-[#1F4D2E]">
-              <Calendar className="w-5 h-5 text-[#12A357]" />
+              <span className="p-1.5 rounded-lg bg-[#E8F5EE]">
+                <Calendar className="w-4 h-4 text-[#12A357]" />
+              </span>
               Sesiones de hoy
             </CardTitle>
           </CardHeader>
@@ -294,7 +304,9 @@ export default function TherapistDashboard() {
         <Card className="border-[#E5E7EB]">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-[#1F4D2E]">
-              <MessageSquare className="w-5 h-5 text-[#E7839D]" />
+              <span className="p-1.5 rounded-lg bg-[#FDF0F4]">
+                <MessageSquare className="w-4 h-4 text-[#E7839D]" />
+              </span>
               Mensajes recientes
             </CardTitle>
           </CardHeader>

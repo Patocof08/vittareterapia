@@ -83,27 +83,27 @@ export const ClientSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }
   const sidebarContent = (isMobile: boolean) => (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className={`border-b border-white/10 relative ${collapsed && !isMobile ? "px-2 py-4" : "p-4"}`}>
-        <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-          <div className="w-10 h-10 bg-[#12A357] rounded-lg flex items-center justify-center flex-shrink-0">
-            <span className="text-white font-bold text-xl">V</span>
+      <div className={`border-b border-[#E5E7EB] relative ${collapsed && !isMobile ? "px-2 py-4" : "p-5"}`}>
+        <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+          <div className="w-10 h-10 bg-gradient-to-br from-[#12A357] to-[#0A7A3E] rounded-xl flex items-center justify-center flex-shrink-0 shadow-md shadow-[#12A357]/20">
+            <span className="font-erstoria text-white font-bold text-xl leading-none">V</span>
           </div>
           {(!collapsed || isMobile) && (
             <div>
-              <span className="font-bold text-xl text-white">Vittare</span>
-              <p className="text-xs text-white/60">Portal Cliente</p>
+              <h1 className="font-erstoria text-lg text-[#1F4D2E] leading-tight">Vittare</h1>
+              <p className="text-xs text-[#6B7280]">Portal Cliente</p>
             </div>
           )}
         </Link>
         {isMobile && (
-          <button onClick={onMobileClose} className="absolute top-4 right-4 p-2 rounded-lg hover:bg-white/10">
-            <X className="w-5 h-5 text-white/70" />
+          <button onClick={onMobileClose} className="absolute top-4 right-4 p-2 rounded-lg hover:bg-[#F0FBF5]">
+            <X className="w-5 h-5 text-[#6B7280]" />
           </button>
         )}
       </div>
 
       {/* Menu */}
-      <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
+      <nav className="flex-1 overflow-y-auto p-3 space-y-0.5">
         {menuItems.map((item) => (
           <NavLink
             key={item.path}
@@ -112,24 +112,24 @@ export const ClientSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }
             onClick={isMobile ? onMobileClose : undefined}
             title={collapsed && !isMobile ? item.label : undefined}
             className={({ isActive }) =>
-              `flex items-center gap-3 rounded-lg transition-colors relative ${
-                collapsed && !isMobile ? "justify-center px-2 py-3" : "px-4 py-3"
+              `flex items-center gap-3 rounded-xl transition-all relative ${
+                collapsed && !isMobile ? "justify-center px-2 py-3" : "px-3 py-2.5"
               } ${
                 isActive
-                  ? "bg-[#12A357] text-white"
-                  : "text-white/70 hover:bg-white/10 hover:text-white"
+                  ? "bg-[#E8F5EE] text-[#12A357] font-semibold border-l-[3px] border-[#12A357]"
+                  : "text-[#6B7280] hover:bg-[#F9FAFB] hover:text-[#1F4D2E]"
               }`
             }
           >
             <item.icon className="w-5 h-5 flex-shrink-0" />
-            {(!collapsed || isMobile) && <span className="font-medium">{item.label}</span>}
+            {(!collapsed || isMobile) && <span className="text-sm">{item.label}</span>}
             {item.hasUnreadBadge && unreadCount > 0 && (!collapsed || isMobile) && (
-              <span className="ml-auto bg-destructive text-destructive-foreground text-xs font-semibold px-2 py-0.5 rounded-full">
+              <span className="ml-auto bg-[#E7839D] text-white text-xs font-bold px-2 py-0.5 rounded-full">
                 {unreadCount}
               </span>
             )}
             {item.hasUnreadBadge && unreadCount > 0 && collapsed && !isMobile && (
-              <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full" />
+              <span className="absolute top-1 right-1 w-2 h-2 bg-[#E7839D] rounded-full" />
             )}
           </NavLink>
         ))}
@@ -137,10 +137,10 @@ export const ClientSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }
 
       {/* Collapse toggle — solo desktop */}
       {!isMobile && (
-        <div className="border-t border-white/10 p-2">
+        <div className="border-t border-[#E5E7EB] p-3">
           <button
             onClick={onToggle}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-white/70 hover:bg-white/10 hover:text-white transition-colors text-sm"
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-[#6B7280] hover:bg-[#F9FAFB] hover:text-[#1F4D2E] transition-colors text-sm"
           >
             {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
             {!collapsed && <span>Colapsar</span>}
@@ -154,7 +154,7 @@ export const ClientSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }
     <>
       {/* Desktop sidebar */}
       <aside
-        className={`hidden lg:flex flex-col bg-[#1F4D2E] border-r border-[#1F4D2E] h-screen sticky top-0 transition-all duration-300 overflow-hidden ${
+        className={`hidden lg:flex flex-col bg-white border-r border-[#E5E7EB] h-screen sticky top-0 transition-all duration-300 overflow-hidden ${
           collapsed ? "w-16" : "w-64"
         }`}
       >
@@ -165,7 +165,7 @@ export const ClientSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }
       {mobileOpen && (
         <>
           <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={onMobileClose} />
-          <aside className="fixed inset-y-0 left-0 w-64 bg-[#1F4D2E] border-r border-[#1F4D2E] z-50 lg:hidden flex flex-col">
+          <aside className="fixed inset-y-0 left-0 w-64 bg-white border-r border-[#E5E7EB] z-50 lg:hidden flex flex-col">
             {sidebarContent(true)}
           </aside>
         </>

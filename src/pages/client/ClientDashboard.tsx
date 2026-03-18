@@ -101,7 +101,9 @@ export default function ClientDashboard() {
               <CardTitle className="text-sm font-medium text-[#1F4D2E]">
                 Agendar Sesión
               </CardTitle>
-              <Calendar className="h-4 w-4 text-[#12A357]" />
+              <span className="p-2 rounded-lg bg-[#E8F5EE]">
+                <Calendar className="h-4 w-4 text-[#12A357]" />
+              </span>
             </CardHeader>
             <CardContent>
               <p className="text-xs text-[#6B7280]">
@@ -117,7 +119,9 @@ export default function ClientDashboard() {
               <CardTitle className="text-sm font-medium text-[#1F4D2E]">
                 Mis Sesiones
               </CardTitle>
-              <Video className="h-4 w-4 text-[#6AB7AB]" />
+              <span className="p-2 rounded-lg bg-[#EDF7F5]">
+                <Video className="h-4 w-4 text-[#6AB7AB]" />
+              </span>
             </CardHeader>
             <CardContent>
               <p className="text-xs text-[#6B7280]">
@@ -133,7 +137,9 @@ export default function ClientDashboard() {
               <CardTitle className="text-sm font-medium text-[#1F4D2E]">
                 Mensajes
               </CardTitle>
-              <MessageSquare className="h-4 w-4 text-[#E7839D]" />
+              <span className="p-2 rounded-lg bg-[#FDF0F4]">
+                <MessageSquare className="h-4 w-4 text-[#E7839D]" />
+              </span>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-[#1F4D2E]">{unreadMessagesCount}</div>
@@ -150,7 +156,9 @@ export default function ClientDashboard() {
               <CardTitle className="text-sm font-medium text-[#1F4D2E]">
                 Mis Tareas
               </CardTitle>
-              <CheckCircle className="h-4 w-4 text-[#D9A932]" />
+              <span className="p-2 rounded-lg bg-[#FEF9EA]">
+                <CheckCircle className="h-4 w-4 text-[#D9A932]" />
+              </span>
             </CardHeader>
             <CardContent>
               <p className="text-xs text-[#6B7280]">
@@ -165,7 +173,9 @@ export default function ClientDashboard() {
       <Card className="border-[#E5E7EB]">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-[#1F4D2E]">
-            <Video className="w-5 h-5 text-[#12A357]" />
+            <span className="p-1.5 rounded-lg bg-[#E8F5EE]">
+              <Video className="w-4 h-4 text-[#12A357]" />
+            </span>
             Próxima Sesión
           </CardTitle>
         </CardHeader>
@@ -234,7 +244,9 @@ export default function ClientDashboard() {
         <Card className="border-[#E5E7EB]">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-[#1F4D2E]">
-              <MessageSquare className="w-5 h-5 text-[#E7839D]" />
+              <span className="p-1.5 rounded-lg bg-[#FDF0F4]">
+                <MessageSquare className="w-4 h-4 text-[#E7839D]" />
+              </span>
               Mensajes Recientes
             </CardTitle>
           </CardHeader>
@@ -249,7 +261,9 @@ export default function ClientDashboard() {
         <Card className="border-[#E5E7EB]">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-[#1F4D2E]">
-              <CheckCircle className="w-5 h-5 text-[#D9A932]" />
+              <span className="p-1.5 rounded-lg bg-[#FEF9EA]">
+                <CheckCircle className="w-4 h-4 text-[#D9A932]" />
+              </span>
               Mis Tareas
             </CardTitle>
           </CardHeader>
