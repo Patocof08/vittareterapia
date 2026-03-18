@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { NewsletterSignup } from "@/components/NewsletterSignup";
 import { SocialLinks } from "@/components/SocialLinks";
+import { VittareLogo } from "@/components/VittareLogo";
 
 export const Footer = () => {
   const { user, role } = useAuth();
@@ -28,12 +29,7 @@ export const Footer = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Marca */}
           <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-xl">V</span>
-              </div>
-              <span className="font-bold text-xl text-foreground">Vittare</span>
-            </div>
+            <VittareLogo size="md" />
             <p className="text-sm text-muted-foreground">
               Terapia en línea segura y profesional. Tu bienestar mental es nuestra prioridad.
             </p>
