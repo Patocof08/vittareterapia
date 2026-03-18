@@ -47,7 +47,8 @@
       "mcp__nano-banana__get_configuration_status",
       "mcp__stitch__list_screens",
       "WebFetch(domain:contribution.usercontent.google.com)",
-      "mcp__nano-banana__generate_image"
+      "mcp__nano-banana__generate_image",
+      "Bash(del:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

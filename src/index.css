@@ -7,10 +7,6 @@ html {
   scroll-behavior: smooth;
 }
 
-/* Ocultar cursor nativo en dispositivos con mouse */
-@media (pointer: fine) {
-  * { cursor: none !important; }
-}
 
 
 /* Page fade-in on load */
