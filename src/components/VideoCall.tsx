@@ -87,7 +87,19 @@ export default function VideoCall({ appointmentId, onLeave, onRoleDetected }: Vi
 
       const frame = DailyIframe.createFrame(containerRef.current, {
         iframeStyle: { width: '100%', height: '100%', border: 'none' },
-        theme: { colors: { accent: '#059669', accentText: '#FFFFFF' } },
+        theme: {
+          colors: {
+            accent:            '#12A357',
+            accentText:        '#FFFFFF',
+            background:        '#0D2117',
+            backgroundAccent:  '#162D1E',
+            baseText:          '#E8F7F3',
+            border:            '#2A5A3C',
+            mainAreaBg:        '#0D2117',
+            mainAreaBgAccent:  '#111F16',
+            supportiveText:    '#6AB7AB',
+          },
+        },
       })
       frameRef.current = frame
 
@@ -102,10 +114,10 @@ export default function VideoCall({ appointmentId, onLeave, onRoleDetected }: Vi
 
   if (loading) {
     return (
-      <div className="h-full flex items-center justify-center bg-gray-900">
+      <div className="h-full flex items-center justify-center" style={{ background: '#0D2117' }}>
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500 mx-auto mb-4" />
-          <p className="text-gray-300">Iniciando videollamada...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{ borderColor: '#12A357' }} />
+          <p style={{ color: '#6AB7AB' }}>Iniciando videollamada...</p>
         </div>
       </div>
     )
@@ -113,14 +125,15 @@ export default function VideoCall({ appointmentId, onLeave, onRoleDetected }: Vi
 
   if (error) {
     return (
-      <div className="h-full flex items-center justify-center bg-gray-900">
+      <div className="h-full flex items-center justify-center" style={{ background: '#0D2117' }}>
         <div className="text-center space-y-4">
-          <Video className="w-16 h-16 mx-auto text-gray-500" />
-          <p className="text-lg font-medium text-white">{error}</p>
+          <Video className="w-16 h-16 mx-auto" style={{ color: '#2A5A3C' }} />
+          <p className="text-lg font-medium" style={{ color: '#E8F7F3' }}>{error}</p>
           <Button
             onClick={() => onLeave?.()}
             variant="outline"
-            className="border-gray-600 text-gray-300 hover:bg-gray-800"
+            style={{ borderColor: '#2A5A3C', color: '#BFE9E2' }}
+            className="hover:bg-[#162D1E]"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Volver

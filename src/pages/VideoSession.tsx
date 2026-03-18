@@ -17,8 +17,8 @@ export default function VideoSession() {
   // Show loading spinner while auth initializes (prevents calling edge function without JWT)
   if (authLoading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-gray-900">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500" />
+      <div className="h-screen flex items-center justify-center" style={{ background: '#0D2117' }}>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2" style={{ borderColor: '#12A357' }} />
       </div>
     )
   }
@@ -31,8 +31,8 @@ export default function VideoSession() {
 
   if (!appointmentId) {
     return (
-      <div className="h-screen flex items-center justify-center bg-gray-900">
-        <p className="text-white">Cita no encontrada</p>
+      <div className="h-screen flex items-center justify-center" style={{ background: '#0D2117' }}>
+        <p style={{ color: '#E8F7F3' }}>Cita no encontrada</p>
       </div>
     )
   }
@@ -46,16 +46,17 @@ export default function VideoSession() {
   }
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-gray-950">
+    <div className="h-screen w-screen flex flex-col" style={{ background: '#0D2117' }}>
       {/* Barra superior con botón de salida */}
       {!showPostSession && (
-        <div className="flex-shrink-0 flex items-center justify-between px-4 py-2 bg-gray-900 border-b border-gray-800">
-          <span className="text-sm text-gray-400 font-medium">Vittare · Sesión en curso</span>
+        <div className="flex-shrink-0 flex items-center justify-between px-4 py-2 border-b" style={{ background: '#1F4D2E', borderColor: '#2A5A3C' }}>
+          <span className="text-sm font-medium" style={{ color: '#6AB7AB' }}>Vittare · Sesión en curso</span>
           <Button
             variant="ghost"
             size="sm"
             onClick={handleLeave}
-            className="text-gray-300 hover:text-white hover:bg-red-900/50 gap-2"
+            className="gap-2 hover:bg-red-900/40"
+            style={{ color: '#BFE9E2' }}
           >
             <LogOut className="w-4 h-4" />
             Salir de la sesión
