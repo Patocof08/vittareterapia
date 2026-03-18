@@ -1,15 +1,16 @@
 import { Navbar } from "@/components/Navbar";
-import { Footer } from "@/components/Footer";
+import { LandingFooter } from "@/components/landing/LandingFooter";
 
 const Terms = () => {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen flex flex-col" style={{ background: "#FAFAF8" }}>
       <Navbar />
 
-      <div className="container mx-auto px-4 py-20">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-4xl md:text-5xl font-bold mb-8">Términos y Condiciones</h1>
-          <p className="text-muted-foreground mb-8">Última actualización: Marzo 2024</p>
+      <div className="flex-1 container mx-auto px-4 md:px-6 py-20">
+        <div className="max-w-3xl mx-auto">
+          <div className="inline-block font-karla text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full mb-6" style={{ background: "#D4F0E2", color: "#12A357" }}>Legal</div>
+          <h1 className="font-erstoria text-[clamp(2rem,5vw,3.2rem)] text-[#1F4D2E] leading-[1.1] tracking-[-0.025em] mb-4">Términos y Condiciones</h1>
+          <p className="font-karla text-[#6D8F7A] mb-10">Última actualización: Marzo 2024</p>
 
           <div className="prose prose-lg max-w-none">
             <section className="mb-12">
@@ -142,7 +143,7 @@ const Terms = () => {
         </div>
       </div>
 
-      <Footer />
+      <LandingFooter />
     </div>
   );
 };
