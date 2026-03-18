@@ -65,9 +65,9 @@ export const VittareLoader = ({ size = 80, className = "" }: { size?: number; cl
   </svg>
 );
 
-/** Pantalla de carga a pantalla completa con el loader centrado */
+/** Overlay de carga: fondo borroso semi-transparente con el loader centrado */
 export const VittareLoadingScreen = ({ message = "Cargando..." }: { message?: string }) => (
-  <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white">
+  <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white/40 backdrop-blur-sm">
     <VittareLoader size={96} />
     <p className="mt-5 text-sm text-[#6B7280] tracking-wide">{message}</p>
   </div>

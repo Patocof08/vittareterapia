@@ -3,7 +3,7 @@ import { AdminSidebar } from "./AdminSidebar";
 import { AdminTopbar } from "./AdminTopbar";
 import { useEffect, useRef, useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { VittareLoader } from "@/components/VittareLogo";
+import { VittareLoadingScreen } from "@/components/VittareLogo";
 
 export const AdminLayout = () => {
   const location = useLocation();
@@ -40,14 +40,8 @@ export const AdminLayout = () => {
       <div className="flex-1 flex flex-col w-full min-w-0">
         <AdminTopbar onMenuClick={() => setSidebarOpen(true)} />
         <main className="flex-1 p-4 lg:p-6 overflow-x-hidden">
-          {isTransitioning && (
-            <div className="flex items-center justify-center h-64">
-              <VittareLoader size={72} />
-            </div>
-          )}
-          <div className={isTransitioning ? "hidden" : ""}>
-            <Outlet key={location.key} />
-          </div>
+          {isTransitioning && <VittareLoadingScreen />}
+          <Outlet key={location.key} />
         </main>
       </div>
     </div>

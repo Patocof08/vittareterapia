@@ -3,7 +3,7 @@ import { TherapistSidebar } from "./TherapistSidebar";
 import { TherapistTopbar } from "./TherapistTopbar";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect, useRef, useState } from "react";
-import { VittareLoader, VittareLoadingScreen } from "@/components/VittareLogo";
+import { VittareLoadingScreen } from "@/components/VittareLogo";
 import { supabase } from "@/integrations/supabase/client";
 import { Upload, User, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -204,15 +204,9 @@ export const TherapistLayout = () => {
         <TherapistTopbar onMenuClick={() => setMobileMenuOpen(true)} />
 
         <main className="flex-1 overflow-y-auto">
+          {isTransitioning && <VittareLoadingScreen />}
           <div className="container mx-auto p-4 lg:p-6 max-w-7xl">
-            {isTransitioning && (
-              <div className="flex items-center justify-center h-64">
-                <VittareLoader size={72} />
-              </div>
-            )}
-            <div className={isTransitioning ? "hidden" : ""}>
-              <Outlet key={location.key} />
-            </div>
+            <Outlet key={location.key} />
           </div>
         </main>
       </div>

@@ -4,7 +4,7 @@ import { ClientSidebar } from "./ClientSidebar";
 import { ClientTopbar } from "./ClientTopbar";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { VittareLoader } from "@/components/VittareLogo";
+import { VittareLoadingScreen } from "@/components/VittareLogo";
 
 export const ClientLayout = () => {
   const { user } = useAuth();
@@ -60,15 +60,9 @@ export const ClientLayout = () => {
         <ClientTopbar onMenuClick={() => setMobileMenuOpen(true)} />
 
         <main className="flex-1 overflow-y-auto">
+          {isTransitioning && <VittareLoadingScreen />}
           <div className="container mx-auto p-4 lg:p-6 max-w-7xl">
-            {isTransitioning && (
-              <div className="flex items-center justify-center h-64">
-                <VittareLoader size={72} />
-              </div>
-            )}
-            <div className={isTransitioning ? "hidden" : ""}>
-              <Outlet key={location.key} />
-            </div>
+            <Outlet key={location.key} />
           </div>
         </main>
       </div>
