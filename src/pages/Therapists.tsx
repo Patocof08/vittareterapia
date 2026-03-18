@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Navbar } from "@/components/Navbar";
-import { Footer } from "@/components/Footer";
+import { LandingFooter } from "@/components/landing/LandingFooter";
 import { TherapistCard } from "@/components/TherapistCard";
 import { PersonalizedQuiz } from "@/components/PersonalizedQuiz";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -14,8 +13,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { PatientPreferences } from "@/types/preferences";
 import { toast } from "sonner";
 import { rankTherapists } from "@/lib/matchingAlgorithm";
-import { Badge } from "@/components/ui/badge";
 import { fetchPublicProfiles } from "@/lib/psychologistQueries";
+import { motion } from "framer-motion";
 
 const Therapists = () => {
   const navigate = useNavigate();
@@ -34,12 +33,9 @@ const Therapists = () => {
   const specialties = ["Todos"];
   const languages = ["Todos", "Español", "Inglés"];
 
-  // Load therapists and preferences
   useEffect(() => {
     const loadData = async () => {
       try {
-        // Load therapists with pricing
-        // Fetch public profiles securely (excludes email/phone)
         const therapistsData = await fetchPublicProfiles();
         const therapistsError = null;
 
@@ -47,7 +43,6 @@ const Therapists = () => {
           setTherapists(therapistsData);
         }
 
-        // Load ratings
         // @ts-ignore - Types will regenerate automatically
         const { data: ratingsData } = await supabase
           .from("psychologist_ratings")
@@ -60,21 +55,17 @@ const Therapists = () => {
           setRatingsMap(map);
         }
 
-        // Load preferences if user is logged in
         if (user) {
           const pendingPrefs = sessionStorage.getItem('pending_preferences');
           if (pendingPrefs) {
             try {
               const preferences = JSON.parse(pendingPrefs);
               sessionStorage.removeItem('pending_preferences');
-              
+
               // @ts-ignore - Types will regenerate automatically
               const { data, error } = await supabase
                 .from("patient_preferences")
-                .upsert({
-                  user_id: user.id,
-                  ...preferences
-                })
+                .upsert({ user_id: user.id, ...preferences })
                 .select()
                 .single();
 
@@ -112,29 +103,18 @@ const Therapists = () => {
   const handleQuizComplete = async (preferences: Omit<PatientPreferences, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
     setShowQuiz(false);
 
-    // If not logged in, redirect to auth
     if (!user) {
       toast.info("Crea tu cuenta para guardar tu configuración");
-      // Store preferences in sessionStorage temporarily
       sessionStorage.setItem('pending_preferences', JSON.stringify(preferences));
       navigate('/auth');
       return;
     }
 
-    // Save preferences to database
     try {
       // @ts-ignore - Types will regenerate automatically
       const { data, error } = await supabase
         .from("patient_preferences")
-        .upsert(
-          {
-            user_id: user.id,
-            ...preferences
-          },
-          {
-            onConflict: 'user_id'
-          }
-        )
+        .upsert({ user_id: user.id, ...preferences }, { onConflict: 'user_id' })
         .select()
         .single();
 
@@ -148,7 +128,6 @@ const Therapists = () => {
     }
   };
 
-  // Apply matching algorithm if preferences exist AND are active
   const rankedTherapists = savedPreferences?.is_active
     ? rankTherapists(
         therapists.map(t => {
@@ -203,7 +182,7 @@ const Therapists = () => {
   });
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen flex flex-col" style={{ background: "#FAFAF8" }}>
       <Navbar />
 
       {showQuiz && (
@@ -213,190 +192,220 @@ const Therapists = () => {
         />
       )}
 
-      {/* Header */}
-      <section className="bg-muted/30 py-12 border-b border-border">
-        <div className="container mx-auto px-4">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">Encuentra tu terapeuta ideal</h1>
-          <p className="text-lg text-muted-foreground max-w-2xl">
-            Todos nuestros terapeutas están certificados y tienen amplia experiencia.
-          </p>
-          <div className="mt-6 flex flex-wrap gap-3 items-center">
-            <Button
-              onClick={() => setShowQuiz(true)}
-              size="lg"
-              className="gap-2"
+      {/* Hero */}
+      <section
+        className="relative py-16 md:py-24 overflow-hidden"
+        style={{ background: "linear-gradient(160deg, #F0FAF8 0%, #E8F7F3 50%, #FAFAF8 100%)" }}
+      >
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-0 right-0 w-[500px] h-[500px] opacity-25"
+            style={{ background: "radial-gradient(circle, #BFE9E2 0%, transparent 65%)" }} />
+          <div className="absolute bottom-0 left-0 w-[350px] h-[350px] opacity-15"
+            style={{ background: "radial-gradient(circle, #D4F0E2 0%, transparent 65%)" }} />
+          <div className="absolute top-1/2 right-1/4 w-[250px] h-[250px] opacity-10"
+            style={{ background: "radial-gradient(circle, #F6E4B2 0%, transparent 65%)" }} />
+        </div>
+
+        <div className="container mx-auto px-4 md:px-6 relative z-10">
+          <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
+            <div
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-karla uppercase tracking-wide mb-5"
+              style={{ background: "#D4F0E2", color: "#12A357" }}
             >
-              <Sparkles className="w-5 h-5" />
-              {savedPreferences ? 'Actualizar' : 'Configurar'} atención personalizada (2 min)
-            </Button>
-            {savedPreferences && savedPreferences.is_active && (
-              <>
-                <Badge variant="secondary" className="text-sm py-2 px-4">
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  Mostrando recomendados
-                </Badge>
-                <Button
-                  variant="ghost"
-                  size="sm"
+              Terapeutas verificados
+            </div>
+            <h1 className="font-erstoria text-[clamp(2rem,5vw,3.5rem)] text-[#1F4D2E] leading-[1.1] tracking-[-0.025em] mb-4 max-w-2xl">
+              Encuentra tu terapeuta ideal
+            </h1>
+            <p className="font-karla text-lg text-[#6D8F7A] max-w-xl leading-relaxed mb-8">
+              Todos nuestros terapeutas están certificados y tienen amplia experiencia. Psicólogos verificados, precios transparentes.
+            </p>
+
+            <div className="flex flex-wrap gap-3 items-center">
+              <motion.button
+                whileHover={{ scale: 1.02, boxShadow: "0 8px 28px rgba(18,163,87,0.22)" }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => setShowQuiz(true)}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-[#12A357] text-white font-karla font-bold rounded-2xl cursor-pointer"
+              >
+                <Sparkles className="w-4 h-4" />
+                {savedPreferences ? "Actualizar" : "Configurar"} atención personalizada
+              </motion.button>
+
+              {savedPreferences?.is_active && (
+                <>
+                  <div
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-karla font-semibold"
+                    style={{ background: "#D4F0E2", color: "#12A357" }}
+                  >
+                    <Sparkles className="w-3 h-3" />
+                    Mostrando recomendados
+                  </div>
+                  <button
+                    onClick={async () => {
+                      if (user) {
+                        await supabase
+                          .from("patient_preferences")
+                          .update({ is_active: false })
+                          .eq("user_id", user.id);
+                        setSavedPreferences({ ...savedPreferences, is_active: false });
+                        toast.success("Mostrando todos los terapeutas");
+                      }
+                    }}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-2xl font-karla text-sm font-medium cursor-pointer border transition-colors hover:bg-white"
+                    style={{ borderColor: "#BFE9E2", color: "#6D8F7A" }}
+                  >
+                    <X className="w-3.5 h-3.5" />
+                    Ver todos
+                  </button>
+                </>
+              )}
+
+              {savedPreferences && !savedPreferences.is_active && (
+                <button
                   onClick={async () => {
                     if (user) {
                       await supabase
                         .from("patient_preferences")
-                        .update({ is_active: false })
+                        .update({ is_active: true })
                         .eq("user_id", user.id);
-                      setSavedPreferences({ ...savedPreferences, is_active: false });
-                      toast.success("Mostrando todos los terapeutas");
+                      setSavedPreferences({ ...savedPreferences, is_active: true });
+                      toast.success("Recomendaciones activadas");
                     }
                   }}
-                  className="gap-2"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl font-karla text-sm font-bold cursor-pointer border-2 transition-colors hover:bg-white"
+                  style={{ borderColor: "#12A357", color: "#1F4D2E" }}
                 >
-                  <X className="w-4 h-4" />
-                  Ver todos
-                </Button>
-              </>
-            )}
-            {savedPreferences && !savedPreferences.is_active && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={async () => {
-                  if (user) {
-                    await supabase
-                      .from("patient_preferences")
-                      .update({ is_active: true })
-                      .eq("user_id", user.id);
-                    setSavedPreferences({ ...savedPreferences, is_active: true });
-                    toast.success("Recomendaciones activadas");
-                  }
-                }}
-                className="gap-2"
-              >
-                <Sparkles className="w-4 h-4" />
-                Activar recomendaciones
-              </Button>
-            )}
-          </div>
+                  <Sparkles className="w-3.5 h-3.5" style={{ color: "#12A357" }} />
+                  Activar recomendaciones
+                </button>
+              )}
+            </div>
+          </motion.div>
         </div>
       </section>
 
       {/* Search & Filters */}
-      <section className="py-8 bg-background sticky top-16 z-40 border-b border-border shadow-soft">
-        <div className="container mx-auto px-4">
+      <section
+        className="border-b sticky top-16 z-40 py-4"
+        style={{
+          background: "rgba(250,250,248,0.95)",
+          borderColor: "#BFE9E2",
+          backdropFilter: "blur(8px)",
+          boxShadow: "0 2px 12px rgba(18,163,87,0.05)",
+        }}
+      >
+        <div className="container mx-auto px-4 md:px-6">
           <div className="flex flex-col lg:flex-row gap-4">
             {/* Search */}
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "#6D8F7A" }} />
               <Input
                 type="text"
                 placeholder="Buscar por nombre, especialidad o enfoque..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="pl-10 border-[#BFE9E2] focus:border-[#12A357] font-karla rounded-xl"
               />
             </div>
 
-            {/* Filter Toggle (Mobile) */}
-            <Button
-              variant="outline"
+            {/* Mobile filter toggle */}
+            <button
               onClick={() => setShowFilters(!showFilters)}
-              className="lg:hidden"
+              className="lg:hidden inline-flex items-center gap-2 px-4 py-2 rounded-xl font-karla text-sm font-medium cursor-pointer border"
+              style={{ borderColor: "#BFE9E2", color: "#3A6A4C" }}
             >
-              <SlidersHorizontal className="w-4 h-4 mr-2" />
+              <SlidersHorizontal className="w-4 h-4" />
               Filtros
-            </Button>
+            </button>
 
             {/* Desktop Filters */}
-            <div className="hidden lg:flex gap-4">
+            <div className="hidden lg:flex gap-3">
               <Select value={selectedSpecialty} onValueChange={setSelectedSpecialty}>
-                <SelectTrigger className="w-48">
+                <SelectTrigger className="w-52 border-[#BFE9E2] font-karla rounded-xl">
                   <SelectValue placeholder="Especialidad" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todas las especialidades</SelectItem>
-                  {specialties.slice(1).map((specialty) => (
-                    <SelectItem key={specialty} value={specialty}>
-                      {specialty}
-                    </SelectItem>
+                  {specialties.slice(1).map((s) => (
+                    <SelectItem key={s} value={s}>{s}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
 
               <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
-                <SelectTrigger className="w-40">
+                <SelectTrigger className="w-44 border-[#BFE9E2] font-karla rounded-xl">
                   <SelectValue placeholder="Idioma" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos los idiomas</SelectItem>
-                  {languages.slice(1).map((language) => (
-                    <SelectItem key={language} value={language}>
-                      {language}
-                    </SelectItem>
+                  {languages.slice(1).map((l) => (
+                    <SelectItem key={l} value={l}>{l}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
 
               <Select value={priceRange} onValueChange={setPriceRange}>
-                <SelectTrigger className="w-40">
+                <SelectTrigger className="w-44 border-[#BFE9E2] font-karla rounded-xl">
                   <SelectValue placeholder="Precio" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos los precios</SelectItem>
                   <SelectItem value="low">Menos de $800</SelectItem>
-                  <SelectItem value="medium">$800 - $1000</SelectItem>
-                  <SelectItem value="high">Más de $1000</SelectItem>
+                  <SelectItem value="medium">$800 – $1,000</SelectItem>
+                  <SelectItem value="high">Más de $1,000</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
 
-          {/* Mobile Filters */}
+          {/* Mobile filters */}
           {showFilters && (
-            <div className="lg:hidden mt-4 p-4 bg-muted rounded-lg space-y-4">
+            <div
+              className="lg:hidden mt-4 p-5 rounded-2xl border space-y-4"
+              style={{ background: "#F0FAF8", borderColor: "#BFE9E2" }}
+            >
               <div>
-                <Label>Especialidad</Label>
+                <Label className="font-karla text-sm text-[#3A6A4C] font-medium mb-1.5 block">Especialidad</Label>
                 <Select value={selectedSpecialty} onValueChange={setSelectedSpecialty}>
-                  <SelectTrigger>
+                  <SelectTrigger className="border-[#BFE9E2] font-karla rounded-xl">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todas las especialidades</SelectItem>
-                    {specialties.slice(1).map((specialty) => (
-                      <SelectItem key={specialty} value={specialty}>
-                        {specialty}
-                      </SelectItem>
+                    {specialties.slice(1).map((s) => (
+                      <SelectItem key={s} value={s}>{s}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
               <div>
-                <Label>Idioma</Label>
+                <Label className="font-karla text-sm text-[#3A6A4C] font-medium mb-1.5 block">Idioma</Label>
                 <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
-                  <SelectTrigger>
+                  <SelectTrigger className="border-[#BFE9E2] font-karla rounded-xl">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todos los idiomas</SelectItem>
-                    {languages.slice(1).map((language) => (
-                      <SelectItem key={language} value={language}>
-                        {language}
-                      </SelectItem>
+                    {languages.slice(1).map((l) => (
+                      <SelectItem key={l} value={l}>{l}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
               <div>
-                <Label>Rango de precio</Label>
+                <Label className="font-karla text-sm text-[#3A6A4C] font-medium mb-1.5 block">Rango de precio</Label>
                 <Select value={priceRange} onValueChange={setPriceRange}>
-                  <SelectTrigger>
+                  <SelectTrigger className="border-[#BFE9E2] font-karla rounded-xl">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todos los precios</SelectItem>
                     <SelectItem value="low">Menos de $800</SelectItem>
-                    <SelectItem value="medium">$800 - $1000</SelectItem>
-                    <SelectItem value="high">Más de $1000</SelectItem>
+                    <SelectItem value="medium">$800 – $1,000</SelectItem>
+                    <SelectItem value="high">Más de $1,000</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -406,37 +415,60 @@ const Therapists = () => {
       </section>
 
       {/* Results */}
-      <section className="py-12">
-        <div className="container mx-auto px-4">
+      <section className="py-12 flex-1">
+        <div className="container mx-auto px-4 md:px-6">
           {loading ? (
-            <div className="flex justify-center items-center py-20">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            <div className="flex justify-center items-center py-24">
+              <div
+                className="w-12 h-12 rounded-full border-4 border-t-transparent animate-spin"
+                style={{ borderColor: "#BFE9E2", borderTopColor: "#12A357" }}
+              />
             </div>
           ) : filteredTherapists.length > 0 ? (
             <>
-              <div className="mb-6">
-                <p className="text-muted-foreground">
-                  Mostrando <span className="font-semibold text-foreground">{filteredTherapists.length}</span> terapeutas
-                </p>
+              <div className="mb-6 flex items-center gap-2">
+                <span className="font-karla text-sm text-[#6D8F7A]">
+                  Mostrando <span className="font-bold text-[#1F4D2E]">{filteredTherapists.length}</span> terapeuta{filteredTherapists.length !== 1 ? "s" : ""}
+                </span>
+                {savedPreferences?.is_active && (
+                  <span
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full font-karla text-[10px] font-bold uppercase tracking-wide"
+                    style={{ background: "#D4F0E2", color: "#12A357" }}
+                  >
+                    <Sparkles className="w-2.5 h-2.5" />
+                    Ordenados por compatibilidad
+                  </span>
+                )}
               </div>
+
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {filteredTherapists.map((match) => {
                   const therapist = match.therapist;
                   const pricing = therapist.pricing?.[0];
-                  
+
                   return (
-                  <div key={therapist.id} className="relative">
+                    <motion.div
+                      key={therapist.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.4 }}
+                      className="relative"
+                    >
                       {savedPreferences?.is_active && match.matchLevel !== 'compatible' && (
                         <div className="absolute -top-3 left-4 z-10">
-                          <Badge 
-                            variant={match.matchLevel === 'top' ? 'default' : 'secondary'}
-                            className="text-xs"
+                          <div
+                            className="inline-flex items-center gap-1 px-3 py-1 rounded-full font-karla text-xs font-bold"
+                            style={
+                              match.matchLevel === 'top'
+                                ? { background: "#D4F0E2", color: "#12A357" }
+                                : { background: "#BFE9E2", color: "#6AB7AB" }
+                            }
                           >
                             {match.matchLevel === 'top' ? '🌟 Excelente match' : '✨ Buen match'}
-                          </Badge>
+                          </div>
                         </div>
                       )}
-                      <TherapistCard 
+                      <TherapistCard
                         id={therapist.id}
                         name={`${therapist.first_name} ${therapist.last_name}`}
                         specialty={therapist.specialties?.[0] || "Psicología"}
@@ -449,45 +481,56 @@ const Therapists = () => {
                         availability="Disponible"
                       />
                       {savedPreferences?.is_active && match.reasons.length > 0 && (
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          {match.reasons.slice(0, 3).map((reason, idx) => (
-                            <Badge key={idx} variant="outline" className="text-xs">
+                        <div className="mt-2 flex flex-wrap gap-2 px-1">
+                          {match.reasons.slice(0, 3).map((reason: any, idx: number) => (
+                            <span
+                              key={idx}
+                              className="inline-block font-karla text-[11px] px-2.5 py-1 rounded-full border"
+                              style={{ borderColor: "#BFE9E2", color: "#6D8F7A" }}
+                            >
                               {reason.label}
-                            </Badge>
+                            </span>
                           ))}
                         </div>
                       )}
-                    </div>
+                    </motion.div>
                   );
                 })}
               </div>
             </>
           ) : (
-            <div className="text-center py-20">
-              <p className="text-lg text-muted-foreground mb-4">
-                {therapists.length === 0 
+            <div className="text-center py-24">
+              <div
+                className="font-erstoria text-6xl mb-6 select-none"
+                style={{ color: "#BFE9E2" }}
+              >
+                ∅
+              </div>
+              <p className="font-karla text-lg text-[#6D8F7A] mb-6 max-w-md mx-auto">
+                {therapists.length === 0
                   ? "Pronto encontrarás profesionales disponibles aquí. Estamos revisando nuevos perfiles."
                   : "No se encontraron terapeutas con los filtros seleccionados."}
               </p>
               {therapists.length > 0 && (
-                <Button
-                  variant="outline"
+                <button
                   onClick={() => {
                     setSearchTerm("");
                     setSelectedSpecialty("all");
                     setSelectedLanguage("all");
                     setPriceRange("all");
                   }}
+                  className="font-karla font-bold text-sm px-6 py-3 rounded-2xl border-2 cursor-pointer transition-colors hover:bg-white"
+                  style={{ borderColor: "#12A357", color: "#1F4D2E" }}
                 >
                   Limpiar filtros
-                </Button>
+                </button>
               )}
             </div>
           )}
         </div>
       </section>
 
-      <Footer />
+      <LandingFooter />
     </div>
   );
 };
