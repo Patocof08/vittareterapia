@@ -134,7 +134,7 @@ export const HeroSection = () => {
                 </motion.button>
               </Link>
 
-              <Link to="/#como-funciona">
+              <Link to="/faq">
                 <motion.button
                   whileHover={{ scale: 1.01 }}
                   whileTap={{ scale: 0.97 }}
