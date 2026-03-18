@@ -7,6 +7,62 @@ html {
   scroll-behavior: smooth;
 }
 
+/* ── Vittare Calendar Design Tokens ── */
+:root {
+  --cal-primary:        #12A357;
+  --cal-primary-dark:   #1F4D2E;
+  --cal-primary-light:  #E8F5EE;
+  --cal-mint:           #7FCFC2;
+  --cal-mint-light:     #F0FBF5;
+  --cal-rose:           #E7839D;
+  --cal-gold:           #F5C243;
+  --cal-external:       #3B82F6;
+  --cal-external-light: #EFF6FF;
+  --cal-blocked-bg:     #F9FAFB;
+  --cal-blocked-border: #D1D5DB;
+
+  --cal-border:         #E5E7EB;
+  --cal-text:           #1F2937;
+  --cal-text-muted:     #6B7280;
+  --cal-text-soft:      #9CA3AF;
+  --cal-bg:             #FFFFFF;
+  --cal-bg-subtle:      #F9FAFB;
+
+  --cal-shadow-green:   0 4px 12px rgba(18, 163, 87, 0.2);
+  --cal-shadow-card:    0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --cal-shadow-panel:   -8px 0 24px rgba(0,0,0,0.08);
+
+  --cal-radius-sm:      6px;
+  --cal-radius-md:      10px;
+  --cal-radius-lg:      14px;
+  --cal-radius-xl:      20px;
+
+  --cal-font-display:   'Playfair Display', Georgia, serif;
+  --cal-font-body:      'Karla', system-ui, sans-serif;
+}
+
+/* ── Calendar scrollbar ── */
+.cal-scroll::-webkit-scrollbar { width: 6px; }
+.cal-scroll::-webkit-scrollbar-track { background: transparent; }
+.cal-scroll::-webkit-scrollbar-thumb {
+  background: rgba(18, 163, 87, 0.3);
+  border-radius: 3px;
+}
+.cal-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(18, 163, 87, 0.6);
+}
+
+/* ── Blocked event pattern ── */
+.cal-blocked {
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 4px,
+    rgba(0,0,0,0.03) 4px,
+    rgba(0,0,0,0.03) 8px
+  );
+}
+
 
 
 /* Page fade-in on load */

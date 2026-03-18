@@ -45,21 +45,24 @@ function pad2(n: number) {
 }
 
 // ─── Event configs ────────────────────────────────────────────────────────────
-const EVENT_CONFIGS: Record<EventType, { bg: string; border: string; text: string }> = {
+const EVENT_CONFIGS: Record<EventType, { bg: string; border: string; text: string; textSub: string }> = {
   vittare: {
-    bg: "linear-gradient(135deg, #065f46 0%, #047857 100%)",
-    border: "#064e3b",
-    text: "#ecfdf5",
+    bg: "#E8F5EE",
+    border: "#12A357",
+    text: "#1F2937",
+    textSub: "#6B7280",
   },
   external: {
-    bg: "linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 100%)",
-    border: "#172554",
-    text: "#eff6ff",
+    bg: "#EFF6FF",
+    border: "#3B82F6",
+    text: "#1E40AF",
+    textSub: "#3B82F6",
   },
   blocked: {
-    bg: "repeating-linear-gradient(135deg, #f1f5f9, #f1f5f9 4px, #e2e8f0 4px, #e2e8f0 8px)",
-    border: "#cbd5e1",
-    text: "#64748b",
+    bg: "#F9FAFB",
+    border: "#D1D5DB",
+    text: "#9CA3AF",
+    textSub: "#9CA3AF",
   },
 };
 
@@ -92,14 +95,14 @@ function NowLine() {
           width: "10px",
           height: "10px",
           borderRadius: "50%",
-          background: "#ef4444",
+          background: "#12A357",
         }}
       />
       <div
         style={{
           height: "2px",
-          background: "#ef4444",
-          boxShadow: "0 0 8px rgba(239,68,68,0.4)",
+          background: "#12A357",
+          boxShadow: "0 0 8px rgba(18,163,87,0.4)",
         }}
       />
     </div>
@@ -133,23 +136,23 @@ function EventBlock({
         height: `${height - 2}px`,
         background: cfg.bg,
         borderLeft: `3px solid ${cfg.border}`,
-        borderRadius: "6px",
+        borderRadius: "8px",
         padding: "4px 8px",
         cursor: "pointer",
         zIndex: 10,
         overflow: "hidden",
         transition: "transform 0.15s ease, box-shadow 0.15s ease",
-        boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+        boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
         opacity: isPending ? 0.85 : 1,
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.transform = "scale(1.02)";
-        e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.15)";
+        e.currentTarget.style.transform = "scale(1.015)";
+        e.currentTarget.style.boxShadow = "0 4px 12px rgba(18,163,87,0.15)";
         (e.currentTarget.style as any).zIndex = "20";
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.transform = "scale(1)";
-        e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
+        e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.06)";
         (e.currentTarget.style as any).zIndex = "10";
       }}
     >
@@ -157,25 +160,25 @@ function EventBlock({
         <span
           style={{
             fontSize: "11px",
-            fontWeight: 600,
-            color: cfg.text,
+            fontWeight: 700,
+            color: cfg.textSub,
             letterSpacing: "-0.01em",
           }}
         >
           {`${pad2(event.startHour)}:${pad2(event.startMin)}`}
         </span>
         {isRecurring && (
-          <span style={{ fontSize: "9px", opacity: 0.8, color: cfg.text }}>↻</span>
+          <span style={{ fontSize: "9px", opacity: 0.7, color: cfg.textSub }}>↻</span>
         )}
         {isPending && (
           <span
             style={{
               fontSize: "8px",
-              background: "rgba(255,255,255,0.3)",
+              background: "rgba(245,194,67,0.2)",
               padding: "1px 5px",
               borderRadius: "4px",
-              color: cfg.text,
-              fontWeight: 600,
+              color: "#92660A",
+              fontWeight: 700,
             }}
           >
             PEND
@@ -186,7 +189,7 @@ function EventBlock({
         <div
           style={{
             fontSize: "12px",
-            fontWeight: 500,
+            fontWeight: 600,
             color: cfg.text,
             marginTop: "2px",
             whiteSpace: "nowrap",
@@ -199,7 +202,7 @@ function EventBlock({
       )}
       {height > 56 && (
         <div
-          style={{ fontSize: "10px", color: cfg.text, opacity: 0.75, marginTop: "2px" }}
+          style={{ fontSize: "10px", color: cfg.textSub, marginTop: "2px" }}
         >
           {event.durationMin} min
         </div>
@@ -391,9 +394,9 @@ function AddBlockModal({
                   borderRadius: "10px",
                   border:
                     blockType === key
-                      ? "2px solid #10b981"
-                      : "2px solid #e2e8f0",
-                  background: blockType === key ? "#f0fdf4" : "white",
+                      ? "2px solid #12A357"
+                      : "2px solid #E5E7EB",
+                  background: blockType === key ? "#E8F5EE" : "white",
                   cursor: "pointer",
                   textAlign: "center",
                   transition: "all 0.15s ease",
@@ -556,8 +559,8 @@ function AddBlockModal({
               gap: "12px",
               padding: "12px 14px",
               borderRadius: "10px",
-              border: isRecurring ? "1.5px solid #10b981" : "1.5px solid #e2e8f0",
-              background: isRecurring ? "#f0fdf4" : "#fafafa",
+              border: isRecurring ? "1.5px solid #12A357" : "1.5px solid #E5E7EB",
+              background: isRecurring ? "#E8F5EE" : "#FAFAFA",
               cursor: "pointer",
               marginBottom: "20px",
               transition: "all 0.15s ease",
@@ -568,8 +571,8 @@ function AddBlockModal({
                 width: "20px",
                 height: "20px",
                 borderRadius: "6px",
-                border: isRecurring ? "none" : "2px solid #cbd5e1",
-                background: isRecurring ? "#10b981" : "white",
+                border: isRecurring ? "none" : "2px solid #D1D5DB",
+                background: isRecurring ? "#12A357" : "white",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -623,12 +626,12 @@ function AddBlockModal({
                 padding: "12px",
                 borderRadius: "10px",
                 border: "none",
-                background: "linear-gradient(135deg, #059669, #10b981)",
+                background: "#12A357",
                 fontSize: "14px",
                 fontWeight: 600,
                 cursor: saving ? "not-allowed" : "pointer",
                 color: "white",
-                boxShadow: "0 2px 8px rgba(16,185,129,0.3)",
+                boxShadow: "0 4px 12px rgba(18,163,87,0.25)",
                 opacity: saving ? 0.7 : 1,
               }}
             >
@@ -646,11 +649,11 @@ const DETAIL_CONFIGS: Record<
   EventType,
   { color: string; bg: string; label: string; icon: string }
 > = {
-  vittare: { color: "#059669", bg: "#f0fdf4", label: "Sesión Vittare", icon: "💬" },
-  external: { color: "#2563eb", bg: "#eff6ff", label: "Cita externa", icon: "📌" },
+  vittare: { color: "#12A357", bg: "#E8F5EE", label: "Sesión Vittare", icon: "💬" },
+  external: { color: "#3B82F6", bg: "#EFF6FF", label: "Cita externa", icon: "📌" },
   blocked: {
-    color: "#64748b",
-    bg: "#f8fafc",
+    color: "#6B7280",
+    bg: "#F9FAFB",
     label: "Horario bloqueado",
     icon: "🚫",
   },
@@ -1089,12 +1092,12 @@ export default function TherapistCalendar() {
           style={{
             padding: "8px 16px",
             borderRadius: "8px",
-            border: "1.5px solid #e2e8f0",
+            border: "1.5px solid #E5E7EB",
             background: "white",
             cursor: "pointer",
             fontSize: "13px",
             fontWeight: 600,
-            color: "#64748b",
+            color: "#1F4D2E",
             marginBottom: "16px",
           }}
         >
@@ -1112,28 +1115,27 @@ export default function TherapistCalendar() {
   return (
     <>
     <style>{`
-      .cal-scroll::-webkit-scrollbar { display: none; }
-      .cal-scroll { scrollbar-width: none; -ms-overflow-style: none; }
+      .cal-scroll { scrollbar-width: thin; scrollbar-color: rgba(18,163,87,0.3) transparent; }
     `}</style>
     <div
       style={{
-        fontFamily: "'DM Sans', -apple-system, sans-serif",
+        fontFamily: "var(--cal-font-body, 'Karla', system-ui, sans-serif)",
         display: "flex",
         flexDirection: "column",
         height: "calc(100vh - 140px)",
-        color: "#0f172a",
-        background: "#f8fafb",
+        color: "#1F2937",
+        background: "#F9FAFB",
         borderRadius: "12px",
         overflow: "hidden",
-        border: "1px solid #e8ecf0",
+        border: "1px solid #E5E7EB",
       }}
     >
       {/* ─── Top Bar ───────────────────────────────────────────────────── */}
       <div
         style={{
           padding: "16px 20px",
-          background: "white",
-          borderBottom: "1px solid #e8ecf0",
+          background: "#FFFFFF",
+          borderBottom: "1px solid #E5E7EB",
           flexShrink: 0,
         }}
       >
@@ -1154,6 +1156,8 @@ export default function TherapistCalendar() {
                 fontWeight: 700,
                 margin: 0,
                 letterSpacing: "-0.02em",
+                color: "#1F4D2E",
+                fontFamily: "var(--cal-font-display, Georgia, serif)",
               }}
             >
               Mi Calendario
@@ -1161,7 +1165,7 @@ export default function TherapistCalendar() {
             <p
               style={{
                 fontSize: "13px",
-                color: "#94a3b8",
+                color: "#6B7280",
                 marginTop: "2px",
                 textTransform: "capitalize",
               }}
@@ -1178,28 +1182,28 @@ export default function TherapistCalendar() {
                   display: "flex",
                   gap: "10px",
                   padding: "5px 12px",
-                  background: "#f8fafb",
+                  background: "#F0FBF5",
                   borderRadius: "8px",
-                  border: "1px solid #f1f5f9",
+                  border: "1px solid #BFE9E2",
                 }}
               >
                 {vittareCount > 0 && (
                   <span
-                    style={{ fontSize: "12px", color: "#059669", fontWeight: 600 }}
+                    style={{ fontSize: "12px", color: "#12A357", fontWeight: 600 }}
                   >
                     💬 {vittareCount}
                   </span>
                 )}
                 {externalCount > 0 && (
                   <span
-                    style={{ fontSize: "12px", color: "#2563eb", fontWeight: 600 }}
+                    style={{ fontSize: "12px", color: "#3B82F6", fontWeight: 600 }}
                   >
                     📌 {externalCount}
                   </span>
                 )}
                 {pendingCount > 0 && (
                   <span
-                    style={{ fontSize: "12px", color: "#f59e0b", fontWeight: 600 }}
+                    style={{ fontSize: "12px", color: "#D9A932", fontWeight: 600 }}
                   >
                     ⏳ {pendingCount}
                   </span>
@@ -1219,12 +1223,12 @@ export default function TherapistCalendar() {
                   padding: "8px 14px",
                   borderRadius: "10px",
                   border: "none",
-                  background: "linear-gradient(135deg, #059669, #10b981)",
+                  background: "#12A357",
                   color: "white",
                   fontSize: "13px",
-                  fontWeight: 600,
+                  fontWeight: 700,
                   cursor: "pointer",
-                  boxShadow: "0 2px 8px rgba(16,185,129,0.25)",
+                  boxShadow: "0 4px 12px rgba(18,163,87,0.25)",
                 }}
               >
                 <span style={{ fontSize: "16px", lineHeight: 1 }}>+</span>
@@ -1241,7 +1245,7 @@ export default function TherapistCalendar() {
                 cursor: "pointer",
                 fontSize: "13px",
                 fontWeight: 600,
-                color: "#64748b",
+                color: "#1F4D2E",
               }}
             >
               ⚙ Horario
@@ -1264,14 +1268,14 @@ export default function TherapistCalendar() {
                 width: "32px",
                 height: "32px",
                 borderRadius: "8px",
-                border: "1.5px solid #e2e8f0",
+                border: "1.5px solid #E5E7EB",
                 background: "white",
                 cursor: "pointer",
                 fontSize: "14px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                color: "#64748b",
+                color: "#6B7280",
               }}
             >
               ←
@@ -1281,12 +1285,13 @@ export default function TherapistCalendar() {
               style={{
                 padding: "6px 14px",
                 borderRadius: "8px",
-                border: "1.5px solid #e2e8f0",
-                background: weekOffset === 0 ? "#f0fdf4" : "white",
+                border: "1.5px solid #E5E7EB",
+                background: weekOffset === 0 ? "#12A357" : "white",
                 cursor: "pointer",
                 fontSize: "12px",
-                fontWeight: 600,
-                color: weekOffset === 0 ? "#059669" : "#64748b",
+                fontWeight: 700,
+                color: weekOffset === 0 ? "white" : "#6B7280",
+                boxShadow: weekOffset === 0 ? "0 4px 12px rgba(18,163,87,0.25)" : "none",
               }}
             >
               Hoy
@@ -1297,14 +1302,14 @@ export default function TherapistCalendar() {
                 width: "32px",
                 height: "32px",
                 borderRadius: "8px",
-                border: "1.5px solid #e2e8f0",
+                border: "1.5px solid #E5E7EB",
                 background: "white",
                 cursor: "pointer",
                 fontSize: "14px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                color: "#64748b",
+                color: "#6B7280",
               }}
             >
               →
@@ -1316,8 +1321,8 @@ export default function TherapistCalendar() {
             style={{
               display: "flex",
               gap: "2px",
-              background: "#f1f5f9",
-              borderRadius: "8px",
+              background: "#F3F4F6",
+              borderRadius: "10px",
               padding: "3px",
             }}
           >
@@ -1338,7 +1343,7 @@ export default function TherapistCalendar() {
                   fontSize: "12px",
                   fontWeight: 600,
                   cursor: "pointer",
-                  color: view === v ? "#0f172a" : "#94a3b8",
+                  color: view === v ? "#1F4D2E" : "#6B7280",
                   transition: "all 0.15s ease",
                 }}
               >
@@ -1363,8 +1368,8 @@ export default function TherapistCalendar() {
             top: 0,
             zIndex: 20,
             display: "flex",
-            background: "white",
-            borderBottom: "1px solid #e8ecf0",
+            background: "#FFFFFF",
+            borderBottom: "1px solid #E5E7EB",
           }}
         >
           {/* Corner — matches gutter width exactly */}
@@ -1373,7 +1378,7 @@ export default function TherapistCalendar() {
               width: "52px",
               flexShrink: 0,
               height: "52px",
-              borderRight: "1px solid #cbd5e1",
+              borderRight: "1px solid #E5E7EB",
             }}
           />
           {/* Day header cells */}
@@ -1415,8 +1420,8 @@ export default function TherapistCalendar() {
                     padding: "4px",
                     cursor: view === "week" ? "pointer" : "default",
                     borderRight:
-                      view === "week" ? "1px solid #dde3ea" : "none",
-                    background: today ? "#f0fdf4" : "white",
+                      view === "week" ? "1px solid #F3F4F6" : "none",
+                    background: today ? "#F0FBF5" : "white",
                     transition: "background 0.15s ease",
                   }}
                 >
@@ -1424,7 +1429,7 @@ export default function TherapistCalendar() {
                     style={{
                       fontSize: "11px",
                       fontWeight: 600,
-                      color: "#94a3b8",
+                      color: today ? "#12A357" : "#6B7280",
                       textTransform: "uppercase",
                       letterSpacing: "0.05em",
                     }}
@@ -1435,14 +1440,15 @@ export default function TherapistCalendar() {
                     style={{
                       fontSize: "17px",
                       fontWeight: 700,
-                      color: today ? "white" : "#0f172a",
+                      color: today ? "white" : "#1F2937",
                       width: "30px",
                       height: "30px",
                       borderRadius: "8px",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      background: today ? "#059669" : "transparent",
+                      background: today ? "#12A357" : "transparent",
+                      boxShadow: today ? "0 4px 10px rgba(18,163,87,0.3)" : "none",
                       marginTop: "1px",
                     }}
                   >
@@ -1465,7 +1471,7 @@ export default function TherapistCalendar() {
                               width: "5px",
                               height: "5px",
                               borderRadius: "50%",
-                              background: "#10b981",
+                              background: "#12A357",
                             }}
                           />
                         ))}
@@ -1476,7 +1482,7 @@ export default function TherapistCalendar() {
                               width: "5px",
                               height: "5px",
                               borderRadius: "50%",
-                              background: "#3b82f6",
+                              background: "#3B82F6",
                             }}
                           />
                         ))}
@@ -1506,7 +1512,7 @@ export default function TherapistCalendar() {
               style={{
                 width: "52px",
                 flexShrink: 0,
-                borderRight: "1px solid #cbd5e1",
+                borderRight: "1px solid #E5E7EB",
                 background: "white",
               }}
             >
@@ -1559,9 +1565,9 @@ export default function TherapistCalendar() {
                     style={{
                       position: "relative",
                       borderRight:
-                        view === "week" ? "1px solid #dde3ea" : "none",
+                        view === "week" ? "1px solid #F3F4F6" : "none",
                       background: today
-                        ? "rgba(16,185,129,0.02)"
+                        ? "rgba(18,163,87,0.03)"
                         : "transparent",
                     }}
                   >
@@ -1578,12 +1584,12 @@ export default function TherapistCalendar() {
                         }
                         style={{
                           height: `${HOUR_HEIGHT}px`,
-                          borderTop: "1px solid #dde3ea",
+                          borderTop: "1px solid #F3F4F6",
                           cursor: "pointer",
                         }}
                         onMouseEnter={(e) => {
                           e.currentTarget.style.background =
-                            "rgba(16,185,129,0.03)";
+                            "rgba(18,163,87,0.05)";
                         }}
                         onMouseLeave={(e) => {
                           e.currentTarget.style.background = "transparent";
@@ -1611,8 +1617,8 @@ export default function TherapistCalendar() {
       <div
         style={{
           padding: "8px 20px",
-          background: "white",
-          borderTop: "1px solid #e8ecf0",
+          background: "#F9FAFB",
+          borderTop: "1px solid #E5E7EB",
           display: "flex",
           gap: "16px",
           alignItems: "center",
@@ -1627,10 +1633,10 @@ export default function TherapistCalendar() {
               width: "10px",
               height: "10px",
               borderRadius: "3px",
-              background: "#10b981",
+              background: "#12A357",
             }}
           />
-          <span style={{ color: "#64748b" }}>Vittare</span>
+          <span style={{ color: "#6B7280" }}>Vittare</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
           <div
@@ -1638,10 +1644,10 @@ export default function TherapistCalendar() {
               width: "10px",
               height: "10px",
               borderRadius: "3px",
-              background: "#3b82f6",
+              background: "#3B82F6",
             }}
           />
-          <span style={{ color: "#64748b" }}>Externas</span>
+          <span style={{ color: "#6B7280" }}>Externas</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
           <div
@@ -1649,13 +1655,13 @@ export default function TherapistCalendar() {
               width: "10px",
               height: "10px",
               borderRadius: "3px",
-              background:
-                "repeating-linear-gradient(135deg, #e2e8f0, #e2e8f0 2px, #f1f5f9 2px, #f1f5f9 4px)",
+              border: "1px solid #D1D5DB",
+              background: "#F9FAFB",
             }}
           />
-          <span style={{ color: "#64748b" }}>Bloqueado</span>
+          <span style={{ color: "#6B7280" }}>Bloqueado</span>
         </div>
-        <div style={{ marginLeft: "auto", color: "#94a3b8" }}>
+        <div style={{ marginLeft: "auto", color: "#9CA3AF" }}>
           <span>↻ = recurrente</span>
           <span style={{ marginLeft: "12px" }}>
             Click en celda vacía para agregar
