@@ -1,5 +1,5 @@
 import { NavLink, Link } from "react-router-dom";
-import { VittareLogo } from "@/components/ui/VittareLogo";
+import { VittareLogo } from "@/components/VittareLogo";
 import {
   LayoutDashboard,
   Calendar,
@@ -98,7 +98,7 @@ export const TherapistSidebar = ({ collapsed, onToggle, mobileOpen, onMobileClos
       <div className={`border-b border-[#E5E7EB] relative ${collapsed && !isMobile ? "px-2 py-4 flex justify-center" : "p-4"}`}>
         <Link to="/" className="hover:opacity-80 transition-opacity inline-flex">
           <VittareLogo
-            variant={collapsed && !isMobile ? "icon-only" : "default"}
+            showWordmark={!collapsed || isMobile}
             size="sm"
           />
         </Link>
