@@ -7,16 +7,9 @@ html {
   scroll-behavior: smooth;
 }
 
-/* Custom ergonomic arrow cursor (mouse devices only) */
+/* Ocultar cursor nativo en dispositivos con mouse */
 @media (pointer: fine) {
-  body {
-    cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22' viewBox='0 0 22 22'%3E%3Cpath d='M3.5 1.5 L3.5 17.5 L7 13.5 L10 20.5 L12 19.5 L9 12.5 L14.5 12.5 Z' fill='white' stroke='%23333' stroke-width='1.5' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E") 3 1, default;
-  }
-  a, button, [role="button"], select,
-  input[type="submit"], input[type="reset"],
-  label[for], [class*="cursor-pointer"] {
-    cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22' viewBox='0 0 22 22'%3E%3Cpath d='M3.5 1.5 L3.5 17.5 L7 13.5 L10 20.5 L12 19.5 L9 12.5 L14.5 12.5 Z' fill='white' stroke='%23333' stroke-width='1.5' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E") 3 1, pointer;
-  }
+  * { cursor: none !important; }
 }
 
 

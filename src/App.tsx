@@ -63,12 +63,14 @@ import AdminFinancials from "./pages/admin/AdminFinancials";
 import AdminAlerts from "./pages/admin/AdminAlerts";
 import VideoSession from "./pages/VideoSession";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { CustomCursor } from "./components/ui/CustomCursor";
 
 const App = () => {
   return (
     <ErrorBoundary>
     <BrowserRouter>
       <AuthProvider>
+        <CustomCursor />
         <ScrollToTop />
         <Toaster />
         <Sonner />
