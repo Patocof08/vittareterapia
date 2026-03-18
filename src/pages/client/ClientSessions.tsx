@@ -386,10 +386,12 @@ export default function ClientSessions() {
       </div>
 
       {/* Próximas Sesiones */}
-      <Card>
+      <Card className="border-0 border-l-4 border-l-[#12A357] shadow-sm hover:shadow-md transition-all">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-[#1F4D2E]">
-            <Calendar className="w-5 h-5 text-[#12A357]" />
+            <span className="p-1.5 rounded-lg bg-[#12A357]">
+              <Calendar className="w-4 h-4 text-white" />
+            </span>
             Próximas Sesiones
           </CardTitle>
         </CardHeader>
@@ -447,10 +449,12 @@ export default function ClientSessions() {
       </Card>
 
       {/* Historial */}
-      <Card>
+      <Card className="border-0 border-l-4 border-l-[#6AB7AB] shadow-sm hover:shadow-md transition-all">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-[#1F4D2E]">
-            <Video className="w-5 h-5 text-[#12A357]" />
+            <span className="p-1.5 rounded-lg bg-[#6AB7AB]">
+              <Video className="w-4 h-4 text-white" />
+            </span>
             Historial de Sesiones
           </CardTitle>
         </CardHeader>

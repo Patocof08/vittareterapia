@@ -186,41 +186,50 @@ export default function ClientPayments() {
 
       {/* Resumen */}
       <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-[#6B7280]">
+        <Card className="border-0 border-t-4 border-t-[#12A357] bg-gradient-to-br from-[#F0FBF5] to-white shadow-sm hover:shadow-md transition-all">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-[#1F4D2E]">
               Total Pagado
             </CardTitle>
+            <span className="p-2.5 rounded-xl bg-[#12A357] shadow-sm shadow-[#12A357]/30">
+              <CreditCard className="h-4 w-4 text-white" />
+            </span>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">
+            <p className="text-3xl font-bold text-[#12A357]">
               ${stats.totalPaid.toFixed(2)}
             </p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-[#6B7280]">
+        <Card className="border-0 border-t-4 border-t-[#6AB7AB] bg-gradient-to-br from-[#F0F9F7] to-white shadow-sm hover:shadow-md transition-all">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-[#1F4D2E]">
               Sesiones Pagadas
             </CardTitle>
+            <span className="p-2.5 rounded-xl bg-[#6AB7AB] shadow-sm shadow-[#6AB7AB]/30">
+              <FileText className="h-4 w-4 text-white" />
+            </span>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">{stats.sessionsPaid}</p>
+            <p className="text-3xl font-bold text-[#6AB7AB]">{stats.sessionsPaid}</p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-[#6B7280]">
+        <Card className="border-0 border-t-4 border-t-[#D9A932] bg-gradient-to-br from-[#FEFAED] to-white shadow-sm hover:shadow-md transition-all">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-[#1F4D2E]">
               Último Pago
             </CardTitle>
+            <span className="p-2.5 rounded-xl bg-[#D9A932] shadow-sm shadow-[#D9A932]/30">
+              <Download className="h-4 w-4 text-white" />
+            </span>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">
+            <p className="text-3xl font-bold text-[#D9A932]">
               {payments.length > 0 ? `$${Number(payments[0].amount).toFixed(2)}` : "$0.00"}
             </p>
-            <p className="text-xs text-[#6B7280] mt-1">
+            <p className="text-xs text-[#6B7280] mt-0.5">
               {payments.length > 0
                 ? format(new Date(payments[0].created_at), "dd/MM/yyyy", { locale: es })
                 : "Sin pagos"}
@@ -230,10 +239,12 @@ export default function ClientPayments() {
       </div>
 
       {/* Historial de Pagos */}
-      <Card>
+      <Card className="border-0 border-l-4 border-l-[#D9A932] shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-[#1F4D2E]">
-            <CreditCard className="w-5 h-5 text-[#D9A932]" />
+            <span className="p-1.5 rounded-lg bg-[#D9A932]">
+              <CreditCard className="w-4 h-4 text-white" />
+            </span>
             Historial de Pagos
           </CardTitle>
         </CardHeader>

@@ -239,7 +239,7 @@ export default function TherapistSessions() {
       </div>
 
       {/* Filtros */}
-      <Card>
+      <Card className="border-0 border-l-4 border-l-[#12A357] shadow-sm">
         <CardContent className="pt-6">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 relative">
@@ -281,7 +281,12 @@ export default function TherapistSessions() {
           </Card>
         ) : (
           filteredSessions.map((session) => (
-            <Card key={session.id} className="border-[#E5E7EB] hover:border-[#12A357]/30 hover:shadow-md transition-all">
+            <Card key={session.id} className={`border-0 border-l-4 shadow-sm hover:shadow-md transition-all ${
+              (session.status === "pending" || session.status === "confirmed") ? "border-l-[#D9A932]" :
+              session.status === "completed" ? "border-l-[#6AB7AB]" :
+              session.status === "cancelled" ? "border-l-red-400" :
+              "border-l-[#E5E7EB]"
+            }`}>
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div>

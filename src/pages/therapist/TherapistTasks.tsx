@@ -242,7 +242,7 @@ export default function TherapistTasks() {
       </div>
 
       {/* Filtros */}
-      <Card>
+      <Card className="border-0 border-l-4 border-l-[#D9A932] shadow-sm">
         <CardContent className="pt-6">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 relative">
@@ -298,7 +298,7 @@ export default function TherapistTasks() {
           </Card>
         ) : (
           filteredTasks.map((task) => (
-            <Card key={task.id}>
+            <Card key={task.id} className={`border-0 border-l-4 shadow-sm hover:shadow-md transition-all ${task.status === "completed" ? "border-l-[#6AB7AB]" : "border-l-[#D9A932]"}`}>
               <CardContent className="pt-6">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">

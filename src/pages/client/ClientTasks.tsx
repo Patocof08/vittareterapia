@@ -162,7 +162,11 @@ export default function ClientTasks() {
             return (
               <Card
                 key={task.id}
-                className={isOverdue ? "border-destructive/50" : ""}
+                className={`border-0 border-l-4 shadow-sm hover:shadow-md transition-all ${
+                  isOverdue ? "border-l-red-400" :
+                  task.status === "completed" ? "border-l-[#6AB7AB]" :
+                  "border-l-[#D9A932]"
+                }`}
               >
                 <CardContent className="pt-6">
                   <div className="flex items-start gap-4">

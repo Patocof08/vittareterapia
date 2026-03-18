@@ -102,10 +102,12 @@ export default function TherapistPatients() {
         </p>
       </div>
 
-      <Card>
+      <Card className="border-0 border-l-4 border-l-[#6AB7AB] shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-[#1F4D2E]">
-            <Users className="w-5 h-5 text-[#6AB7AB]" />
+            <span className="p-1.5 rounded-lg bg-[#6AB7AB]">
+              <Users className="w-4 h-4 text-white" />
+            </span>
             Lista de Pacientes
           </CardTitle>
           <div className="relative mt-4">

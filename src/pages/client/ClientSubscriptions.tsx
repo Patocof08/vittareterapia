@@ -242,31 +242,35 @@ export default function ClientSubscriptions() {
       {/* Summary Cards */}
       {(hasSubscriptions || hasCredits) && (
         <div className="grid gap-4 md:grid-cols-2">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Package className="w-4 h-4 text-[#12A357]" />
+          <Card className="border-0 border-t-4 border-t-[#12A357] bg-gradient-to-br from-[#F0FBF5] to-white shadow-sm hover:shadow-md transition-all">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-[#1F4D2E]">
                 Suscripciones Activas
               </CardTitle>
+              <span className="p-2.5 rounded-xl bg-[#12A357] shadow-sm shadow-[#12A357]/30">
+                <Package className="w-4 h-4 text-white" />
+              </span>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{subscriptions.length}</div>
-              <p className="text-xs text-[#6B7280]">
+              <div className="text-3xl font-bold text-[#12A357]">{subscriptions.length}</div>
+              <p className="text-xs text-[#6B7280] mt-0.5">
                 {subscriptions.reduce((sum, s) => sum + s.sessions_remaining, 0)} sesiones disponibles
               </p>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Coins className="w-4 h-4 text-[#D9A932]" />
+          <Card className="border-0 border-t-4 border-t-[#D9A932] bg-gradient-to-br from-[#FEFAED] to-white shadow-sm hover:shadow-md transition-all">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-[#1F4D2E]">
                 Créditos Individuales
               </CardTitle>
+              <span className="p-2.5 rounded-xl bg-[#D9A932] shadow-sm shadow-[#D9A932]/30">
+                <Coins className="w-4 h-4 text-white" />
+              </span>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{credits.length}</div>
-              <p className="text-xs text-[#6B7280]">
+              <div className="text-3xl font-bold text-[#D9A932]">{credits.length}</div>
+              <p className="text-xs text-[#6B7280] mt-0.5">
                 {credits.length === 1 ? 'sesión disponible como crédito' : 'sesiones disponibles como crédito'}
               </p>
             </CardContent>
@@ -304,8 +308,8 @@ export default function ClientSubscriptions() {
               const rolloverDisplay = subscription.rollover_sessions > 0;
 
               return (
-                <Card key={subscription.id} className="overflow-hidden">
-                  <CardHeader className="bg-muted/50">
+                <Card key={subscription.id} className="overflow-hidden border-0 border-l-4 border-l-[#6AB7AB] shadow-sm hover:shadow-md transition-all">
+                  <CardHeader className="bg-[#F0F9F7]">
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-4">
                         {subscription.psychologist_profiles.profile_photo_url ? (
@@ -487,7 +491,7 @@ export default function ClientSubscriptions() {
         ) : (
           <div className="grid gap-4">
             {credits.map((credit) => (
-              <Card key={credit.id}>
+              <Card key={credit.id} className="border-0 border-l-4 border-l-[#D9A932] shadow-sm hover:shadow-md transition-all">
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">

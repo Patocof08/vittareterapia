@@ -283,50 +283,58 @@ export default function TherapistPayments() {
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-3">
-        <Card>
+        <Card className="border-0 border-t-4 border-t-[#12A357] bg-gradient-to-br from-[#F0FBF5] to-white shadow-sm hover:shadow-md transition-all">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-[#1F4D2E]">Ingresos del Mes</CardTitle>
-            <Calendar className="h-4 w-4 text-[#12A357]" />
+            <span className="p-2.5 rounded-xl bg-[#12A357] shadow-sm shadow-[#12A357]/30">
+              <Calendar className="h-4 w-4 text-white" />
+            </span>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${stats.monthlyIncome.toFixed(2)}</div>
-            <p className="text-xs text-[#6B7280]">
+            <div className="text-3xl font-bold text-[#12A357]">${stats.monthlyIncome.toFixed(2)}</div>
+            <p className="text-xs text-[#6B7280] mt-0.5">
               {stats.monthlySessions} sesiones este mes
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-0 border-t-4 border-t-[#D9A932] bg-gradient-to-br from-[#FEFAED] to-white shadow-sm hover:shadow-md transition-all">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-[#1F4D2E]">Pagos Pendientes</CardTitle>
-            <DollarSign className="h-4 w-4 text-[#D9A932]" />
+            <span className="p-2.5 rounded-xl bg-[#D9A932] shadow-sm shadow-[#D9A932]/30">
+              <DollarSign className="h-4 w-4 text-white" />
+            </span>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${stats.pendingPayments.toFixed(2)}</div>
-            <p className="text-xs text-[#6B7280]">
+            <div className="text-3xl font-bold text-[#D9A932]">${stats.pendingPayments.toFixed(2)}</div>
+            <p className="text-xs text-[#6B7280] mt-0.5">
               {payments.filter(p => p.payment_status === 'pending').length} pagos pendientes
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-0 border-t-4 border-t-[#6AB7AB] bg-gradient-to-br from-[#F0F9F7] to-white shadow-sm hover:shadow-md transition-all">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-[#1F4D2E]">Ganancias Totales</CardTitle>
-            <TrendingUp className="h-4 w-4 text-[#12A357]" />
+            <span className="p-2.5 rounded-xl bg-[#6AB7AB] shadow-sm shadow-[#6AB7AB]/30">
+              <TrendingUp className="h-4 w-4 text-white" />
+            </span>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${stats.totalEarnings.toFixed(2)}</div>
-            <p className="text-xs text-[#6B7280]">Histórico</p>
+            <div className="text-3xl font-bold text-[#6AB7AB]">${stats.totalEarnings.toFixed(2)}</div>
+            <p className="text-xs text-[#6B7280] mt-0.5">Histórico</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Payment History */}
-      <Card>
+      <Card className="border-0 border-l-4 border-l-[#D9A932] shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-[#1F4D2E]">
-              <FileText className="w-5 h-5 text-[#6AB7AB]" />
+              <span className="p-1.5 rounded-lg bg-[#D9A932]">
+                <FileText className="w-4 h-4 text-white" />
+              </span>
               Historial de Pagos
             </div>
             <Select value={statusFilter} onValueChange={applyFilter}>
