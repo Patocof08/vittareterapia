@@ -31,7 +31,7 @@ export default function TherapistDashboard() {
   useEffect(() => {
     const fetchData = async () => {
       if (!user) return;
-      
+
       try {
         // Fetch profile
         const { data: profileData } = await supabase
@@ -174,67 +174,67 @@ export default function TherapistDashboard() {
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="border-[#E5E7EB] hover:border-[#12A357]/30 hover:shadow-md transition-all">
+        <Card className="border-0 border-t-4 border-t-[#12A357] bg-gradient-to-br from-[#F0FBF5] to-white shadow-sm hover:shadow-md transition-all">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-[#1F4D2E]">
               Sesiones esta semana
             </CardTitle>
-            <span className="p-2 rounded-lg bg-[#E8F5EE]">
-              <Video className="h-4 w-4 text-[#12A357]" />
+            <span className="p-2.5 rounded-xl bg-[#12A357] shadow-sm shadow-[#12A357]/30">
+              <Video className="h-4 w-4 text-white" />
             </span>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-[#1F4D2E]">{weekSessions.length}</div>
-            <p className="text-xs text-[#6B7280]">
+            <div className="text-3xl font-bold text-[#12A357]">{weekSessions.length}</div>
+            <p className="text-xs text-[#6B7280] mt-0.5">
               {weekSessions.length === 0 ? "Sin sesiones programadas aún" : `${weekSessions.length} sesión${weekSessions.length !== 1 ? 'es' : ''} programada${weekSessions.length !== 1 ? 's' : ''}`}
             </p>
           </CardContent>
         </Card>
 
-        <Card className="border-[#E5E7EB] hover:border-[#6AB7AB]/40 hover:shadow-md transition-all">
+        <Card className="border-0 border-t-4 border-t-[#6AB7AB] bg-gradient-to-br from-[#F0F9F7] to-white shadow-sm hover:shadow-md transition-all">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-[#1F4D2E]">
               Tasa de asistencia
             </CardTitle>
-            <span className="p-2 rounded-lg bg-[#EDF7F5]">
-              <CheckCircle className="h-4 w-4 text-[#6AB7AB]" />
+            <span className="p-2.5 rounded-xl bg-[#6AB7AB] shadow-sm shadow-[#6AB7AB]/30">
+              <CheckCircle className="h-4 w-4 text-white" />
             </span>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-[#1F4D2E]">--</div>
-            <p className="text-xs text-[#6B7280]">
+            <div className="text-3xl font-bold text-[#6AB7AB]">--</div>
+            <p className="text-xs text-[#6B7280] mt-0.5">
               Sin datos aún
             </p>
           </CardContent>
         </Card>
 
-        <Card className="border-[#E5E7EB] hover:border-[#D9A932]/40 hover:shadow-md transition-all">
+        <Card className="border-0 border-t-4 border-t-[#D9A932] bg-gradient-to-br from-[#FEFAED] to-white shadow-sm hover:shadow-md transition-all">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-[#1F4D2E]">
               Balance acumulado
             </CardTitle>
-            <span className="p-2 rounded-lg bg-[#FEF9EA]">
-              <DollarSign className="h-4 w-4 text-[#D9A932]" />
+            <span className="p-2.5 rounded-xl bg-[#D9A932] shadow-sm shadow-[#D9A932]/30">
+              <DollarSign className="h-4 w-4 text-white" />
             </span>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-[#1F4D2E]">${walletBalance.toFixed(2)}</div>
-            <p className="text-xs text-[#6B7280]">MXN en tu wallet</p>
+            <div className="text-3xl font-bold text-[#D9A932]">${walletBalance.toFixed(2)}</div>
+            <p className="text-xs text-[#6B7280] mt-0.5">MXN en tu wallet</p>
           </CardContent>
         </Card>
 
-        <Card className="border-[#E5E7EB] hover:border-[#E7839D]/40 hover:shadow-md transition-all">
+        <Card className="border-0 border-t-4 border-t-[#E7839D] bg-gradient-to-br from-[#FDF5F8] to-white shadow-sm hover:shadow-md transition-all">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-[#1F4D2E]">
               Mensajes sin leer
             </CardTitle>
-            <span className="p-2 rounded-lg bg-[#FDF0F4]">
-              <MessageSquare className="h-4 w-4 text-[#E7839D]" />
+            <span className="p-2.5 rounded-xl bg-[#E7839D] shadow-sm shadow-[#E7839D]/30">
+              <MessageSquare className="h-4 w-4 text-white" />
             </span>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-[#1F4D2E]">{unreadMessagesCount}</div>
-            <p className="text-xs text-[#6B7280]">
+            <div className="text-3xl font-bold text-[#E7839D]">{unreadMessagesCount}</div>
+            <p className="text-xs text-[#6B7280] mt-0.5">
               {unreadMessagesCount === 0 ? "Sin mensajes pendientes" : `${unreadMessagesCount} mensaje${unreadMessagesCount !== 1 ? 's' : ''} sin leer`}
             </p>
           </CardContent>
@@ -244,11 +244,11 @@ export default function TherapistDashboard() {
       {/* Main Content Grid */}
       <div className="grid gap-6 md:grid-cols-2">
         {/* Sesiones de hoy */}
-        <Card className="border-[#E5E7EB]">
+        <Card className="border-0 border-l-4 border-l-[#12A357] shadow-sm hover:shadow-md transition-all">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-[#1F4D2E]">
-              <span className="p-1.5 rounded-lg bg-[#E8F5EE]">
-                <Calendar className="w-4 h-4 text-[#12A357]" />
+              <span className="p-1.5 rounded-lg bg-[#12A357]">
+                <Calendar className="w-4 h-4 text-white" />
               </span>
               Sesiones de hoy
             </CardTitle>
@@ -301,11 +301,11 @@ export default function TherapistDashboard() {
         </Card>
 
         {/* Mensajes recientes */}
-        <Card className="border-[#E5E7EB]">
+        <Card className="border-0 border-l-4 border-l-[#E7839D] shadow-sm hover:shadow-md transition-all">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-[#1F4D2E]">
-              <span className="p-1.5 rounded-lg bg-[#FDF0F4]">
-                <MessageSquare className="w-4 h-4 text-[#E7839D]" />
+              <span className="p-1.5 rounded-lg bg-[#E7839D]">
+                <MessageSquare className="w-4 h-4 text-white" />
               </span>
               Mensajes recientes
             </CardTitle>
