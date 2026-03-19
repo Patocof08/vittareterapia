@@ -414,7 +414,8 @@ export default function TherapistSessions() {
                         ⚠️ Marcar completada (temporal)
                       </Button>
                     )}
-                    {(session.status === "pending" || session.status === "confirmed" || session.status === "scheduled") && (
+                    {(session.status === "pending" || session.status === "confirmed" || session.status === "scheduled") &&
+                     (new Date(session.start_time).getTime() - Date.now()) > 12 * 60 * 60 * 1000 && (
                       <Button
                         variant="outline"
                         size="sm"
