@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Video, Search, Filter, Sparkles } from "lucide-react";
+import { Video, Search, Filter, Sparkles, XCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -27,6 +29,10 @@ export default function TherapistSessions() {
   const [briefData, setBriefData] = useState<{ text: string; sources: Record<string, boolean> } | null>(null);
   const [briefDialogOpen, setBriefDialogOpen] = useState(false);
   const [briefPatientName, setBriefPatientName] = useState("");
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [cancelAppointmentId, setCancelAppointmentId] = useState<string | null>(null);
+  const [cancelReason, setCancelReason] = useState("");
+  const [cancelling, setCancelling] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -162,6 +168,45 @@ export default function TherapistSessions() {
     } catch (err) {
       console.error(err);
       toast.error("Error al actualizar sesión");
+    }
+  };
+
+  const handlePsychologistCancel = async () => {
+    if (!cancelAppointmentId) return;
+    setCancelling(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error("No autenticado");
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/psychologist-cancel-session`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${session.access_token}`,
+            "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({
+            appointment_id: cancelAppointmentId,
+            reason: cancelReason,
+          }),
+        }
+      );
+
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Error al cancelar");
+
+      toast.success(result.message || "Sesión cancelada y crédito creado para el paciente");
+      setCancelDialogOpen(false);
+      setCancelReason("");
+      setCancelAppointmentId(null);
+      loadSessions();
+    } catch (error: any) {
+      console.error("Cancel error:", error);
+      toast.error(error.message || "Error al cancelar la sesión");
+    } finally {
+      setCancelling(false);
     }
   };
 
@@ -369,6 +414,20 @@ export default function TherapistSessions() {
                         ⚠️ Marcar completada (temporal)
                       </Button>
                     )}
+                    {(session.status === "pending" || session.status === "confirmed" || session.status === "scheduled") && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-destructive border-destructive/30 hover:bg-destructive/10"
+                        onClick={() => {
+                          setCancelAppointmentId(session.id);
+                          setCancelDialogOpen(true);
+                        }}
+                      >
+                        <XCircle className="w-3.5 h-3.5 mr-1.5" />
+                        Cancelar
+                      </Button>
+                    )}
                     {session.status === "completed" && (
                       <Button
                         variant="outline"
@@ -390,6 +449,48 @@ export default function TherapistSessions() {
           ))
         )}
       </div>
+
+      <Dialog open={cancelDialogOpen} onOpenChange={(open) => {
+        if (!open) {
+          setCancelDialogOpen(false);
+          setCancelReason("");
+          setCancelAppointmentId(null);
+        }
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Cancelar sesión</DialogTitle>
+            <DialogDescription>
+              Al cancelar, el paciente recibirá un crédito por el monto total que pagó. Este crédito es válido por 6 meses y lo puede usar para agendar con cualquier psicólogo.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="cancel-reason">Motivo de cancelación (opcional)</Label>
+              <Textarea
+                id="cancel-reason"
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                placeholder="Ej: Imprevisto personal, enfermedad..."
+                rows={3}
+              />
+            </div>
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+              <p className="text-sm text-amber-800">
+                Esta acción no se puede deshacer. El paciente será notificado por email.
+              </p>
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setCancelDialogOpen(false)} disabled={cancelling}>
+              Volver
+            </Button>
+            <Button variant="destructive" onClick={handlePsychologistCancel} disabled={cancelling}>
+              {cancelling ? "Cancelando..." : "Confirmar cancelación"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={briefDialogOpen} onOpenChange={setBriefDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
