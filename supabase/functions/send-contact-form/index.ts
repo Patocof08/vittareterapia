@@ -1,16 +1,24 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { emailLayout } from '../_shared/emailLayout.ts'
+import {
+  emailH1, emailP, emailSmall, emailButton,
+  emailDivider, emailHighlight, emailAlert, emailSignOff,
+} from '../_shared/emailComponents.ts'
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const FROM_CONTACT = 'Vittare Contacto <hola@vittare.mx>'
+const TEAM_EMAIL   = 'hola@vittare.mx'
+
 const subjectLabels: Record<string, string> = {
-  info: "Información general",
+  info:      "Información general",
   therapist: "Preguntas sobre terapeutas",
-  pricing: "Preguntas sobre precios",
+  pricing:   "Preguntas sobre precios",
   technical: "Soporte técnico",
-  other: "Otro",
+  other:     "Otro",
 };
 
 Deno.serve(async (req) => {
@@ -32,7 +40,26 @@ Deno.serve(async (req) => {
     const subjectLabel = subjectLabels[subject] || subject || "Contacto";
 
     if (resendKey) {
-      // Send notification to Vittare team
+      // ── Email interno al equipo de Vittare ──────────────────────────────────
+      const teamHtml = emailLayout(
+        emailH1('Nuevo mensaje de contacto.') +
+        emailHighlight([
+          ['Nombre',  name],
+          ['Email',   `<a href="mailto:${email}" style="color:#12A357;text-decoration:none;">${email}</a>`],
+          ['Motivo',  subjectLabel],
+        ]) +
+        `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:20px 0;">
+          <tr>
+            <td style="background-color:#F9FAFB;border:1px solid #E5E7EB;border-radius:8px;padding:16px 20px;">
+              <p style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#6B7280;margin:0 0 6px 0;font-weight:600;">Mensaje:</p>
+              <p style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.7;color:#1F2937;margin:0;white-space:pre-wrap;">${message}</p>
+            </td>
+          </tr>
+        </table>` +
+        emailSmall(`Responde directamente a <a href="mailto:${email}" style="color:#12A357;">${email}</a>`),
+        { previewText: `[Contacto] ${subjectLabel} — ${name}` }
+      )
+
       await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: {
@@ -40,27 +67,32 @@ Deno.serve(async (req) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          from: "Vittare Contacto <contacto@vittareterapia.com>",
-          to: "contacto@vittareterapia.com",
+          from: FROM_CONTACT,
+          to: TEAM_EMAIL,
           reply_to: email,
           subject: `[Contacto] ${subjectLabel} — ${name}`,
-          html: `
-            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-              <h2 style="color: #1a1a1a;">Nuevo mensaje de contacto</h2>
-              <table style="width:100%; border-collapse: collapse; margin-bottom: 16px;">
-                <tr><td style="padding: 8px; font-weight: bold; width: 120px;">Nombre:</td><td style="padding: 8px;">${name}</td></tr>
-                <tr style="background:#f9f9f9;"><td style="padding: 8px; font-weight: bold;">Email:</td><td style="padding: 8px;"><a href="mailto:${email}">${email}</a></td></tr>
-                <tr><td style="padding: 8px; font-weight: bold;">Motivo:</td><td style="padding: 8px;">${subjectLabel}</td></tr>
-              </table>
-              <div style="background:#f9f9f9; border-left: 4px solid #6366f1; padding: 16px; border-radius: 4px;">
-                <p style="margin:0; white-space: pre-wrap;">${message}</p>
-              </div>
-            </div>
-          `,
+          html: teamHtml,
         }),
       });
 
-      // Send confirmation to user
+      // ── Confirmación al usuario ─────────────────────────────────────────────
+      const userHtml = emailLayout(
+        emailH1(`Recibimos tu mensaje, ${name}.`) +
+        emailP('Gracias por escribirnos. Nuestro equipo revisará tu mensaje y te responderá en menos de 24 horas.') +
+        `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:20px 0;">
+          <tr>
+            <td style="background-color:#F9FAFB;border:1px solid #E5E7EB;border-radius:8px;padding:16px 20px;">
+              <p style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#6B7280;margin:0 0 6px 0;font-weight:600;">Tu mensaje:</p>
+              <p style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.7;color:#1F2937;margin:0;white-space:pre-wrap;">${message}</p>
+            </td>
+          </tr>
+        </table>` +
+        emailDivider() +
+        emailSmall(`Si tienes alguna urgencia, escríbenos directamente a <a href="mailto:hola@vittare.mx" style="color:#12A357;">hola@vittare.mx</a>`) +
+        emailSignOff('Con gusto te atendemos. — El equipo de Vittare'),
+        { previewText: `Recibimos tu mensaje — te responderemos en menos de 24 horas` }
+      )
+
       await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: {
@@ -68,35 +100,21 @@ Deno.serve(async (req) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          from: "Vittare <contacto@vittareterapia.com>",
+          from: FROM_CONTACT,
           to: email,
           subject: "Recibimos tu mensaje — Vittare",
-          html: `
-            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-              <h2 style="color: #1a1a1a;">Hola ${name}, recibimos tu mensaje</h2>
-              <p style="color: #555;">Gracias por contactarnos. Nuestro equipo revisará tu mensaje y te responderá en menos de 24 horas.</p>
-              <div style="background:#f9f9f9; border-left: 4px solid #6366f1; padding: 16px; border-radius: 4px; margin: 16px 0;">
-                <p style="margin:0; font-weight: bold; color: #333;">Tu mensaje:</p>
-                <p style="margin: 8px 0 0; white-space: pre-wrap; color: #555;">${message}</p>
-              </div>
-              <p style="color: #555;">Si tienes alguna urgencia, también puedes escribirnos directamente a <a href="mailto:contacto@vittareterapia.com">contacto@vittareterapia.com</a>.</p>
-              <p style="color: #555;">— El equipo de Vittare</p>
-            </div>
-          `,
+          html: userHtml,
         }),
       });
     }
 
     // Save to DB
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const serviceKey  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const adminClient = createClient(supabaseUrl, serviceKey);
 
     await adminClient.from("contact_messages").insert({
-      name,
-      email,
-      subject,
-      message,
+      name, email, subject, message,
     }).catch(() => {
       // Table may not exist yet — not critical
     });

@@ -1,141 +1,166 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
+import { emailLayout } from '../_shared/emailLayout.ts'
+import {
+  emailH1, emailP, emailSmall, emailButton,
+  emailDivider, emailHighlight, emailAlert, emailSignOff,
+} from '../_shared/emailComponents.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const EMAIL_TEMPLATES: Record<string, (vars: Record<string, string>) => { subject: string; html: string }> = {
+const FROM = 'Vittare <hola@vittare.mx>'
+const BASE_URL = 'https://vittare.mx'
+
+// ─── Templates ────────────────────────────────────────────────────────────────
+
+const EMAIL_TEMPLATES: Record<string, (v: Record<string, string>) => { subject: string; html: string }> = {
+
   new_booking: (v) => ({
     subject: 'Nueva sesión reservada',
-    html: buildEmail(
-      `Hola ${v.recipient_name},`,
-      `<p>Tienes una nueva sesión programada.</p>
-       <div style="background:#f8f9fa;border-left:4px solid #6366f1;border-radius:0 8px 8px 0;padding:20px 24px;margin:20px 0;">
-         <p style="margin:0 0 8px;"><strong>Paciente:</strong> ${v.patient_name}</p>
-         <p style="margin:0 0 8px;"><strong>Fecha:</strong> ${v.session_date}</p>
-         <p style="margin:0;"><strong>Hora:</strong> ${v.session_time}</p>
-       </div>
-       <p>Ingresa a la plataforma para ver los detalles.</p>`
+    html: emailLayout(
+      emailH1('Nueva sesión programada.') +
+      emailP(`Hola ${v.recipient_name}, tienes una nueva sesión confirmada en Vittare.`) +
+      emailHighlight([
+        ['Paciente', v.patient_name || '—'],
+        ['Fecha',    v.session_date || '—'],
+        ['Hora',     v.session_time || '—'],
+      ]) +
+      emailButton(`${BASE_URL}/therapist/sessions`, 'Ver detalles de la sesión') +
+      emailDivider() +
+      emailSignOff('Gracias por ser parte de Vittare. — El equipo de Vittare'),
+      { previewText: `Nueva sesión con ${v.patient_name} el ${v.session_date}` }
     ),
   }),
 
   session_reminder: (v) => ({
-    subject: `Recordatorio: sesión hoy a las ${v.session_time}`,
-    html: buildEmail(
-      `Hola ${v.recipient_name},`,
-      `<p>Te recordamos que tienes una sesión programada en las próximas horas.</p>
-       <div style="background:#f8f9fa;border-left:4px solid #6366f1;border-radius:0 8px 8px 0;padding:20px 24px;margin:20px 0;">
-         <p style="margin:0 0 8px;"><strong>Con:</strong> ${v.other_party_name}</p>
-         <p style="margin:0 0 8px;"><strong>Fecha:</strong> ${v.session_date}</p>
-         <p style="margin:0;"><strong>Hora:</strong> ${v.session_time}</p>
-       </div>
-       <p>Ingresa a la plataforma unos minutos antes de la hora para estar listo.</p>`
+    subject: `Recordatorio: tu sesión de hoy a las ${v.session_time}`,
+    html: emailLayout(
+      emailH1('Tu sesión es hoy.') +
+      emailP(`Hola ${v.recipient_name}, te recordamos que tienes una sesión programada hoy.`) +
+      emailHighlight([
+        ['Con',   v.other_party_name || '—'],
+        ['Fecha', v.session_date || '—'],
+        ['Hora',  v.session_time + ' (hora CDMX)' || '—'],
+      ]) +
+      emailButton(`${BASE_URL}/portal/sesiones`, 'Ver mi sesión') +
+      emailAlert('Recuerda entrar unos minutos antes y estar en un lugar tranquilo y privado.', 'info') +
+      emailDivider() +
+      emailSignOff('¡Nos vemos pronto! — El equipo de Vittare'),
+      { previewText: `Tu sesión con ${v.other_party_name} es hoy a las ${v.session_time}` }
     ),
   }),
 
   session_reminder_soon: (v) => ({
-    subject: `Tu sesión comienza en 10 minutos`,
-    html: buildEmail(
-      `Hola ${v.recipient_name},`,
-      `<p><strong>Tu sesión está por comenzar.</strong></p>
-       <div style="background:#f0fdf4;border-left:4px solid #22c55e;border-radius:0 8px 8px 0;padding:20px 24px;margin:20px 0;">
-         <p style="margin:0 0 8px;"><strong>Paciente:</strong> ${v.other_party_name}</p>
-         <p style="margin:0;"><strong>Hora:</strong> ${v.session_time}</p>
-       </div>
-       <p>Ingresa a la plataforma ahora para iniciar la videollamada.</p>`
+    subject: 'Tu sesión comienza en 10 minutos',
+    html: emailLayout(
+      emailH1('Tu sesión está por comenzar.') +
+      emailHighlight([
+        ['Con',  v.other_party_name || '—'],
+        ['Hora', v.session_time || '—'],
+      ]) +
+      emailP(`Hola ${v.recipient_name}, es momento de conectarte. Ingresa ahora para iniciar la videollamada.`) +
+      emailButton(`${BASE_URL}/therapist/sessions`, 'Entrar a la sesión') +
+      emailAlert('💡 Asegúrate de tener buena conexión a internet y cámara y micrófono listos.', 'warning'),
+      { previewText: `Tu sesión comienza en 10 minutos — ${v.session_time}` }
     ),
   }),
 
   new_message: (v) => ({
     subject: `Nuevo mensaje de ${v.sender_name}`,
-    html: buildEmail(
-      `Hola ${v.recipient_name},`,
-      `<p>${v.sender_name} te envió un mensaje en la plataforma.</p>
-       <p style="color:#666;">Ingresa a Vittare para leerlo y responder.</p>`
+    html: emailLayout(
+      emailH1('Tienes un nuevo mensaje.') +
+      emailP(`Hola ${v.recipient_name}, <strong>${v.sender_name}</strong> te envió un mensaje en Vittare.`) +
+      emailButton(`${BASE_URL}/portal/mensajes`, 'Leer y responder') +
+      emailDivider() +
+      emailSmall('Para evitar notificaciones de mensajes, puedes ajustar tus preferencias desde tu perfil en Vittare.'),
+      { previewText: `${v.sender_name} te envió un mensaje` }
     ),
   }),
 
   payment_update: (v) => ({
-    subject: 'Actualización de pago',
-    html: buildEmail(
-      `Hola ${v.recipient_name},`,
-      `<p>${v.payment_description}</p>
-       <div style="background:#f8f9fa;border-left:4px solid #22c55e;border-radius:0 8px 8px 0;padding:20px 24px;margin:20px 0;">
-         <p style="margin:0 0 8px;"><strong>Monto:</strong> ${v.amount}</p>
-         <p style="margin:0;"><strong>Concepto:</strong> ${v.concept}</p>
-       </div>`
+    subject: 'Actualización de pago — Vittare',
+    html: emailLayout(
+      emailH1('Actualización de pago.') +
+      emailP(`Hola ${v.recipient_name}, ${v.payment_description || 'hay una actualización en tu cuenta.'}`) +
+      emailHighlight([
+        ['Monto',   v.amount   || '—'],
+        ['Concepto', v.concept || '—'],
+      ]) +
+      emailButton(`${BASE_URL}/therapist/wallet`, 'Ver mi billetera') +
+      emailDivider() +
+      emailSmall('Si tienes preguntas sobre este movimiento, escríbenos a hola@vittare.mx.'),
+      { previewText: `Actualización de pago: ${v.amount}` }
     ),
   }),
 
   cancellation: (v) => ({
     subject: 'Sesión cancelada',
-    html: buildEmail(
-      `Hola ${v.recipient_name},`,
-      `<p>Una sesión ha sido cancelada.</p>
-       <div style="background:#fef2f2;border-left:4px solid #ef4444;border-radius:0 8px 8px 0;padding:20px 24px;margin:20px 0;">
-         <p style="margin:0 0 8px;"><strong>Con:</strong> ${v.other_party_name}</p>
-         <p style="margin:0 0 8px;"><strong>Fecha original:</strong> ${v.session_date}</p>
-         <p style="margin:0;"><strong>Hora original:</strong> ${v.session_time}</p>
-       </div>`
+    html: emailLayout(
+      emailH1('Una sesión ha sido cancelada.') +
+      emailP(`Hola ${v.recipient_name}, te informamos que la siguiente sesión fue cancelada.`) +
+      emailHighlight([
+        ['Con',            v.other_party_name || '—'],
+        ['Fecha original', v.session_date     || '—'],
+        ['Hora original',  v.session_time     || '—'],
+      ]) +
+      emailAlert('Si tienes crédito generado por esta cancelación, aparecerá disponible en tu cuenta.', 'warning') +
+      emailButton(`${BASE_URL}/portal/sesiones`, 'Ver mis sesiones') +
+      emailDivider() +
+      emailSignOff('Lamentamos el inconveniente. — El equipo de Vittare'),
+      { previewText: `Sesión cancelada con ${v.other_party_name}` }
     ),
   }),
 
   no_show: (v) => ({
-    subject: 'Registro de inasistencia a tu sesión',
-    html: buildEmail(
-      `Hola ${v.recipient_name},`,
-      `<p>Te informamos que tu sesión programada no registró asistencia.</p>
-       <div style="background:#f8f9fa;border-left:4px solid #6366f1;border-radius:0 8px 8px 0;padding:20px 24px;margin:20px 0;">
-         <p style="margin:0 0 8px;"><strong>Sesión con:</strong> ${v.psychologist_name}</p>
-         <p style="margin:0 0 8px;"><strong>Fecha:</strong> ${v.session_date}</p>
-         <p style="margin:0;"><strong>Hora:</strong> ${v.session_time}</p>
-       </div>
-       <p>Si crees que esto es un error, comunícate con tu psicólogo a través de la plataforma.</p>
-       <p>Recuerda que la constancia en tus sesiones es parte fundamental de tu proceso terapéutico.</p>`
+    subject: 'Inasistencia registrada en tu sesión',
+    html: emailLayout(
+      emailH1('No registramos tu asistencia.') +
+      emailP(`Hola ${v.recipient_name}, tu sesión programada fue marcada como inasistencia.`) +
+      emailHighlight([
+        ['Terapeuta', v.psychologist_name || '—'],
+        ['Fecha',     v.session_date      || '—'],
+        ['Hora',      v.session_time      || '—'],
+      ]) +
+      emailAlert('Si crees que esto es un error, comunícate con tu psicólogo a través de la plataforma.', 'warning') +
+      emailP('Recuerda que la constancia en tus sesiones es parte fundamental de tu proceso terapéutico.', true) +
+      emailButton(`${BASE_URL}/portal/sesiones`, 'Ir a mis sesiones') +
+      emailDivider() +
+      emailSignOff('Estamos aquí para apoyarte. — El equipo de Vittare'),
+      { previewText: 'Tu sesión fue marcada como inasistencia' }
     ),
   }),
 
   task_assigned: (v) => ({
-    subject: 'Nueva tarea asignada',
-    html: buildEmail(
-      `Hola ${v.recipient_name},`,
-      `<p>Tu terapeuta te ha asignado una nueva tarea.</p>
-       <div style="background:#f8f9fa;border-left:4px solid #6366f1;border-radius:0 8px 8px 0;padding:20px 24px;margin:20px 0;">
-         <p style="margin:0 0 8px;"><strong>Terapeuta:</strong> ${v.psychologist_name}</p>
-         <p style="margin:0;"><strong>Tarea:</strong> ${v.task_title}</p>
-       </div>
-       <p>Ingresa a Vittare para ver los detalles y completarla.</p>`
+    subject: `Nueva tarea asignada — ${v.task_title || 'Vittare'}`,
+    html: emailLayout(
+      emailH1('Tu terapeuta te asignó una tarea.') +
+      emailP(`Hola ${v.recipient_name}, ${v.psychologist_name} te ha asignado una nueva actividad.`) +
+      emailHighlight([
+        ['Tarea',      v.task_title        || '—'],
+        ['Asignada por', v.psychologist_name || '—'],
+      ]) +
+      emailButton(`${BASE_URL}/portal/tareas`, 'Ver la tarea') +
+      emailDivider() +
+      emailSmall('Completar las tareas entre sesiones refuerza tu proceso terapéutico.'),
+      { previewText: `Nueva tarea: ${v.task_title}` }
     ),
   }),
 
   newsletter: (v) => ({
     subject: v.newsletter_subject || 'Novedades de Vittare',
-    html: buildEmail(
-      `Hola ${v.recipient_name},`,
-      `${v.newsletter_body || '<p>Tenemos novedades para ti.</p>'}`
+    html: emailLayout(
+      emailH1(v.newsletter_subject || 'Novedades de Vittare') +
+      (v.newsletter_body || emailP('Tenemos novedades para ti. Ingresa a Vittare para conocerlas.')) +
+      emailDivider() +
+      emailSmall('Recibiste este correo porque estás suscrito al newsletter de Vittare. Puedes darte de baja en cualquier momento desde tu perfil.'),
+      { previewText: v.newsletter_subject || 'Novedades de Vittare' }
     ),
   }),
 }
 
-function buildEmail(greeting: string, body: string): string {
-  return `<!DOCTYPE html>
-<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background:#f8f9fa;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
-  <div style="max-width:560px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
-    <div style="background:#1a1a2e;padding:28px 40px;text-align:center;">
-      <h1 style="color:#fff;font-size:22px;margin:0;font-weight:600;">Vittare</h1>
-    </div>
-    <div style="padding:36px 40px;">
-      <p style="font-size:16px;color:#333;margin:0 0 20px;line-height:1.6;">${greeting}</p>
-      <div style="font-size:15px;color:#555;line-height:1.6;">${body}</div>
-    </div>
-    <div style="padding:20px 40px;background:#f8f9fa;border-top:1px solid #eee;text-align:center;">
-      <p style="font-size:12px;color:#999;margin:0;">Este es un mensaje automático de Vittare. No responder a este correo.</p>
-    </div>
-  </div>
-</body></html>`
-}
+// ─── Preference column map ────────────────────────────────────────────────────
 
 const TYPE_TO_PREF_COLUMN: Record<string, string> = {
   new_booking:           'email_new_booking',
@@ -148,6 +173,8 @@ const TYPE_TO_PREF_COLUMN: Record<string, string> = {
   task_assigned:         'email_task_assigned',
   newsletter:            'email_newsletter',
 }
+
+// ─── Handler ──────────────────────────────────────────────────────────────────
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -181,7 +208,7 @@ Deno.serve(async (req) => {
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 })
     }
 
-    // Check user's notification preferences
+    // Check user notification preferences
     const prefColumn = TYPE_TO_PREF_COLUMN[notification_type]
     if (prefColumn) {
       const { data: prefs } = await supabase
@@ -226,48 +253,16 @@ Deno.serve(async (req) => {
 
     const { subject, html } = templateFn(variables || {})
 
-    // ── Crear notificación in-app ──
+    // Create in-app notification
     const NOTIF_CONFIGS: Record<string, (v: Record<string, string>) => { title: string; body: string; link: string }> = {
-      new_booking: (v) => ({
-        title: `Nueva sesión con ${v.patient_name || 'un paciente'}`,
-        body: `${v.session_date} a las ${v.session_time}`,
-        link: '/therapist/sessions',
-      }),
-      session_reminder: (v) => ({
-        title: `Recordatorio: sesión hoy a las ${v.session_time}`,
-        body: `Con ${v.other_party_name}`,
-        link: '/portal/sesiones',
-      }),
-      session_reminder_soon: (v) => ({
-        title: 'Tu sesión comienza en 10 minutos',
-        body: `Con ${v.other_party_name}`,
-        link: '/therapist/sessions',
-      }),
-      new_message: (v) => ({
-        title: `Nuevo mensaje de ${v.sender_name}`,
-        body: 'Tienes un mensaje sin leer',
-        link: '/portal/mensajes',
-      }),
-      payment_update: (v) => ({
-        title: 'Actualización de pago',
-        body: `${v.amount} — ${v.concept}`,
-        link: '/portal/sesiones',
-      }),
-      cancellation: (v) => ({
-        title: 'Sesión cancelada',
-        body: `Con ${v.other_party_name} — ${v.session_date}`,
-        link: '/portal/sesiones',
-      }),
-      no_show: (v) => ({
-        title: 'Inasistencia registrada',
-        body: `Sesión con ${v.psychologist_name || 'tu psicólogo'}`,
-        link: '/portal/sesiones',
-      }),
-      task_assigned: (v) => ({
-        title: `Nueva tarea: ${v.task_title}`,
-        body: `Asignada por ${v.psychologist_name}`,
-        link: '/portal/tareas',
-      }),
+      new_booking:           (v) => ({ title: `Nueva sesión con ${v.patient_name || 'un paciente'}`,      body: `${v.session_date} a las ${v.session_time}`,   link: '/therapist/sessions' }),
+      session_reminder:      (v) => ({ title: `Recordatorio: sesión hoy a las ${v.session_time}`,         body: `Con ${v.other_party_name}`,                   link: '/portal/sesiones' }),
+      session_reminder_soon: (v) => ({ title: 'Tu sesión comienza en 10 minutos',                         body: `Con ${v.other_party_name}`,                   link: '/therapist/sessions' }),
+      new_message:           (v) => ({ title: `Nuevo mensaje de ${v.sender_name}`,                        body: 'Tienes un mensaje sin leer',                  link: '/portal/mensajes' }),
+      payment_update:        (v) => ({ title: 'Actualización de pago',                                    body: `${v.amount} — ${v.concept}`,                 link: '/portal/sesiones' }),
+      cancellation:          (v) => ({ title: 'Sesión cancelada',                                         body: `Con ${v.other_party_name} — ${v.session_date}`, link: '/portal/sesiones' }),
+      no_show:               (v) => ({ title: 'Inasistencia registrada',                                  body: `Sesión con ${v.psychologist_name || 'tu psicólogo'}`, link: '/portal/sesiones' }),
+      task_assigned:         (v) => ({ title: `Nueva tarea: ${v.task_title}`,                             body: `Asignada por ${v.psychologist_name}`,         link: '/portal/tareas' }),
     }
 
     const notifConfig = NOTIF_CONFIGS[notification_type]
@@ -283,18 +278,14 @@ Deno.serve(async (req) => {
       if (notifError) console.error('Error creating in-app notification:', notifError)
     }
 
+    // Send email via Resend
     const resendResponse = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${RESEND_API_KEY}`,
       },
-      body: JSON.stringify({
-        from: 'Vittare <no-reply@vittareterapia.com>',
-        to: [toEmail],
-        subject,
-        html,
-      }),
+      body: JSON.stringify({ from: FROM, to: [toEmail], subject, html }),
     })
 
     if (!resendResponse.ok) {

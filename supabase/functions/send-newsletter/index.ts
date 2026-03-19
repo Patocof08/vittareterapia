@@ -1,4 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { emailLayout } from '../_shared/emailLayout.ts'
+import { emailH1, emailP, emailButton, emailDivider, emailSmall } from '../_shared/emailComponents.ts'
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -94,28 +96,23 @@ Deno.serve(async (req) => {
     // Send emails via Resend (if API key is configured)
     const resendKey = Deno.env.get("RESEND_API_KEY");
     if (resendKey && subscribers && subscribers.length > 0) {
-      const siteUrl = Deno.env.get("SITE_URL") ?? "https://vittareterapia.com";
+      const siteUrl = Deno.env.get("SITE_URL") ?? "https://vittare.mx";
       const postUrl = `${siteUrl}/blog/${post.slug}`;
 
       for (const subscriber of subscribers) {
-        const nombre = "Hola";
-        const htmlBody = `
-          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #1a1a1a;">${post.title}</h2>
-            ${post.excerpt ? `<p style="color: #555;">${post.excerpt}</p>` : ""}
-            ${post.cover_image_url ? `<img src="${post.cover_image_url}" alt="" style="width:100%;border-radius:8px;margin:16px 0;" />` : ""}
-            <p>
-              <a href="${postUrl}" style="background:#6366f1;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;display:inline-block;">
-                Leer artículo completo
-              </a>
-            </p>
-            <hr style="border:none;border-top:1px solid #eee;margin:24px 0;" />
-            <p style="color:#999;font-size:12px;">
-              Recibiste este correo porque estás suscrito al newsletter de Vittare.<br/>
-              <a href="${siteUrl}/unsubscribe?email=${encodeURIComponent(subscriber.email)}" style="color:#999;">Cancelar suscripción</a>
-            </p>
-          </div>
-        `;
+        const coverImageHtml = post.cover_image_url
+          ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px 0;"><tr><td><img src="${post.cover_image_url}" alt="" width="100%" style="display:block;border-radius:8px;max-width:100%;height:auto;" /></td></tr></table>`
+          : ''
+
+        const htmlBody = emailLayout(
+          emailH1(post.title) +
+          coverImageHtml +
+          (post.excerpt ? emailP(post.excerpt) : '') +
+          emailButton(postUrl, 'Leer artículo completo') +
+          emailDivider() +
+          emailSmall(`Recibiste este correo porque estás suscrito al newsletter de Vittare. <a href="${siteUrl}/unsubscribe?email=${encodeURIComponent(subscriber.email)}" style="color:#9CA3AF;">Cancelar suscripción</a>`),
+          { previewText: post.excerpt || post.title }
+        )
 
         await fetch("https://api.resend.com/emails", {
           method: "POST",
@@ -124,7 +121,7 @@ Deno.serve(async (req) => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            from: "Vittare <newsletter@vittareterapia.com>",
+            from: "Vittare <hola@vittare.mx>",
             to: subscriber.email,
             subject: post.title,
             html: htmlBody,
