@@ -32,7 +32,8 @@ ${preview}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;">
   <tr>
     <td style="background-color:#1F4D2E;border-radius:12px 12px 0 0;padding:28px 40px;">
-      <img src="https://vittare.mx/images/logo/vittare-logo-white.png" width="180" alt="Vittare — Reconecta Contigo" style="display:block;border:0;max-width:180px;height:auto;" />
+      <span style="font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:normal;color:#FFFFFF;font-style:italic;">vittare</span><br>
+      <span style="font-family:Arial,Helvetica,sans-serif;font-size:9px;color:rgba(255,255,255,0.50);letter-spacing:3.5px;text-transform:uppercase;">RECONECTA CONTIGO</span>
     </td>
   </tr>
   <tr>
