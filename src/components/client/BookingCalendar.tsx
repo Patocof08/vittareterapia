@@ -60,6 +60,21 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
     try {
       const dayOfWeek = date.getDay();
 
+      // Check if this date is blocked (exception in psychologist_availability)
+      const dateString = format(date, "yyyy-MM-dd");
+      const { data: exceptions } = await supabase
+        .from("psychologist_availability")
+        .select("id")
+        .eq("psychologist_id", psychologistId)
+        .eq("is_exception", true)
+        .eq("exception_date", dateString);
+
+      if (exceptions && exceptions.length > 0) {
+        setAvailableSlots([]);
+        setLoading(false);
+        return;
+      }
+
       // Get psychologist's availability for this day
       // @ts-ignore - Types will regenerate automatically
       const { data: availability, error: availError } = await supabase
