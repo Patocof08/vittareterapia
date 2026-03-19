@@ -105,7 +105,6 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
       if (apptError) throw apptError;
 
       // Get therapist calendar blocks for this date (external/blocked times)
-      const dateString = format(date, "yyyy-MM-dd");
       const [{ data: recurringBlocks }, { data: specificBlocks }] = await Promise.all([
         (supabase as any)
           .from("therapist_calendar_blocks")
