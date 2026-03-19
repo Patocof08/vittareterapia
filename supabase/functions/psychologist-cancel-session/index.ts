@@ -10,17 +10,19 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders })
   }
 
+  const log = (step: string, data?: unknown) =>
+    console.log(`[psychologist-cancel-session] ${step}`, data ?? '')
+
   try {
     const authHeader = req.headers.get('Authorization')
+    log('START', { hasAuth: !!authHeader })
 
-    // Cliente con service role para escritura
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
-    // Cliente con JWT del usuario para verificar identidad
     const userSupabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
@@ -30,15 +32,21 @@ Deno.serve(async (req) => {
       }
     )
 
+    // ─── Auth ────────────────────────────────────────────────────────────────
     const { data: { user }, error: authError } = await userSupabase.auth.getUser()
     if (authError || !user) {
+      log('AUTH_FAIL', authError?.message)
       return new Response(
         JSON.stringify({ error: 'No autorizado' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
       )
     }
+    log('AUTH_OK', user.id)
 
-    const { appointment_id, reason } = await req.json()
+    // ─── Body ────────────────────────────────────────────────────────────────
+    const body = await req.json()
+    const { appointment_id, reason } = body
+    log('BODY', { appointment_id, reason })
 
     if (!appointment_id) {
       return new Response(
@@ -47,12 +55,14 @@ Deno.serve(async (req) => {
       )
     }
 
-    // ─── 1. Verificar que el usuario es el psicólogo de esta cita ─────────────
-    const { data: psychProfile } = await supabase
+    // ─── Psicólogo ───────────────────────────────────────────────────────────
+    const { data: psychProfile, error: psychError } = await supabase
       .from('psychologist_profiles')
       .select('id')
       .eq('user_id', user.id)
       .maybeSingle()
+
+    log('PSYCH_PROFILE', { id: psychProfile?.id, error: psychError?.message })
 
     if (!psychProfile) {
       return new Response(
@@ -61,20 +71,24 @@ Deno.serve(async (req) => {
       )
     }
 
-    const { data: appointment } = await supabase
+    // ─── Cita ────────────────────────────────────────────────────────────────
+    const { data: appointment, error: apptError } = await supabase
       .from('appointments')
       .select('id, patient_id, psychologist_id, status, start_time, subscription_id')
       .eq('id', appointment_id)
-      .single()
+      .maybeSingle()
+
+    log('APPOINTMENT', { status: appointment?.status, psychologist_id: appointment?.psychologist_id, error: apptError?.message })
 
     if (!appointment) {
       return new Response(
-        JSON.stringify({ error: 'Cita no encontrada' }),
+        JSON.stringify({ error: `Cita no encontrada${apptError ? ': ' + apptError.message : ''}` }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 404 }
       )
     }
 
     if (appointment.psychologist_id !== psychProfile.id) {
+      log('OWNERSHIP_FAIL', { appt_psych: appointment.psychologist_id, my_psych: psychProfile.id })
       return new Response(
         JSON.stringify({ error: 'No tienes permiso para cancelar esta cita' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
@@ -88,8 +102,8 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Belt-and-suspenders: verificar > 12h desde el servidor también
     const hoursUntil = (new Date(appointment.start_time).getTime() - Date.now()) / (1000 * 60 * 60)
+    log('HOURS_UNTIL', hoursUntil)
     if (hoursUntil < 12) {
       return new Response(
         JSON.stringify({ error: 'No se puede cancelar con menos de 12 horas de anticipación' }),
@@ -97,32 +111,40 @@ Deno.serve(async (req) => {
       )
     }
 
-    // ─── 2. Obtener monto pagado ──────────────────────────────────────────────
+    // ─── Monto ───────────────────────────────────────────────────────────────
     let creditAmount = 0
 
-    // Primero buscar en deferred_revenue (cubre paquetes y sesiones individuales)
-    const { data: deferred } = await supabase
-      .from('deferred_revenue')
-      .select('price_per_session')
-      .eq('appointment_id', appointment_id)
-      .maybeSingle()
+    if (appointment.subscription_id) {
+      const { data: sub, error: subError } = await supabase
+        .from('client_subscriptions')
+        .select('session_price')
+        .eq('id', appointment.subscription_id)
+        .maybeSingle()
 
-    if (deferred?.price_per_session) {
-      creditAmount = Number(deferred.price_per_session)
-    } else {
-      // Fallback: buscar en payments directamente
-      const { data: payment } = await supabase
+      log('SUBSCRIPTION', { session_price: sub?.session_price, error: subError?.message })
+
+      if (sub?.session_price) {
+        creditAmount = Number(sub.session_price)
+      }
+    }
+
+    if (creditAmount === 0) {
+      const { data: payment, error: paymentError } = await supabase
         .from('payments')
         .select('base_amount, amount')
         .eq('appointment_id', appointment_id)
         .maybeSingle()
+
+      log('PAYMENT_FALLBACK', { base_amount: payment?.base_amount, error: paymentError?.message })
 
       if (payment) {
         creditAmount = Number(payment.base_amount || payment.amount || 0)
       }
     }
 
-    // ─── 3. Cancelar la cita ─────────────────────────────────────────────────
+    log('CREDIT_AMOUNT', creditAmount)
+
+    // ─── Cancelar ────────────────────────────────────────────────────────────
     const { error: cancelError } = await supabase
       .from('appointments')
       .update({
@@ -133,9 +155,10 @@ Deno.serve(async (req) => {
       })
       .eq('id', appointment_id)
 
-    if (cancelError) throw cancelError
+    log('CANCEL', { error: cancelError?.message })
+    if (cancelError) throw new Error(`Error al cancelar cita: ${cancelError.message}`)
 
-    // ─── 4. Crear crédito para el cliente ────────────────────────────────────
+    // ─── Crédito ─────────────────────────────────────────────────────────────
     if (creditAmount > 0) {
       const expiresAt = new Date()
       expiresAt.setMonth(expiresAt.getMonth() + 6)
@@ -147,26 +170,19 @@ Deno.serve(async (req) => {
           psychologist_id: psychProfile.id,
           amount: creditAmount,
           currency: 'MXN',
-          reason: reason
-            ? `Sesión cancelada por psicólogo: ${reason}`
-            : 'Sesión cancelada por psicólogo',
+          reason: reason ? `Sesión cancelada por psicólogo: ${reason}` : 'Sesión cancelada por psicólogo',
           original_appointment_id: appointment_id,
           status: 'available',
           expires_at: expiresAt.toISOString(),
         })
 
+      log('CREDIT', { error: creditError?.message })
       if (creditError) {
-        console.error('Error creating credit (appointment already cancelled):', creditError)
-        // La cita ya fue cancelada — no revertimos, solo logueamos
+        console.error('Credit insert failed (non-fatal):', creditError.message)
       }
     }
 
-    console.log('Psychologist cancelled appointment:', {
-      appointment_id,
-      psychologist_id: psychProfile.id,
-      patient_id: appointment.patient_id,
-      credit_amount: creditAmount,
-    })
+    log('SUCCESS', { credit_amount: creditAmount })
 
     return new Response(
       JSON.stringify({
@@ -180,9 +196,10 @@ Deno.serve(async (req) => {
     )
 
   } catch (error) {
-    console.error('psychologist-cancel-session error:', error)
+    const msg = error instanceof Error ? error.message : 'Error desconocido'
+    console.error('[psychologist-cancel-session] CATCH:', msg)
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Error desconocido' }),
+      JSON.stringify({ error: msg }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     )
   }

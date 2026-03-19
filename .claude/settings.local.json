@@ -50,7 +50,8 @@
       "mcp__nano-banana__generate_image",
       "Bash(del:*)",
       "mcp___21st-dev_magic__21st_magic_component_inspiration",
-      "Bash(git:*)"
+      "Bash(git:*)",
+      "Bash(xargs -I{} grep -l 'CREATE TABLE' {})"
     ]
   },
   "enableAllProjectMcpServers": true,
