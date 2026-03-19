@@ -183,7 +183,42 @@ export function AvailabilityEditor({ psychologistId, onClose }: AvailabilityEdit
     setSaving(true);
     try {
       const dateStr = exceptionDate.toISOString().split('T')[0];
-      
+
+      // Check for pending appointments on this date
+      const dateStart = new Date(dateStr + "T00:00:00");
+      const dateEnd = new Date(dateStr + "T23:59:59");
+
+      const { data: conflictingAppts } = await supabase
+        .from("appointments")
+        .select("id, start_time, patient_id")
+        .eq("psychologist_id", psychologistId)
+        .in("status", ["pending", "confirmed", "scheduled"])
+        .gte("start_time", dateStart.toISOString())
+        .lte("start_time", dateEnd.toISOString());
+
+      if (conflictingAppts && conflictingAppts.length > 0) {
+        const patientIds = [...new Set(conflictingAppts.map((a: any) => a.patient_id))];
+        const { data: patients } = await supabase
+          .from("profiles")
+          .select("id, full_name")
+          .in("id", patientIds);
+        const nameMap: Record<string, string> = {};
+        (patients || []).forEach((p: any) => { nameMap[p.id] = p.full_name; });
+
+        const apptList = conflictingAppts.map((a: any) => {
+          const d = new Date(a.start_time);
+          const name = nameMap[a.patient_id] || "Paciente";
+          return `• ${name} a las ${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`;
+        }).join("\n");
+
+        toast.error(
+          `No puedes bloquear este día porque tienes ${conflictingAppts.length} cita(s) pendiente(s). Cancélalas primero:\n\n${apptList}`,
+          { duration: 8000 }
+        );
+        setSaving(false);
+        return;
+      }
+
       // Check if exception already exists
       const existing = blocks.find(b => 
         b.is_exception && b.exception_date === dateStr

@@ -255,6 +255,62 @@ function AddBlockModal({
     }
     setSaving(true);
     try {
+      // Check for pending appointments that conflict with this block
+      let conflictQuery = supabase
+        .from("appointments")
+        .select("id, start_time, end_time, patient_id")
+        .eq("psychologist_id", psychologistId)
+        .in("status", ["pending", "confirmed", "scheduled"]);
+
+      if (isRecurring) {
+        const today = new Date();
+        conflictQuery = conflictQuery.gte("start_time", today.toISOString());
+      } else {
+        const dateStart = new Date(specificDate + "T00:00:00");
+        const dateEnd = new Date(specificDate + "T23:59:59");
+        conflictQuery = conflictQuery
+          .gte("start_time", dateStart.toISOString())
+          .lte("start_time", dateEnd.toISOString());
+      }
+
+      const { data: conflictingAppts } = await conflictQuery;
+
+      const overlapping = (conflictingAppts || []).filter((appt: any) => {
+        const apptStart = new Date(appt.start_time);
+        const apptStartMins = apptStart.getHours() * 60 + apptStart.getMinutes();
+        const apptEndMins = apptStartMins + 50;
+        const bStart = startHour * 60 + startMin;
+        const bEnd = endTotalMins;
+        return apptStartMins < bEnd && apptEndMins > bStart;
+      });
+
+      const finalConflicts = isRecurring
+        ? overlapping.filter((appt: any) => new Date(appt.start_time).getDay() === parseInt(dayOfWeek))
+        : overlapping;
+
+      if (finalConflicts.length > 0) {
+        const patientIds = [...new Set(finalConflicts.map((a: any) => a.patient_id))];
+        const { data: patients } = await supabase
+          .from("profiles")
+          .select("id, full_name")
+          .in("id", patientIds);
+        const nameMap: Record<string, string> = {};
+        (patients || []).forEach((p: any) => { nameMap[p.id] = p.full_name; });
+
+        const apptList = finalConflicts.map((a: any) => {
+          const d = new Date(a.start_time);
+          const name = nameMap[a.patient_id] || "Paciente";
+          return `• ${name} — ${d.toLocaleDateString("es-MX", { day: "numeric", month: "short" })} a las ${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+        }).join("\n");
+
+        toast.error(
+          `No puedes bloquear este horario porque tienes ${finalConflicts.length} cita(s) pendiente(s). Cancélalas primero:\n\n${apptList}`,
+          { duration: 8000 }
+        );
+        setSaving(false);
+        return;
+      }
+
       const record: any = {
         psychologist_id: psychologistId,
         block_type: blockType,
