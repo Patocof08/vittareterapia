@@ -127,7 +127,8 @@ Deno.serve(async (req) => {
       .from('appointments')
       .update({
         status: 'cancelled',
-        session_notes: reason ? `Cancelado por psicólogo: ${reason}` : 'Cancelado por psicólogo',
+        cancellation_reason: reason || 'Cancelado por psicólogo',
+        cancelled_by: user.id,
         updated_at: new Date().toISOString(),
       })
       .eq('id', appointment_id)
@@ -158,23 +159,6 @@ Deno.serve(async (req) => {
         console.error('Error creating credit (appointment already cancelled):', creditError)
         // La cita ya fue cancelada — no revertimos, solo logueamos
       }
-    }
-
-    // ─── 5. Restaurar sesión en suscripción si aplica ────────────────────────
-    if (appointment.subscription_id) {
-      await supabase
-        .from('client_subscriptions')
-        .update({
-          sessions_remaining: supabase.rpc ? undefined : undefined, // incrementar con SQL
-        })
-        .eq('id', appointment.subscription_id)
-
-      // Incrementar sesiones_remaining con RPC o raw SQL via service role
-      await supabase.rpc('increment_subscription_sessions', {
-        _subscription_id: appointment.subscription_id,
-      }).catch(() => {
-        // Si el RPC no existe, ignorar — el crédito monetario cubre al cliente
-      })
     }
 
     console.log('Psychologist cancelled appointment:', {
