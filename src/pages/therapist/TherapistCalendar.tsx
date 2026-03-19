@@ -236,6 +236,7 @@ function AddBlockModal({
   const [startMin, setStartMin] = useState(0);
   const [durationMin, setDurationMin] = useState(60);
   const [saving, setSaving] = useState(false);
+  const [conflictList, setConflictList] = useState<string[] | null>(null);
 
   useEffect(() => {
     if (initialDayOfWeek !== undefined) setDayOfWeek(String(initialDayOfWeek));
@@ -303,10 +304,11 @@ function AddBlockModal({
           return `• ${name} — ${d.toLocaleDateString("es-MX", { day: "numeric", month: "short" })} a las ${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
         }).join("\n");
 
-        toast.error(
-          `No puedes bloquear este horario porque tienes ${finalConflicts.length} cita(s) pendiente(s). Cancélalas primero:\n\n${apptList}`,
-          { duration: 8000 }
-        );
+        setConflictList(finalConflicts.map((a: any) => {
+          const d = new Date(a.start_time);
+          const name = nameMap[a.patient_id] || "Paciente";
+          return `${name} — ${d.toLocaleDateString("es-MX", { day: "numeric", month: "short" })} a las ${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+        }));
         setSaving(false);
         return;
       }
@@ -367,6 +369,62 @@ function AddBlockModal({
     external: { label: "Cita externa", icon: "📌", desc: "Consulta fuera de Vittare" },
     blocked: { label: "Bloquear horario", icon: "🚫", desc: "No disponible para citas" },
   };
+
+  if (conflictList) {
+    return (
+      <div
+        style={{
+          position: "fixed", inset: 0, zIndex: 1000,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)",
+        }}
+      >
+        <div style={{
+          background: "white", borderRadius: "16px", width: "min(440px, 92vw)",
+          padding: "28px 28px 24px", boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
+            <div style={{
+              width: "36px", height: "36px", borderRadius: "50%",
+              background: "#FEF3C7", display: "flex", alignItems: "center", justifyContent: "center",
+              flexShrink: 0,
+            }}>
+              <span style={{ fontSize: "18px" }}>⚠️</span>
+            </div>
+            <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 700, color: "#0f172a" }}>
+              No puedes bloquear este horario
+            </h3>
+          </div>
+          <p style={{ margin: "0 0 16px", fontSize: "13px", color: "#64748b", paddingLeft: "46px" }}>
+            Tienes {conflictList.length} cita{conflictList.length > 1 ? "s" : ""} pendiente{conflictList.length > 1 ? "s" : ""} en este rango. Cancélalas primero:
+          </p>
+          <div style={{
+            background: "#FFF8F0", border: "1px solid #FDE68A", borderRadius: "10px",
+            padding: "12px 16px", marginBottom: "20px",
+          }}>
+            {conflictList.map((item, i) => (
+              <div key={i} style={{
+                fontSize: "13px", color: "#92400E", padding: "4px 0",
+                borderBottom: i < conflictList.length - 1 ? "1px solid #FDE68A" : "none",
+              }}>
+                • {item}
+              </div>
+            ))}
+          </div>
+          <button
+            onClick={() => setConflictList(null)}
+            style={{
+              width: "100%", padding: "12px", borderRadius: "10px",
+              background: "#0f172a", color: "white", border: "none",
+              fontSize: "14px", fontWeight: 600, cursor: "pointer",
+            }}
+          >
+            Entendido
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div

@@ -35,6 +35,7 @@ export function AvailabilityEditor({ psychologistId, onClose }: AvailabilityEdit
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showExceptionDialog, setShowExceptionDialog] = useState(false);
   const [exceptionDate, setExceptionDate] = useState<Date | undefined>(undefined);
+  const [conflictList, setConflictList] = useState<string[] | null>(null);
 
   // New block form
   const [newBlock, setNewBlock] = useState<TimeBlock>({
@@ -211,10 +212,11 @@ export function AvailabilityEditor({ psychologistId, onClose }: AvailabilityEdit
           return `• ${name} a las ${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`;
         }).join("\n");
 
-        toast.error(
-          `No puedes bloquear este día porque tienes ${conflictingAppts.length} cita(s) pendiente(s). Cancélalas primero:\n\n${apptList}`,
-          { duration: 8000 }
-        );
+        setConflictList(conflictingAppts.map((a: any) => {
+          const d = new Date(a.start_time);
+          const name = nameMap[a.patient_id] || "Paciente";
+          return `${name} a las ${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`;
+        }));
         setSaving(false);
         return;
       }
@@ -546,6 +548,28 @@ export function AvailabilityEditor({ psychologistId, onClose }: AvailabilityEdit
               </Button>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Conflict warning dialog */}
+      <Dialog open={!!conflictList} onOpenChange={() => setConflictList(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <span className="text-xl">⚠️</span> No puedes bloquear este día
+            </DialogTitle>
+            <DialogDescription>
+              Tienes {conflictList?.length ?? 0} cita{(conflictList?.length ?? 0) > 1 ? "s" : ""} pendiente{(conflictList?.length ?? 0) > 1 ? "s" : ""} en esta fecha. Cancélalas primero:
+            </DialogDescription>
+          </DialogHeader>
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 space-y-1">
+            {(conflictList ?? []).map((item, i) => (
+              <p key={i} className="text-sm text-amber-900">• {item}</p>
+            ))}
+          </div>
+          <Button className="w-full" onClick={() => setConflictList(null)}>
+            Entendido
+          </Button>
         </DialogContent>
       </Dialog>
     </div>
