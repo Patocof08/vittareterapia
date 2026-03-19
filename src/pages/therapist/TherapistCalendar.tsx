@@ -952,7 +952,7 @@ export default function TherapistCalendar() {
       }
 
       const dateStrings = weekDates.map((d) => format(d, "yyyy-MM-dd"));
-      const [{ data: recurring }, { data: specific }] = await Promise.all([
+      const [{ data: recurring }, { data: specific }, { data: exceptions }] = await Promise.all([
         (supabase as any)
           .from("therapist_calendar_blocks")
           .select("*")
@@ -964,6 +964,12 @@ export default function TherapistCalendar() {
           .eq("psychologist_id", psychologistId)
           .eq("is_recurring", false)
           .in("specific_date", dateStrings),
+        supabase
+          .from("psychologist_availability")
+          .select("*")
+          .eq("psychologist_id", psychologistId)
+          .eq("is_exception", true)
+          .in("exception_date", dateStrings),
       ]);
 
       const calEvents: CalEvent[] = [];
@@ -1027,6 +1033,25 @@ export default function TherapistCalendar() {
         });
       }
 
+      // Excepciones del AvailabilityEditor (días completos bloqueados)
+      for (const exc of exceptions || []) {
+        if (!exc.exception_date) continue;
+        const matchDate = weekDates.find(
+          (d) => format(d, "yyyy-MM-dd") === exc.exception_date
+        );
+        if (!matchDate) continue;
+        calEvents.push({
+          id: `exc-${exc.id}`,
+          type: "blocked" as EventType,
+          title: "Día bloqueado",
+          startHour: HOUR_START,
+          startMin: 0,
+          durationMin: (HOUR_END - HOUR_START) * 60,
+          date: matchDate,
+          raw: { ...exc, is_recurring: false },
+        });
+      }
+
       setEvents(calEvents);
     } catch (err) {
       console.error("Error loading calendar:", err);
@@ -1052,8 +1077,10 @@ export default function TherapistCalendar() {
   const handleDeleteBlock = async (event: CalEvent) => {
     if (!event.raw?.id) return;
     try {
+      const isException = event.id.startsWith("exc-");
+      const table = isException ? "psychologist_availability" : "therapist_calendar_blocks";
       const { error } = await (supabase as any)
-        .from("therapist_calendar_blocks")
+        .from(table)
         .delete()
         .eq("id", event.raw.id);
       if (error) throw error;

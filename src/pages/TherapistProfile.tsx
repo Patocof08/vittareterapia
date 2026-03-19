@@ -188,9 +188,16 @@ const TherapistProfile = () => {
   // Generate available time slots based on therapist's availability
   const getAvailableTimesForDate = (date: Date | undefined) => {
     if (!date || availability.length === 0) return [];
-    
+
+    // Check if this specific date has been blocked (exception)
+    const dateString = date.toISOString().split('T')[0];
+    const hasException = availability.some(a =>
+      a.is_exception && a.exception_date === dateString
+    );
+    if (hasException) return []; // Entire day is blocked
+
     const dayOfWeek = date.getDay();
-    const dayAvailability = availability.filter(a => 
+    const dayAvailability = availability.filter(a =>
       a.day_of_week === dayOfWeek && !a.is_exception
     );
 
