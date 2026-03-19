@@ -51,7 +51,12 @@
       "Bash(del:*)",
       "mcp___21st-dev_magic__21st_magic_component_inspiration",
       "Bash(git:*)",
-      "Bash(xargs -I{} grep -l 'CREATE TABLE' {})"
+      "Bash(xargs -I{} grep -l 'CREATE TABLE' {})",
+      "Bash(__NEW_LINE_ccb605b2935add72__ OLD='      <span style=\"\"font-family:Georgia,'\"''\"'Times New Roman'\"''\"',serif;font-size:26px;font-weight:normal;color:#FFFFFF;font-style:italic;\"\">vittare</span><br>:*)",
+      "Bash(__NEW_LINE_ccb605b2935add72__ NEW='      <img src=\"\"https://vittare.mx/images/logo/vittare-logo-white.png\"\" width=\"\"180\"\" alt=\"\"Vittare — Reconecta Contigo\"\" style=\"\"display:block;border:0;max-width:180px;height:auto;\"\" />')",
+      "Bash(__NEW_LINE_ccb605b2935add72__ for:*)",
+      "Bash(do)",
+      "Bash(FILE=\"C:/Users/patoc/OneDrive/Documentos/Vittare/lovable dev/vittareterapia/supabase/functions/$f\")"
     ]
   },
   "enableAllProjectMcpServers": true,
