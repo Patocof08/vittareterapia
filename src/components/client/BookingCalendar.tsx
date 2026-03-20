@@ -504,7 +504,7 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
     setShowPaymentForm(false);
     setClientSecret(null);
     setPendingSessionInfo(null);
-    window.location.href = "/portal/sesiones";
+    navigate("/portal/sesiones");
   };
 
   const handlePaymentCancel = () => {

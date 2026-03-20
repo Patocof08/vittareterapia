@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { ClientSidebar } from "./ClientSidebar";
 import { ClientTopbar } from "./ClientTopbar";
@@ -13,8 +13,6 @@ export const ClientLayout = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const isFirstRender = useRef(true);
-
   useEffect(() => {
     if (!user) return;
     if (location.pathname === "/portal/onboarding") return;
@@ -38,10 +36,6 @@ export const ClientLayout = () => {
 
   // Loader de transición en cada navegación
   useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
     setIsTransitioning(true);
     const t = setTimeout(() => setIsTransitioning(false), 500);
     return () => clearTimeout(t);
