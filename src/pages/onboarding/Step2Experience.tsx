@@ -1,12 +1,6 @@
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { useOnboardingContext } from "@/hooks/useOnboarding";
-import { X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Minus, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 const suggestedApproaches = [
@@ -21,27 +15,13 @@ const suggestedApproaches = [
 ];
 
 const suggestedSpecialties = [
-  "Ansiedad",
-  "Depresión",
-  "Terapia de Pareja",
-  "Duelo",
-  "TDAH",
-  "Trauma",
-  "Autoestima",
-  "Estrés",
-  "Adicciones",
-  "Trastornos alimentarios",
+  "Ansiedad", "Depresión", "Terapia de Pareja", "Duelo",
+  "TDAH", "Trauma", "Autoestima", "Estrés", "Adicciones", "Trastornos alimentarios",
 ];
 
 const suggestedPopulations = [
-  "Adultos",
-  "Adolescentes",
-  "Niños",
-  "Parejas",
-  "Familias",
-  "Ejecutivos",
-  "LGBTQ+",
-  "Tercera edad",
+  "Adultos", "Adolescentes", "Niños", "Parejas",
+  "Familias", "Ejecutivos", "LGBTQ+", "Tercera edad",
 ];
 
 export const Step2Experience = () => {
@@ -60,7 +40,10 @@ export const Step2Experience = () => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const toggleChip = (field: "therapeutic_approaches" | "specialties" | "populations", value: string) => {
+  const toggleChip = (
+    field: "therapeutic_approaches" | "specialties" | "populations",
+    value: string
+  ) => {
     setFormData((prev) => ({
       ...prev,
       [field]: prev[field].includes(value)
@@ -104,142 +87,212 @@ export const Step2Experience = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Experiencia y enfoques terapéuticos</CardTitle>
-          <CardDescription>
-            Cuéntanos sobre tu experiencia profesional y áreas de especialización.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Years of Experience */}
-          <div className="space-y-2">
-            <Label htmlFor="years_experience">Años de experiencia *</Label>
-            <Input
-              id="years_experience"
-              type="number"
-              min="0"
-              max="50"
-              value={formData.years_experience}
-              onChange={(e) => handleChange("years_experience", parseInt(e.target.value) || 0)}
-            />
-            <p className="text-xs text-muted-foreground">
-              Nota: Una vez establecida, la experiencia se actualizará automáticamente cada año
+    <div className="space-y-5">
+      {/* Header */}
+      <div className="space-y-1 pb-1">
+        <h2 className="ob-heading text-2xl font-semibold" style={{ color: "var(--ob-primary-dark)" }}>
+          Tu experiencia profesional
+        </h2>
+        <p className="text-sm" style={{ color: "var(--ob-muted)" }}>
+          Ayuda a los clientes a conocer tu formación y especialidades.
+        </p>
+      </div>
+
+      {/* ── Years of experience ── */}
+      <div className="ob-card p-6">
+        <p className="ob-section-title mb-4">Años de experiencia *</p>
+        <div className="flex items-center gap-4">
+          <button
+            type="button"
+            onClick={() => handleChange("years_experience", Math.max(0, formData.years_experience - 1))}
+            className="w-11 h-11 rounded-full flex items-center justify-center transition-all"
+            style={{
+              background: "var(--ob-surface)",
+              border: "1.5px solid var(--ob-border)",
+              color: "var(--ob-muted)",
+            }}
+          >
+            <Minus className="w-4 h-4" />
+          </button>
+
+          <div
+            className="flex-1 h-14 rounded-2xl flex items-center justify-center"
+            style={{ background: "var(--ob-chip-idle-bg)" }}
+          >
+            <span
+              className="ob-heading text-3xl font-semibold"
+              style={{ color: "var(--ob-primary-dark)" }}
+            >
+              {formData.years_experience}
+            </span>
+            <span className="text-sm ml-2" style={{ color: "var(--ob-muted)" }}>
+              {formData.years_experience === 1 ? "año" : "años"}
+            </span>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => handleChange("years_experience", Math.min(50, formData.years_experience + 1))}
+            className="w-11 h-11 rounded-full flex items-center justify-center transition-all"
+            style={{
+              background: "var(--ob-primary)",
+              color: "#fff",
+            }}
+          >
+            <Plus className="w-4 h-4" />
+          </button>
+        </div>
+        <p className="text-xs mt-3" style={{ color: "var(--ob-placeholder)" }}>
+          Se actualizará automáticamente cada año.
+        </p>
+      </div>
+
+      {/* ── Therapeutic approaches ── */}
+      <div className="ob-card p-6 space-y-3">
+        <p className="ob-section-title">Enfoques terapéuticos *</p>
+        <p className="text-xs" style={{ color: "var(--ob-muted)" }}>Selecciona al menos uno</p>
+        <div className="flex flex-wrap gap-2">
+          {suggestedApproaches.map((approach) => (
+            <button
+              key={approach}
+              type="button"
+              onClick={() => toggleChip("therapeutic_approaches", approach)}
+              className={
+                formData.therapeutic_approaches.includes(approach)
+                  ? "ob-chip-active"
+                  : "ob-chip-idle"
+              }
+            >
+              {approach}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Specialties ── */}
+      <div className="ob-card p-6 space-y-3">
+        <p className="ob-section-title">Especialidades *</p>
+        <div className="flex flex-wrap gap-2">
+          {suggestedSpecialties.map((specialty) => (
+            <button
+              key={specialty}
+              type="button"
+              onClick={() => toggleChip("specialties", specialty)}
+              className={
+                formData.specialties.includes(specialty) ? "ob-chip-active" : "ob-chip-idle"
+              }
+            >
+              {specialty}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Populations ── */}
+      <div className="ob-card p-6 space-y-3">
+        <p className="ob-section-title">Población que atiendes *</p>
+        <div className="flex flex-wrap gap-2">
+          {suggestedPopulations.map((pop) => (
+            <button
+              key={pop}
+              type="button"
+              onClick={() => toggleChip("populations", pop)}
+              className={
+                formData.populations.includes(pop) ? "ob-chip-active" : "ob-chip-idle"
+              }
+            >
+              {pop}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Bio ── */}
+      <div className="ob-card p-6 space-y-5">
+        <p className="ob-section-title">Presentación</p>
+
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <label className="ob-label mb-0">Presentación breve *</label>
+            <span
+              className="text-xs"
+              style={{
+                color:
+                  formData.bio_short.length > 380
+                    ? "#e7839d"
+                    : "var(--ob-placeholder)",
+              }}
+            >
+              {formData.bio_short.length}/400
+            </span>
+          </div>
+          <textarea
+            className="ob-textarea"
+            rows={3}
+            value={formData.bio_short}
+            onChange={(e) => handleChange("bio_short", e.target.value)}
+            placeholder="Una breve descripción profesional que aparecerá en tu perfil..."
+            maxLength={400}
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <label className="ob-label mb-0">Bio extendida</label>
+              <span
+                className="text-[10px] px-2 py-0.5 rounded-full"
+                style={{
+                  background: "var(--ob-surface)",
+                  color: "var(--ob-muted)",
+                }}
+              >
+                Opcional
+              </span>
+            </div>
+            <span className="text-xs" style={{ color: "var(--ob-placeholder)" }}>
+              {formData.bio_extended.length}/1200
+            </span>
+          </div>
+          <textarea
+            className="ob-textarea"
+            rows={5}
+            value={formData.bio_extended}
+            onChange={(e) => handleChange("bio_extended", e.target.value)}
+            placeholder="Describe tu filosofía de trabajo, logros destacados o información adicional relevante..."
+            maxLength={1200}
+          />
+        </div>
+
+        {/* Live preview */}
+        {formData.bio_short && (
+          <div
+            className="rounded-xl p-4"
+            style={{ background: "var(--ob-surface)", borderLeft: "3px solid var(--ob-primary)" }}
+          >
+            <p
+              className="text-xs font-medium mb-1"
+              style={{ color: "var(--ob-primary)" }}
+            >
+              Vista previa
+            </p>
+            <p className="text-sm" style={{ color: "var(--ob-text)" }}>
+              {formData.bio_short}
             </p>
           </div>
+        )}
+      </div>
 
-          {/* Therapeutic Approaches */}
-          <div className="space-y-3">
-            <Label>Enfoques terapéuticos *</Label>
-            <div className="flex flex-wrap gap-2">
-              {suggestedApproaches.map((approach) => (
-                <Badge
-                  key={approach}
-                  variant={formData.therapeutic_approaches.includes(approach) ? "default" : "outline"}
-                  className="cursor-pointer"
-                  onClick={() => toggleChip("therapeutic_approaches", approach)}
-                >
-                  {approach}
-                  {formData.therapeutic_approaches.includes(approach) && (
-                    <X className="w-3 h-3 ml-1" />
-                  )}
-                </Badge>
-              ))}
-            </div>
-          </div>
-
-          {/* Specialties */}
-          <div className="space-y-3">
-            <Label>Especialidades *</Label>
-            <div className="flex flex-wrap gap-2">
-              {suggestedSpecialties.map((specialty) => (
-                <Badge
-                  key={specialty}
-                  variant={formData.specialties.includes(specialty) ? "default" : "outline"}
-                  className="cursor-pointer"
-                  onClick={() => toggleChip("specialties", specialty)}
-                >
-                  {specialty}
-                  {formData.specialties.includes(specialty) && <X className="w-3 h-3 ml-1" />}
-                </Badge>
-              ))}
-            </div>
-          </div>
-
-          {/* Populations */}
-          <div className="space-y-3">
-            <Label>Poblaciones que atiendes *</Label>
-            <div className="flex flex-wrap gap-2">
-              {suggestedPopulations.map((pop) => (
-                <Badge
-                  key={pop}
-                  variant={formData.populations.includes(pop) ? "default" : "outline"}
-                  className="cursor-pointer"
-                  onClick={() => toggleChip("populations", pop)}
-                >
-                  {pop}
-                  {formData.populations.includes(pop) && <X className="w-3 h-3 ml-1" />}
-                </Badge>
-              ))}
-            </div>
-          </div>
-
-          {/* Bio Short */}
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <Label htmlFor="bio_short">Bio corta *</Label>
-              <span className="text-sm text-muted-foreground">
-                {formData.bio_short.length}/400
-              </span>
-            </div>
-            <Textarea
-              id="bio_short"
-              value={formData.bio_short}
-              onChange={(e) => handleChange("bio_short", e.target.value)}
-              placeholder="Una breve descripción profesional que aparecerá en tu perfil..."
-              maxLength={400}
-              rows={3}
-            />
-          </div>
-
-          {/* Bio Extended */}
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <Label htmlFor="bio_extended">Bio extendida (opcional)</Label>
-              <span className="text-sm text-muted-foreground">
-                {formData.bio_extended.length}/1200
-              </span>
-            </div>
-            <Textarea
-              id="bio_extended"
-              value={formData.bio_extended}
-              onChange={(e) => handleChange("bio_extended", e.target.value)}
-              placeholder="Describe tu filosofía de trabajo, logros destacados, o cualquier información adicional relevante..."
-              maxLength={1200}
-              rows={6}
-            />
-          </div>
-
-          {/* Preview */}
-          {formData.bio_short && (
-            <Card className="bg-muted/50">
-              <CardHeader>
-                <CardTitle className="text-base">Vista previa del perfil</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm">{formData.bio_short}</p>
-              </CardContent>
-            </Card>
-          )}
-        </CardContent>
-      </Card>
-
-      <div className="flex justify-between">
-        <Button variant="outline" onClick={prevStep}>
+      {/* ── Navigation ── */}
+      <div className="flex justify-between pt-2">
+        <button onClick={prevStep} className="ob-btn-ghost flex items-center gap-2">
+          <ChevronLeft className="w-4 h-4" />
           Anterior
-        </Button>
-        <Button onClick={handleNext}>Siguiente</Button>
+        </button>
+        <button onClick={handleNext} className="ob-btn-primary flex items-center gap-2">
+          Continuar
+          <ChevronRight className="w-4 h-4" />
+        </button>
       </div>
     </div>
   );
