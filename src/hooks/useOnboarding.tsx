@@ -15,6 +15,7 @@ export interface OnboardingData {
   languages?: string[];
   modalities?: string[];
   profile_photo_url?: string;
+  selfie_verification_url?: string;
   
   // Step 2
   years_experience?: number;
@@ -154,6 +155,7 @@ export const useOnboarding = () => {
         languages: profileData.languages || [],
         modalities: profileData.modalities || [],
         profile_photo_url: profileData.profile_photo_url,
+        selfie_verification_url: profileData.selfie_verification_url,
         years_experience: profileData.years_experience,
         therapeutic_approaches: profileData.therapeutic_approaches || [],
         specialties: profileData.specialties || [],
@@ -185,6 +187,7 @@ export const useOnboarding = () => {
       languages: data.languages,
       modalities: data.modalities,
       profile_photo_url: data.profile_photo_url,
+      selfie_verification_url: data.selfie_verification_url,
       years_experience: data.years_experience,
       therapeutic_approaches: data.therapeutic_approaches,
       specialties: data.specialties,

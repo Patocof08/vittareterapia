@@ -17,6 +17,7 @@ import {
   Calendar,
   FileText,
   Download,
+  ShieldCheck,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -28,6 +29,66 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+
+// ── Document preview helper ───────────────────────────────────────
+const DocumentPreview = ({
+  documents,
+  type,
+  onDownload,
+}: {
+  documents: any[];
+  type: string;
+  onDownload: (path: string, name: string) => void;
+}) => {
+  const doc = documents.find((d: any) => d.document_type === type);
+
+  // Fallback: legacy "id" type when looking for id_front
+  const legacyDoc =
+    !doc && type === "id_front"
+      ? documents.find((d: any) => d.document_type === "id")
+      : null;
+
+  const target = doc || legacyDoc;
+
+  if (!target) {
+    return (
+      <div className="w-full aspect-[3/2] bg-muted rounded-lg flex items-center justify-center">
+        <p className="text-xs text-muted-foreground">No subido</p>
+      </div>
+    );
+  }
+
+  if (target.mime_type?.startsWith("image/") && target.viewUrl) {
+    return (
+      <div className="relative group cursor-pointer" onClick={() => onDownload(target.file_path, target.file_name)}>
+        <img
+          src={target.viewUrl}
+          alt={target.file_name}
+          className="w-full aspect-[3/2] object-cover rounded-lg border"
+        />
+        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+          <p className="text-white text-xs font-medium">Descargar</p>
+        </div>
+        {legacyDoc && (
+          <p className="text-xs text-muted-foreground mt-1 text-center">(tipo: id)</p>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="w-full aspect-[3/2] bg-muted rounded-lg flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-muted/80 transition-colors"
+      onClick={() => onDownload(target.file_path, target.file_name)}
+    >
+      <FileText className="w-8 h-8 text-muted-foreground" />
+      <p className="text-xs text-muted-foreground text-center px-2 truncate max-w-full">
+        {target.file_name}
+      </p>
+      <p className="text-xs text-primary font-medium">Descargar</p>
+    </div>
+  );
+};
 
 export default function AdminPsychologistDetail() {
   const { id } = useParams();
@@ -74,9 +135,68 @@ export default function AdminPsychologistDetail() {
         .eq("psychologist_id", id);
 
       if (error) throw error;
-      setDocuments(data || []);
+
+      // Generate signed URLs for image preview
+      const docsWithUrls = await Promise.all(
+        (data || []).map(async (doc: any) => {
+          if (doc.file_path && doc.mime_type?.startsWith("image/")) {
+            const { data: signedData } = await supabase.storage
+              .from("psychologist-files")
+              .createSignedUrl(doc.file_path, 3600);
+            return { ...doc, viewUrl: signedData?.signedUrl || null };
+          }
+          return { ...doc, viewUrl: null };
+        })
+      );
+      setDocuments(docsWithUrls);
     } catch (error) {
       logger.error("Error fetching documents:", error);
+    }
+  };
+
+  const handleVerifyIdentity = async () => {
+    if (!id) return;
+    setActionLoading(true);
+    try {
+      // @ts-ignore
+      const { error } = await supabase
+        .from("psychologist_profiles")
+        .update({ identity_verified_at: new Date().toISOString(), identity_rejection_reason: null })
+        .eq("id", id);
+      if (error) throw error;
+      toast.success("Identidad verificada correctamente");
+      fetchProfileDetails();
+    } catch (error) {
+      logger.error("Error verifying identity:", error);
+      toast.error("Error al verificar identidad");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleRejectIdentity = async () => {
+    const reason = window.prompt("Motivo del rechazo de identidad (el psicólogo deberá subir nueva selfie):");
+    if (!reason) return;
+    setActionLoading(true);
+    try {
+      // @ts-ignore
+      const { error } = await supabase
+        .from("psychologist_profiles")
+        .update({
+          identity_verified_at: null,
+          identity_rejection_reason: reason,
+          selfie_verification_url: null,
+          profile_photo_url: null,
+        })
+        .eq("id", id);
+      if (error) throw error;
+      toast.success("Identidad rechazada — el psicólogo deberá subir nueva selfie");
+      fetchProfileDetails();
+    } catch (error) {
+      logger.error("Error rejecting identity:", error);
+      toast.error("Error al rechazar identidad");
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -351,6 +471,105 @@ export default function AdminPsychologistDetail() {
                       </Button>
                     </div>
                   ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+          {/* ── Identity Verification Card ── */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5" />
+                Verificación de Identidad
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Status banner */}
+              {profile.identity_verified_at ? (
+                <div className="flex items-center gap-2 text-green-700 bg-green-50 border border-green-200 p-3 rounded-lg">
+                  <CheckCircle className="w-5 h-5 flex-shrink-0" />
+                  <span className="text-sm font-medium">
+                    Identidad verificada el{" "}
+                    {new Date(profile.identity_verified_at).toLocaleDateString("es-MX", {
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    })}
+                  </span>
+                </div>
+              ) : profile.identity_rejection_reason ? (
+                <div className="bg-red-50 border border-red-200 p-3 rounded-lg space-y-1">
+                  <p className="text-sm font-medium text-red-800">Identidad rechazada</p>
+                  <p className="text-sm text-red-700">{profile.identity_rejection_reason}</p>
+                </div>
+              ) : (
+                <div className="bg-amber-50 border border-amber-200 p-3 rounded-lg">
+                  <p className="text-sm font-medium text-amber-800">Pendiente de verificación</p>
+                  <p className="text-xs text-amber-700 mt-0.5">
+                    Compara la selfie con el INE para verificar la identidad del psicólogo.
+                  </p>
+                </div>
+              )}
+
+              {/* Side-by-side comparison */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Selfie */}
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-muted-foreground">Selfie de verificación</p>
+                  {profile.selfie_verification_url ? (
+                    <img
+                      src={profile.selfie_verification_url}
+                      alt="Selfie de verificación"
+                      className="w-full aspect-square object-cover rounded-lg border"
+                    />
+                  ) : (
+                    <div className="w-full aspect-square bg-muted rounded-lg flex items-center justify-center">
+                      <p className="text-xs text-muted-foreground">Sin selfie</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* INE front */}
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-muted-foreground">INE (frente)</p>
+                  <DocumentPreview
+                    documents={documents}
+                    type="id_front"
+                    onDownload={handleDownloadDocument}
+                  />
+                </div>
+
+                {/* INE back */}
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-muted-foreground">INE (reverso)</p>
+                  <DocumentPreview
+                    documents={documents}
+                    type="id_back"
+                    onDownload={handleDownloadDocument}
+                  />
+                </div>
+              </div>
+
+              {/* Action buttons — only show when selfie present and not yet verified */}
+              {!profile.identity_verified_at && profile.selfie_verification_url && (
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={handleRejectIdentity}
+                    disabled={actionLoading}
+                  >
+                    <XCircle className="w-4 h-4 mr-2" />
+                    Rechazar identidad
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={handleVerifyIdentity}
+                    disabled={actionLoading}
+                  >
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    Identidad verificada
+                  </Button>
                 </div>
               )}
             </CardContent>

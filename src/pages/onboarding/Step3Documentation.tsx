@@ -16,10 +16,24 @@ interface Document {
 }
 
 const documentTypes = [
-  { type: "license", label: "Cédula / Licencia profesional", required: true },
-  { type: "id", label: "Identificación oficial", required: true },
-  { type: "certificate", label: "Certificados relevantes", required: false },
-  { type: "address_proof", label: "Comprobante de domicilio", required: false },
+  {
+    type: "license",
+    label: "Cédula profesional",
+    required: true,
+    description: "Tu cédula profesional de psicología emitida por la SEP",
+  },
+  {
+    type: "id_front",
+    label: "INE / Identificación oficial (frente)",
+    required: true,
+    description: "Foto clara del frente de tu INE o pasaporte",
+  },
+  {
+    type: "id_back",
+    label: "INE / Identificación oficial (reverso)",
+    required: true,
+    description: "Foto clara del reverso de tu INE",
+  },
 ];
 
 export const Step3Documentation = () => {
@@ -127,7 +141,8 @@ export const Step3Documentation = () => {
           Documentación y verificación
         </h2>
         <p className="text-sm" style={{ color: "var(--ob-muted)" }}>
-          Tu privacidad es nuestra prioridad. Los documentos son revisados únicamente por nuestro equipo.
+          Tu privacidad es nuestra prioridad. Los documentos son revisados únicamente por nuestro
+          equipo para comparar con tu selfie de verificación.
         </p>
       </div>
 
@@ -162,23 +177,22 @@ export const Step3Documentation = () => {
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span
-                      className="text-sm font-medium"
-                      style={{ color: "var(--ob-text)" }}
-                    >
+                    <span className="text-sm font-medium" style={{ color: "var(--ob-text)" }}>
                       {docType.label}
                     </span>
                     <span
                       className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
-                      style={
-                        docType.required
-                          ? { background: "#fce7ed", color: "#c0365c" }
-                          : { background: "var(--ob-surface)", color: "var(--ob-muted)" }
-                      }
+                      style={{ background: "#fce7ed", color: "#c0365c" }}
                     >
-                      {docType.required ? "REQUERIDO" : "OPCIONAL"}
+                      REQUERIDO
                     </span>
                   </div>
+
+                  {docType.description && (
+                    <p className="text-xs mt-0.5" style={{ color: "var(--ob-placeholder)" }}>
+                      {docType.description}
+                    </p>
+                  )}
 
                   {doc && (
                     <div className="mt-2 space-y-1">
@@ -270,11 +284,7 @@ export const Step3Documentation = () => {
               "Entiendo que esta plataforma no es un servicio de emergencias y orientaré a clientes en crisis a líneas especializadas",
           },
         ].map(({ id, checked, onChange, label }) => (
-          <label
-            key={id}
-            htmlFor={id}
-            className="flex items-start gap-3 cursor-pointer group"
-          >
+          <label key={id} htmlFor={id} className="flex items-start gap-3 cursor-pointer">
             <div className="relative mt-0.5 flex-shrink-0">
               <input
                 type="checkbox"

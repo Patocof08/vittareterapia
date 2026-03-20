@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useOnboardingContext } from "@/hooks/useOnboarding";
-import { Upload, User, ChevronRight } from "lucide-react";
+import { Camera, Check, ChevronRight, ShieldCheck, User } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 const languages = ["Español", "Inglés", "Francés", "Alemán", "Portugués", "Italiano"];
@@ -19,6 +21,7 @@ export const Step1PersonalData = () => {
     languages: data.languages || [],
     modalities: ["Videollamada"],
     profile_photo_url: data.profile_photo_url || "",
+    selfie_verification_url: data.selfie_verification_url || "",
   });
 
   const handleChange = (field: string, value: any) => {
@@ -37,19 +40,23 @@ export const Step1PersonalData = () => {
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
     if (!file.type.startsWith("image/")) {
       toast.error("Por favor selecciona una imagen");
       return;
     }
+
     if (file.size > 5 * 1024 * 1024) {
       toast.error("La imagen no debe superar 5MB");
       return;
     }
+
     setUploading(true);
     const url = await uploadFile(file, "photo");
     if (url) {
       handleChange("profile_photo_url", url);
-      toast.success("Foto subida correctamente");
+      handleChange("selfie_verification_url", url);
+      toast.success("Selfie subida correctamente");
     }
     setUploading(false);
   };
@@ -62,7 +69,10 @@ export const Step1PersonalData = () => {
     if (!formData.city.trim()) { toast.error("La ciudad es obligatoria"); return false; }
     if (!formData.country.trim()) { toast.error("El país es obligatorio"); return false; }
     if (formData.languages.length === 0) { toast.error("Selecciona al menos un idioma"); return false; }
-    if (!formData.profile_photo_url) { toast.error("La foto de perfil es obligatoria"); return false; }
+    if (!formData.profile_photo_url) {
+      toast.error("La selfie de verificación es obligatoria");
+      return false;
+    }
     return true;
   };
 
@@ -84,60 +94,94 @@ export const Step1PersonalData = () => {
         </p>
       </div>
 
-      {/* ── Photo upload ── */}
-      <div className="ob-card p-6">
-        <p className="ob-section-title mb-4">Foto de perfil</p>
-        <div className="flex flex-col sm:flex-row items-center gap-5">
-          {/* Avatar */}
-          <div
-            className="relative w-24 h-24 rounded-full flex-shrink-0 overflow-hidden"
-            style={{
-              background: formData.profile_photo_url ? "transparent" : "var(--ob-surface)",
-              border: formData.profile_photo_url
-                ? "3px solid var(--ob-primary)"
-                : "2px dashed var(--ob-teal)",
-            }}
-          >
-            {formData.profile_photo_url ? (
-              <img
-                src={formData.profile_photo_url}
-                alt="Foto de perfil"
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <User className="w-10 h-10" style={{ color: "var(--ob-placeholder)" }} />
-              </div>
-            )}
-          </div>
-
-          <div className="space-y-2 text-center sm:text-left">
-            <p className="text-sm font-medium" style={{ color: "var(--ob-text)" }}>
-              {formData.profile_photo_url ? "Foto cargada ✓" : "Sube tu foto profesional"}
-            </p>
-            <p className="text-xs" style={{ color: "var(--ob-placeholder)" }}>
-              Imagen clara de tu rostro · Máx. 5 MB · JPG o PNG
-            </p>
-            <input
-              type="file"
-              id="photo-upload"
-              className="hidden"
-              accept="image/*"
-              onChange={handlePhotoUpload}
-              disabled={uploading}
-            />
-            <button
-              type="button"
-              onClick={() => document.getElementById("photo-upload")?.click()}
-              disabled={uploading}
-              className="ob-btn-ghost flex items-center gap-2 text-sm"
-              style={{ height: "2.25rem", padding: "0 1rem", fontSize: "0.8125rem" }}
-            >
-              <Upload className="w-3.5 h-3.5" />
-              {uploading ? "Subiendo..." : formData.profile_photo_url ? "Cambiar foto" : "Subir foto"}
-            </button>
-          </div>
+      {/* ── Selfie / Identity verification ── */}
+      <div
+        className="ob-card p-6 space-y-4"
+        style={{ border: "2px dashed rgba(18,163,87,0.25)" }}
+      >
+        <div className="flex items-center gap-2.5 justify-center">
+          <ShieldCheck className="w-5 h-5" style={{ color: "var(--ob-primary)" }} />
+          <h3 className="font-semibold text-base" style={{ color: "var(--ob-text)" }}>
+            Verificación de identidad
+          </h3>
         </div>
+
+        <p className="text-sm text-center" style={{ color: "var(--ob-muted)" }}>
+          Toma una selfie con tu cámara. Esta foto será tu imagen de perfil y se usará para
+          verificar tu identidad.
+        </p>
+
+        <div className="flex flex-col items-center gap-4">
+          {formData.profile_photo_url ? (
+            <div className="relative">
+              <Avatar className="w-36 h-36 ring-4 ring-green-100">
+                <AvatarImage src={formData.profile_photo_url} className="object-cover" />
+                <AvatarFallback>
+                  <User className="w-16 h-16" />
+                </AvatarFallback>
+              </Avatar>
+              <div className="absolute -bottom-1 -right-1 bg-green-500 text-white rounded-full p-1.5">
+                <Check className="w-4 h-4" />
+              </div>
+            </div>
+          ) : (
+            <div
+              className="w-36 h-36 rounded-full flex flex-col items-center justify-center gap-2"
+              style={{
+                background: "var(--ob-surface)",
+                border: "2px dashed var(--ob-border)",
+              }}
+            >
+              <Camera className="w-8 h-8" style={{ color: "var(--ob-placeholder)" }} />
+              <span className="text-xs" style={{ color: "var(--ob-placeholder)" }}>
+                Sin foto
+              </span>
+            </div>
+          )}
+
+          <input
+            type="file"
+            id="photo-upload"
+            className="hidden"
+            accept="image/*"
+            capture="user"
+            onChange={handlePhotoUpload}
+            disabled={uploading}
+          />
+          <Button
+            variant="outline"
+            onClick={() => document.getElementById("photo-upload")?.click()}
+            disabled={uploading}
+          >
+            <Camera className="w-4 h-4 mr-2" />
+            {uploading
+              ? "Subiendo..."
+              : formData.profile_photo_url
+              ? "Tomar otra selfie"
+              : "Tomar selfie"}
+          </Button>
+        </div>
+
+        <div
+          className="rounded-lg p-3 space-y-1"
+          style={{ background: "#fffbeb", border: "1px solid #fde68a" }}
+        >
+          <p className="text-xs font-medium" style={{ color: "#92400e" }}>
+            Requisitos de la foto:
+          </p>
+          <ul className="text-xs space-y-0.5 list-disc list-inside" style={{ color: "#b45309" }}>
+            <li>Rostro completamente visible, de frente</li>
+            <li>Buena iluminación, sin filtros</li>
+            <li>Sin lentes de sol ni accesorios que cubran el rostro</li>
+            <li>Fondo neutro de preferencia</li>
+          </ul>
+        </div>
+
+        {!formData.profile_photo_url && (
+          <p className="text-sm text-center" style={{ color: "var(--ob-rose)" }}>
+            La selfie de verificación es obligatoria para continuar
+          </p>
+        )}
       </div>
 
       {/* ── Personal info ── */}
