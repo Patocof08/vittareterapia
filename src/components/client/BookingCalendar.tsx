@@ -209,7 +209,8 @@ export function BookingCalendar({ psychologistId, pricing }: BookingCalendarProp
       .select("*")
       .eq("client_id", user.id)
       .eq("status", "available")
-      .is("used_at", null);
+      .is("used_at", null)
+      .gt("expires_at", new Date().toISOString());
 
     const creditsForThisPsych = credits?.filter((c: any) => c.psychologist_id === psychologistId) || [];
 
