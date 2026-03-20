@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Video, Search, Filter, Sparkles, XCircle } from "lucide-react";
+import { Video, Search, Filter, Sparkles, XCircle, CheckCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -96,78 +96,72 @@ export default function TherapistSessions() {
     return diffMin <= 15 && diffMin >= -30;
   };
 
-  // TEMPORAL — para pruebas sin esperar sesión
-  const handleMarkCompleted = async (session: any) => {
+  const handleConfirmAttendance = async (session: any) => {
     try {
-      // 1. Actualizar status
       const { error } = await supabase
         .from("appointments")
         .update({ status: "completed", updated_at: new Date().toISOString() })
         .eq("id", session.id);
       if (error) throw error;
 
-      // 2. Revenue recognition (85/15 split)
       await supabase.rpc("recognize_session_revenue", { _appointment_id: session.id });
 
-      // 3. Notificar al psicólogo por email
+      toast.success("Sesión completada — pago procesado");
+      loadSessions();
+    } catch (error: any) {
+      console.error("Error confirming attendance:", error);
+      toast.error("Error al confirmar asistencia");
+    }
+  };
+
+  const handleMarkNoShow = async (session: any) => {
+    try {
+      const { error } = await supabase
+        .from("appointments")
+        .update({ status: "no_show", updated_at: new Date().toISOString() })
+        .eq("id", session.id);
+      if (error) throw error;
+
+      await supabase.rpc("recognize_session_revenue", { _appointment_id: session.id });
+
       try {
-        // Precio por sesión desde deferred_revenue
-        const { data: deferredData } = await supabase
-          .from("deferred_revenue")
-          .select("price_per_session")
-          .eq(session.subscription_id ? "subscription_id" : "appointment_id",
-             session.subscription_id || session.id)
-          .maybeSingle();
-
-        const { data: paymentData } = !deferredData?.price_per_session ? await supabase
-          .from("payments")
-          .select("base_amount")
-          .eq("appointment_id", session.id)
-          .maybeSingle() : { data: null };
-
-        const sessionPrice = Number(deferredData?.price_per_session || paymentData?.base_amount || 0);
-
-        if (sessionPrice > 0 && user) {
+        const { data: { session: authSession } } = await supabase.auth.getSession();
+        if (authSession?.access_token) {
+          const sessionDate = new Date(session.start_time);
           const { data: psychProfile } = await supabase
             .from("psychologist_profiles")
-            .select("user_id, first_name")
-            .eq("user_id", user.id)
-            .maybeSingle();
+            .select("first_name, last_name")
+            .eq("id", session.psychologist_id)
+            .single();
 
-          if (psychProfile?.user_id) {
-            const psychCut = Math.round(sessionPrice * 0.85 * 100) / 100;
-            const { data: { session: authSession } } = await supabase.auth.getSession();
-            if (authSession) {
-              fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-notification-email`, {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  "Authorization": `Bearer ${authSession.access_token}`,
-                  "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-                },
-                body: JSON.stringify({
-                  notification_type: "payment_update",
-                  recipient_user_id: psychProfile.user_id,
-                  variables: {
-                    recipient_name: psychProfile.first_name || "Psicólogo",
-                    payment_description: "Sesión completada. El pago ha sido acreditado a tu cuenta.",
-                    amount: `${psychCut.toLocaleString("es-MX", { minimumFractionDigits: 0 })} MXN`,
-                    concept: `Tu parte (85%) de la sesión con ${session.profile?.full_name || "paciente"}`,
-                  },
-                }),
-              }).catch(() => {});
-            }
-          }
+          fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-notification-email`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${authSession.access_token}`,
+              "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            },
+            body: JSON.stringify({
+              notification_type: "no_show",
+              recipient_user_id: session.patient_id,
+              variables: {
+                recipient_name: session.profile?.full_name?.split(" ")[0] || "Usuario",
+                psychologist_name: psychProfile
+                  ? `${psychProfile.first_name} ${psychProfile.last_name}`.trim()
+                  : "Tu psicólogo",
+                session_date: sessionDate.toLocaleDateString("es-MX", { day: "numeric", month: "long" }),
+                session_time: sessionDate.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" }),
+              },
+            }),
+          }).catch(() => {});
         }
-      } catch {
-        // Best-effort
-      }
+      } catch {}
 
-      toast.success("Sesión marcada como completada");
+      toast.success("Sesión marcada como inasistencia");
       loadSessions();
-    } catch (err) {
-      console.error(err);
-      toast.error("Error al actualizar sesión");
+    } catch (error: any) {
+      console.error("Error marking no-show:", error);
+      toast.error("Error al registrar inasistencia");
     }
   };
 
@@ -258,9 +252,16 @@ export default function TherapistSessions() {
       matchesStatus = session.status === "cancelled";
     } else if (statusFilter === "no_show") {
       matchesStatus = session.status === "no_show";
+    } else if (statusFilter === "por_confirmar") {
+      matchesStatus = session.status === "needs_confirmation";
     }
-    
+
     return matchesSearch && matchesStatus;
+  }).sort((a, b) => {
+    // needs_confirmation siempre primero
+    if (a.status === "needs_confirmation" && b.status !== "needs_confirmation") return -1;
+    if (b.status === "needs_confirmation" && a.status !== "needs_confirmation") return 1;
+    return new Date(a.start_time).getTime() - new Date(b.start_time).getTime();
   });
 
   if (loading) {
@@ -306,6 +307,7 @@ export default function TherapistSessions() {
                 <SelectItem value="pendiente">Pendientes</SelectItem>
                 <SelectItem value="completada">Completadas</SelectItem>
                 <SelectItem value="cancelada">Canceladas</SelectItem>
+                <SelectItem value="por_confirmar">Por confirmar</SelectItem>
                 <SelectItem value="no_show">Sin asistencia</SelectItem>
               </SelectContent>
             </Select>
@@ -327,6 +329,7 @@ export default function TherapistSessions() {
         ) : (
           filteredSessions.map((session) => (
             <Card key={session.id} className={`border-0 border-l-4 shadow-sm hover:shadow-md transition-all ${
+              session.status === "needs_confirmation" ? "border-l-orange-400" :
               (session.status === "pending" || session.status === "confirmed") ? "border-l-[#D9A932]" :
               session.status === "completed" ? "border-l-[#6AB7AB]" :
               session.status === "cancelled" ? "border-l-red-400" :
@@ -353,7 +356,9 @@ export default function TherapistSessions() {
                   </div>
                   <span
                     className={`px-3 py-1 rounded text-sm font-medium ${
-                      (session.status === "pending" || session.status === "confirmed")
+                      session.status === "needs_confirmation"
+                        ? "bg-orange-50 text-orange-700"
+                        : (session.status === "pending" || session.status === "confirmed")
                         ? "bg-[#FEF9EA] text-[#D9A932]"
                         : session.status === "completed"
                         ? "bg-[#EFF6FF] text-[#3B82F6]"
@@ -364,7 +369,8 @@ export default function TherapistSessions() {
                         : "bg-gray-50 text-gray-600"
                     }`}
                   >
-                    {(session.status === "pending" || session.status === "confirmed") ? "pendiente" :
+                    {session.status === "needs_confirmation" ? "por confirmar" :
+                     (session.status === "pending" || session.status === "confirmed") ? "pendiente" :
                      session.status === "completed" ? "completada" :
                      session.status === "cancelled" ? "cancelada" :
                      session.status === "no_show" ? "sin asistencia" : session.status}
@@ -405,14 +411,32 @@ export default function TherapistSessions() {
                         Iniciar videollamada
                       </Button>
                     )}
-                    {(session.status === "pending" || session.status === "confirmed") && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleMarkCompleted(session)}
-                      >
-                        ⚠️ Marcar completada (temporal)
-                      </Button>
+                    {session.status === "needs_confirmation" && (
+                      <div className="flex flex-col gap-2">
+                        <p className="text-sm font-medium text-orange-700 bg-orange-50 px-3 py-1.5 rounded-md">
+                          ¿El paciente asistió a la sesión?
+                        </p>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-green-700 border-green-300 hover:bg-green-50"
+                            onClick={() => handleConfirmAttendance(session)}
+                          >
+                            <CheckCircle className="w-3.5 h-3.5 mr-1.5" />
+                            Sí, asistió
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-red-700 border-red-300 hover:bg-red-50"
+                            onClick={() => handleMarkNoShow(session)}
+                          >
+                            <XCircle className="w-3.5 h-3.5 mr-1.5" />
+                            No asistió
+                          </Button>
+                        </div>
+                      </div>
                     )}
                     {(session.status === "pending" || session.status === "confirmed" || session.status === "scheduled") &&
                      (new Date(session.start_time).getTime() - Date.now()) > 12 * 60 * 60 * 1000 && (
