@@ -23,16 +23,10 @@ const documentTypes = [
     description: "Tu cédula profesional de psicología emitida por la SEP",
   },
   {
-    type: "id_front",
-    label: "INE / Identificación oficial (frente)",
+    type: "id",
+    label: "INE / Identificación oficial",
     required: true,
     description: "Foto clara del frente de tu INE o pasaporte",
-  },
-  {
-    type: "id_back",
-    label: "INE / Identificación oficial (reverso)",
-    required: true,
-    description: "Foto clara del reverso de tu INE",
   },
 ];
 
